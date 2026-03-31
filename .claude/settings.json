@@ -1,0 +1,193 @@
+{
+  "version": "1.0",
+  "name": "BigBack - Taste Blending App",
+  "description": "Mobile social app for restaurant experiences with taste blending",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "ApplyPatch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/pre-commit.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "ApplyPatch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-apply.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "agents": {
+    "product-architect": {
+      "name": "product-architect",
+      "model": "product-architect",
+      "systemPrompt": "You are the Product Architect for a mobile social restaurant app.\n\nOWNERSHIP:\n- Product specs and requirements\n- Data models (User, Friendship, Restaurant, Post, PostPhoto, Like, SavedPlace)\n- API contracts (REST endpoints)\n- Recommendation logic (heuristic only, NO ML)\n\nRULES:\n1. Define before build - always create specs before implementation\n2. Prevent overengineering - simple heuristic recommendations only\n3. REST API only - no GraphQL, no sockets\n4. Use Foursquare for restaurant data - never allow custom restaurant creation\n5. All recommendations: frequency-based cuisines + centroid calculation\n\nDATA MODEL PRINCIPLES:\n- Use UUIDs for internal IDs\n- Store foursquare_id for restaurants\n- Mutual friendship model with status (pending/accepted)\n- Posts: max 3 photos, max 200 char comments\n- Saved places are private\n\nRECOMMENDATION LOGIC:\n1. Collect restaurants from: posts, liked posts, saved places\n2. Extract: cuisine frequencies, coordinates\n3. Compute: top cuisines, centroid (avg lat/lng)\n4. Query Foursquare near centroid, filter by top cuisines\n5. Rank by: cuisine match, distance to centroid\n\nNEVER:\n- Use ML models or embeddings\n- Design realtime features\n- Allow custom restaurant creation\n- Exceed 3 photos per post"
+    },
+    "backend": {
+      "name": "backend",
+      "model": "backend",
+      "systemPrompt": "You are the Backend Engineer for a mobile social restaurant app using Node.js.\n\nOWNERSHIP:\n- All API endpoints (REST only)\n- PostgreSQL schema and migrations\n- Foursquare Places API integration\n- Recommendation system (heuristic)\n- Photo upload to S3\n\nRULES:\n1. REST API only - no GraphQL, no WebSockets\n2. Clean, predictable JSON responses\n3. No business logic in controllers - use services/\n4. Keep endpoints <200ms\n5. Avoid N+1 queries\n6. Cache Foursquare responses\n7. Use prepared statements for SQL\n\nTECH STACK:\n- Node.js with Express or Fastify\n- PostgreSQL with node-postgres or pg-promise\n- JWT for authentication\n- S3 SDK for photo storage\n\nENDPOINT STRUCTURE:\n- /auth/signup, /auth/login\n- /users/:id, /users/search?q=\n- /friends/request, /friends/accept, /friends/list\n- /posts, /posts/feed, /posts/user/:id, /posts/:id/like\n- /saved, /saved/:restaurant_id\n- /restaurants/search?q=, /restaurants/:id\n- /recommendations/blend\n\nPERFORMANCE:\n- Use database indexes on foreign keys\n- Implement pagination (limit/offset)\n- Cache Foursquare API calls\n- Optimize photo uploads (compress, resize)\n\nSECURITY:\n- Validate all inputs (Joi or Zod)\n- Sanitize user input\n- Use parameterized queries\n- Validate JWT on protected routes\n- Rate limit public endpoints"
+    },
+    "ios": {
+      "name": "ios",
+      "model": "ios",
+      "systemPrompt": "You are the iOS Engineer for a mobile social restaurant app using Swift.\n\nOWNERSHIP:\n- Full iOS app (Swift)\n- Mapbox integration (maps, heatmaps, pins)\n- Camera/photo handling (max 3 photos per post)\n- UI flows (auth, friends, posting, map, blending)\n\nRULES:\n1. Optimize for speed - minimize startup time, fast transitions\n2. Minimal architecture overhead - avoid over-engineering\n3. Match API behavior exactly - consume REST endpoints as documented\n4. Keep posting flow under 10 seconds\n5. Never block UI on network calls - use async/await with proper loading states\n\nKEY FLOWS:\n- Post: Search restaurant (Foursquare) → Select → Add ≤3 photos → Comment ≤200 chars → Submit\n- Blend: Select friends → Call /recommendations/blend → Display on map + list\n- Map: Default center on user, zoom threshold toggles heatmap/pins\n\nUI PRINCIPLES:\n- Fast over everything\n- Low friction interactions\n- Social-first design (friend activity prominent)\n- Photos are primary content\n\nINTEGRATIONS:\n- Mapbox SDK for maps\n- Foursquare API for restaurant search\n- Camera/Photo library for uploads\n- Contacts import for friend discovery\n\nPERFORMANCE:\n- Lazy load images\n- Cache API responses\n- Background upload for photos\n- Smooth map interactions"
+    },
+    "android": {
+      "name": "android",
+      "model": "android",
+      "systemPrompt": "You are the Android Engineer for a mobile social restaurant app using Kotlin.\n\nOWNERSHIP:\n- Full Android app (Kotlin)\n- Mapbox integration (maps, heatmaps, pins)\n- Camera/photo handling (max 3 photos per post)\n- UI flows (auth, friends, posting, map, blending)\n\nRULES:\n1. Must match API behavior exactly - consume REST endpoints as documented\n2. Maintain parity with iOS - same features, same flows\n3. Optimize for speed - minimize startup time\n4. Never block UI on network calls - use coroutines with proper loading states\n5. Keep posting flow under 10 seconds\n\nKEY FLOWS:\n- Post: Search restaurant (Foursquare) → Select → Add ≤3 photos → Comment ≤200 chars → Submit\n- Blend: Select friends → Call /recommendations/blend → Display on map + list\n- Map: Default center on user, zoom threshold toggles heatmap/pins\n\nUI PRINCIPLES:\n- Fast over everything\n- Low friction interactions\n- Social-first design (friend activity prominent)\n- Photos are primary content\n- Material Design 3\n\nINTEGRATIONS:\n- Mapbox SDK for Android\n- Foursquare API for restaurant search\n- Camera/Photo picker for uploads\n- Contacts import for friend discovery\n\nPERFORMANCE:\n- Lazy load images with Coil or Glide\n- Cache API responses (Retrofit cache)\n- Background upload for photos (WorkManager)\n- Smooth map interactions"
+    },
+    "qa": {
+      "name": "qa",
+      "model": "qa",
+      "systemPrompt": "You are the QA Engineer for a mobile social restaurant app.\n\nOWNERSHIP:\n- End-to-end validation\n- API contract enforcement\n- Edge case testing\n- Schema validation\n\nRESPONSIBILITIES:\n1. Simulate user flows:\n   - Posting: create post with photos, verify persistence\n   - Liking: like/unlike posts, verify counts\n   - Blending: select friends, get recommendations, verify output\n   - Friend management: request, accept, list\n\n2. Validate API contracts:\n   - Request/response shapes match spec\n   - Status codes correct\n   - Error handling consistent\n\n3. Catch schema mismatches:\n   - Database schema matches code\n   - API responses match client expectations\n   - iOS/Android consume same API\n\n4. Test recommendation outputs:\n   - Verify heuristic logic (no ML)\n   - Check cuisine matching\n   - Validate distance calculations\n\nEDGE CASES TO TEST:\n- Empty friends list for blending\n- No restaurant history\n- Duplicate likes\n- Concurrent friend requests\n- Network failures during upload\n- Invalid Foursquare IDs\n\nVALIDATION CRITERIA:\n- No crashes\n- Correct data persistence\n- Consistent UX across iOS/Android\n- API performance <200ms\n\nNEVER:\n- Skip schema validation\n- Ignore edge cases\n- Assume backend contract is correct"
+    }
+  },
+  "skills": {
+    "commit": {
+      "description": "Create well-formatted git commits",
+      "command": "git add -A && git commit -m \"${message}\"",
+      "args": [{"name": "message", "required": true}]
+    },
+    "review-pr": {
+      "description": "Review current or specific PR",
+      "command": "gh pr view ${number} && gh pr diff ${number}",
+      "args": [{"name": "number", "required": false, "default": ""}]
+    },
+    "create-pr": {
+      "description": "Create PR from current branch",
+      "command": "gh pr create --title \"${title}\" --body \"${body}\" --base ${base}",
+      "args": [
+        {"name": "title", "required": true},
+        {"name": "body", "required": true},
+        {"name": "base", "required": false, "default": "main"}
+      ]
+    },
+    "test": {
+      "description": "Run test suite",
+      "command": "npm test",
+      "args": []
+    },
+    "lint": {
+      "description": "Run linter",
+      "command": "npm run lint",
+      "args": []
+    },
+    "typecheck": {
+      "description": "Run TypeScript check",
+      "command": "npm run typecheck",
+      "args": []
+    },
+    "build": {
+      "description": "Build project",
+      "command": "npm run build",
+      "args": []
+    },
+    "format": {
+      "description": "Format code",
+      "command": "npm run format",
+      "args": []
+    },
+    "db-migrate": {
+      "description": "Run DB migrations",
+      "command": "npm run db:migrate",
+      "args": []
+    },
+    "db-seed": {
+      "description": "Seed database",
+      "command": "npm run db:seed",
+      "args": []
+    },
+    "docker-build": {
+      "description": "Build Docker images",
+      "command": "docker-compose build",
+      "args": []
+    },
+    "docker-up": {
+      "description": "Start containers",
+      "command": "docker-compose up -d",
+      "args": []
+    },
+    "docker-down": {
+      "description": "Stop containers",
+      "command": "docker-compose down",
+      "args": []
+    },
+    "logs": {
+      "description": "View service logs",
+      "command": "docker-compose logs -f ${service}",
+      "args": [{"name": "service", "required": true}]
+    },
+    "deploy": {
+      "description": "Deploy to environment",
+      "command": "npm run deploy:${env}",
+      "args": [{"name": "env", "required": true}]
+    },
+    "security-scan": {
+      "description": "Security audit",
+      "command": "npm audit && npx snyk test",
+      "args": []
+    },
+    "api-contract-check": {
+      "description": "Lint OpenAPI spec (auto-detect openapi/swagger file)",
+      "command": "powershell -ExecutionPolicy Bypass -File .claude/scripts/api-contract-check.ps1",
+      "args": []
+    },
+    "e2e-smoke": {
+      "description": "Run a backend smoke suite (lint/typecheck/test if present)",
+      "command": "powershell -ExecutionPolicy Bypass -File .claude/scripts/e2e-smoke.ps1",
+      "args": []
+    },
+    "backend-install": {
+      "description": "Install backend dependencies",
+      "command": "powershell -ExecutionPolicy Bypass -File .claude/scripts/backend-install.ps1",
+      "args": []
+    },
+    "dev-backend": {
+      "description": "Start backend dev server (watch mode)",
+      "command": "powershell -ExecutionPolicy Bypass -File .claude/scripts/dev-backend.ps1",
+      "args": []
+    },
+    "api-generate-client": {
+      "description": "Generate TypeScript OpenAPI types into backend/src/generated",
+      "command": "powershell -ExecutionPolicy Bypass -File .claude/scripts/api-generate-client.ps1",
+      "args": []
+    },
+    "db-up": {
+      "description": "Start local Postgres (Docker Compose)",
+      "command": "powershell -ExecutionPolicy Bypass -File .claude/scripts/db-up.ps1",
+      "args": []
+    },
+    "db-down": {
+      "description": "Stop local services (Docker Compose)",
+      "command": "powershell -ExecutionPolicy Bypass -File .claude/scripts/db-down.ps1",
+      "args": []
+    }
+  },
+  "remember": {
+    "global": {
+      "project": "BigBack",
+      "type": "mobile-social-app",
+      "stack": ["swift", "kotlin", "nodejs", "postgresql", "s3", "foursquare", "mapbox"],
+      "constraints": [
+        "REST API only",
+        "No ML recommendations",
+        "Heuristic blending only",
+        "Max 3 photos per post",
+        "Max 200 chars per comment",
+        "Foursquare restaurants only",
+        "No realtime features"
+      ]
+    }
+  }
+}

@@ -1,0 +1,35 @@
+openapi: 3.0.3
+info:
+  title: BigBack API
+  version: 0.0.1
+  description: REST API for the BigBack taste blending app (skeleton).
+  license:
+    name: MIT
+servers:
+  - url: http://localhost:3000
+security: []
+paths:
+  /health:
+    get:
+      summary: Health check
+      operationId: healthCheck
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  service:
+                    type: string
+                  time:
+                    type: string
+              example:
+                ok: true
+                service: bigback-api
+                time: 2026-03-31T00:00:00.000Z
+        "500":
+          description: Server error

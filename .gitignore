@@ -1,0 +1,25 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+coverage/
+.turbo/
+.next/
+
+# Xcode
+DerivedData/
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+
+# Android / Gradle
+.gradle/
+**/build/
+local.properties
+
+# Logs
+*.log
