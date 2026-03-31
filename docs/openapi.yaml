@@ -5,10 +5,69 @@ info:
   description: REST API for the BigBack taste blending app (skeleton).
   license:
     name: MIT
+    url: https://opensource.org/license/mit/
 servers:
   - url: http://localhost:3000
 security: []
 paths:
+  /auth/signup:
+    post:
+      summary: Create account
+      operationId: authSignup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 32
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+      responses:
+        "201":
+          description: Created
+        "400":
+          description: Validation error
+        "409":
+          description: Username taken
+        "500":
+          description: Server error
+  /auth/login:
+    post:
+      summary: Login
+      operationId: authLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 32
+                password:
+                  type: string
+                  minLength: 8
+                  maxLength: 200
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Validation error
+        "401":
+          description: Invalid credentials
+        "500":
+          description: Server error
   /health:
     get:
       summary: Health check
@@ -31,5 +90,7 @@ paths:
                 ok: true
                 service: bigback-api
                 time: 2026-03-31T00:00:00.000Z
+        "400":
+          description: Bad request
         "500":
           description: Server error

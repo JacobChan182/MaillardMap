@@ -1,0 +1,15 @@
+[allowlist]
+description = "Repo allowlist"
+
+paths = [
+  '''^backend/node_modules/''',
+  '''^backend/dist/''',
+  '''^android/''',
+  '''^ios/''',
+]
+
+# Allow example env files
+regexes = [
+  '''(?i)\.env\.example''',
+]
+

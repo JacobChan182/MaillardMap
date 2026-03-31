@@ -100,7 +100,7 @@
     },
     "db-migrate": {
       "description": "Run DB migrations",
-      "command": "npm run db:migrate",
+      "command": "npm --prefix backend run db:migrate",
       "args": []
     },
     "db-seed": {
