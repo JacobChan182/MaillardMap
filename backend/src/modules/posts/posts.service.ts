@@ -37,8 +37,11 @@ export async function createPost(userId: string, input: {
   );
   const restaurantId = upsertRes.rows[0].id;
 
-  return pool.transaction(async (tx) => {
-    const postRes = await tx.query(
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const postRes = await client.query(
       `insert into posts (user_id, restaurant_id, comment)
        values ($1, $2, $3)
        returning id`,
@@ -48,7 +51,7 @@ export async function createPost(userId: string, input: {
 
     if (input.photos && input.photos.length > 0) {
       for (let i = 0; i < input.photos.length; i++) {
-        await tx.query(
+        await client.query(
           `insert into post_photos (post_id, url, order_index)
            values ($1, $2, $3)`,
           [postId, input.photos[i].url, i + 1],
@@ -56,8 +59,14 @@ export async function createPost(userId: string, input: {
       }
     }
 
+    await client.query('COMMIT');
     return postId;
-  });
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
 }
 
 /**

@@ -12,17 +12,22 @@ type RestaurantRow = {
 /**
  * Search restaurants from Foursquare, caching results locally.
  */
-export async function searchRestaurants(q: string) {
+export async function searchRestaurants(q: string, lat?: number, lng?: number) {
   const pool = getPool();
 
   // First check local DB for cached results
-  const cached = await pool.query<RestaurantRow>(
-    `select id, foursquare_id, name, lat, lng, cuisine
+  let sql = `select id, foursquare_id, name, lat, lng, cuisine
      from restaurants
-     where name ilike $1
-     limit 30`,
-    [`%${q}%`],
-  );
+     where name ilike $1`;
+  const args: (string | number)[] = [`%${q}%`];
+
+  if (lat != null && lng != null) {
+    args.push(lat, lng);
+    sql += ` order by sqrt((lat - $2) * (lat - $2) + (lng - $3) * (lng - $3))`;
+  }
+  sql += ` limit 30`;
+
+  const cached = await pool.query<RestaurantRow>(sql, args);
 
   if (cached.rows.length > 0) {
     return cached.rows.map(rowToRestaurant);

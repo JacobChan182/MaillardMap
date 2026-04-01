@@ -1,7 +1,15 @@
-import type { NextFunction, Request, Response } from 'express';
+/* eslint-disable no-unused-vars */
+import type { NextFunction, Response, Request } from 'express';
 import jwt from 'jsonwebtoken';
 
 type JwtPayload = { sub: string; username: string };
+
+declare module 'express-serve-static-core' {
+  interface Request {
+    userId: string;
+    username: string;
+  }
+}
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
