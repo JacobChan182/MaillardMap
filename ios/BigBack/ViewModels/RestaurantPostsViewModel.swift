@@ -17,8 +17,14 @@ final class RestaurantPostsViewModel: ObservableObject {
     func load() async {
         isLoading = true
         defer { isLoading = false }
+        let id = restaurantId
+        let client = api
         do {
-            posts = try await api.getPostsForRestaurant(restaurantId: restaurantId)
+            // Detached so SwiftUI cancelling `.task` / `refreshable` does not cancel URLSession (server saw aborted connections).
+            let fetched = try await Task.detached(priority: .userInitiated) {
+                try await client.getPostsForRestaurant(restaurantId: id)
+            }.value
+            posts = fetched
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription

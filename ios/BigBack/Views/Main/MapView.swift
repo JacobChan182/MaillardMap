@@ -62,10 +62,19 @@ struct BigBackMapView: View {
                             .background(Color.white)
                             .cornerRadius(10)
                             .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
-                            Image(systemName: "mappin.circle.fill")
-                                .font(.title)
-                                .foregroundStyle(.blue)
-                                .shadow(radius: 1)
+                            Group {
+                                if vm.showHeatmap {
+                                    Circle()
+                                        .fill(Color.orange.opacity(0.8))
+                                        .frame(width: 14, height: 14)
+                                        .shadow(radius: 1)
+                                } else {
+                                    Image(systemName: "mappin.circle.fill")
+                                        .font(.title)
+                                        .foregroundStyle(.orange)
+                                        .shadow(radius: 1)
+                                }
+                            }
                         }
                         .offset(y: -10)
                     }

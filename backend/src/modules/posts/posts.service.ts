@@ -30,18 +30,27 @@ export async function createPost(userId: string, input: {
   lat: number;
   lng: number;
   cuisine?: string;
+  address?: string | null;
   comment?: string;
   photos?: { url: string }[];
 }): Promise<string> {
   const pool = getPool();
 
-  // Upsert restaurant (creates on first post for a Foursquare venue)
+  const addressParam = input.address?.trim() ? input.address.trim() : null;
+
+  // Upsert restaurant; merge address so rows from search / Foursquare keep or gain a street line.
   const upsertRes = await pool.query(
-    `insert into restaurants (foursquare_id, name, lat, lng, cuisine)
-     values ($1, $2, $3, $4, $5)
-     on conflict (foursquare_id) do update set updated_at = now()
+    `insert into restaurants (foursquare_id, name, lat, lng, cuisine, address)
+     values ($1, $2, $3, $4, $5, $6)
+     on conflict (foursquare_id) do update set
+       name = excluded.name,
+       lat = excluded.lat,
+       lng = excluded.lng,
+       cuisine = coalesce(excluded.cuisine, restaurants.cuisine),
+       address = coalesce(nullif(trim(excluded.address), ''), restaurants.address),
+       updated_at = now()
      returning id`,
-    [input.foursquareId, input.name, input.lat, input.lng, input.cuisine ?? null],
+    [input.foursquareId, input.name, input.lat, input.lng, input.cuisine ?? null, addressParam],
   );
   const restaurantId = upsertRes.rows[0].id;
 

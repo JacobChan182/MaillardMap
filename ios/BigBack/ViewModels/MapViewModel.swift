@@ -11,7 +11,7 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     /// The actual user location, separate from the displayed region
     @Published var userLocation: CLLocationCoordinate2D?
     @Published var pins: [MapPin] = []
-    /// Temporary blue callout from a post’s “restaurant” chip; cleared when the user pans/zooms the map.
+    /// Temporary map callout from a post’s restaurant chip; cleared when the user pans/zooms the map.
     @Published var restaurantCallout: MapRestaurantCallout?
     /// Region snapshot when the callout was shown (iOS 17 has no `MapCameraUpdateContext.reason`; compare camera to this to detect user moves).
     private var calloutDismissRegionAnchor: MKCoordinateRegion?

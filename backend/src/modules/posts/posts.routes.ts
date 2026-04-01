@@ -25,6 +25,7 @@ postsRouter.post('/', requireAuth, async (req, res) => {
       lat: restaurant.lat,
       lng: restaurant.lng,
       cuisine: restaurant.cuisine ?? undefined,
+      address: restaurant.address ?? undefined,
     });
     return res.status(201).json({ ok: true, post: { id: postId } });
   } catch (err) {

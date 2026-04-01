@@ -242,6 +242,9 @@ final class APIClient {
     func clearSession() { authToken = nil }
 }
 
+/// Allows `Task.detached` fetches; `URLSession` is thread-safe and token reads are coarse-grained.
+extension APIClient: @unchecked Sendable {}
+
 // MARK: - Request/Response types
 
 struct AuthRequest: Encodable {

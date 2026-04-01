@@ -49,9 +49,22 @@ export async function searchRestaurants(q: string, lat?: number, lng?: number) {
       const res = await pool.query(
         `insert into restaurants (foursquare_id, name, lat, lng, cuisine, address)
          values ($1, $2, $3, $4, $5, $6)
-         on conflict (foursquare_id) do update set updated_at = now()
+         on conflict (foursquare_id) do update set
+           name = excluded.name,
+           lat = excluded.lat,
+           lng = excluded.lng,
+           cuisine = coalesce(excluded.cuisine, restaurants.cuisine),
+           address = coalesce(nullif(trim(excluded.address), ''), restaurants.address),
+           updated_at = now()
          returning id`,
-        [v.foursquare_id, v.name, v.lat, v.lng, v.categories || null, v.address || null],
+        [
+          v.foursquare_id,
+          v.name,
+          v.lat,
+          v.lng,
+          v.categories || null,
+          v.address?.trim() ? v.address.trim() : null,
+        ],
       );
       ids.push(res.rows[0].id);
     }
@@ -80,12 +93,19 @@ export async function upsertRestaurant(data: {
   address?: string;
 }): Promise<string> {
   const pool = getPool();
+  const addr = data.address?.trim() ? data.address.trim() : null;
   const result = await pool.query(
     `insert into restaurants (foursquare_id, name, lat, lng, cuisine, address)
      values ($1, $2, $3, $4, $5, $6)
-     on conflict (foursquare_id) do update set updated_at = now()
+     on conflict (foursquare_id) do update set
+       name = excluded.name,
+       lat = excluded.lat,
+       lng = excluded.lng,
+       cuisine = coalesce(excluded.cuisine, restaurants.cuisine),
+       address = coalesce(nullif(trim(excluded.address), ''), restaurants.address),
+       updated_at = now()
      returning id`,
-    [data.foursquareId, data.name, data.lat, data.lng, data.cuisine ?? null, data.address ?? null],
+    [data.foursquareId, data.name, data.lat, data.lng, data.cuisine ?? null, addr],
   );
   return result.rows[0].id;
 }

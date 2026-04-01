@@ -37,13 +37,30 @@ export async function searchNearby(lat: number, lng: number, radius = 5000, quer
   return (data.results || []).map(mapVenue);
 }
 
+function venueAddressFromLocation(loc: any): string {
+  if (!loc || typeof loc !== 'object') return '';
+  const formatted = loc.formatted_address;
+  if (typeof formatted === 'string' && formatted.trim()) return formatted.trim();
+  const line1 = [loc.address, loc.address_extended].filter(Boolean).join(', ');
+  const cityPart = [loc.locality, loc.region, loc.postcode].filter(Boolean).join(', ');
+  const combined = [line1, cityPart].filter(Boolean).join(', ');
+  return typeof combined === 'string' ? combined.trim() : '';
+}
+
 function mapVenue(r: any): FoursquareVenue {
+  const categories =
+    Array.isArray(r.categories)
+      ? r.categories.map((c: any) => c?.name).filter(Boolean).join(', ')
+      : typeof r.categories === 'string'
+        ? r.categories
+        : '';
   return {
     foursquare_id: r.fsq_place_id ?? r.fsq_id,
     name: r.name,
     lat: r.latitude ?? r.geocodes?.main?.latitude ?? 0,
     lng: r.longitude ?? r.geocodes?.main?.longitude ?? 0,
-    address: r.location?.formatted_address ?? '',
+    categories,
+    address: venueAddressFromLocation(r.location),
   };
 }
 
