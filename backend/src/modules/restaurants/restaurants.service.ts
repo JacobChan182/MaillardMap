@@ -8,6 +8,7 @@ type RestaurantRow = {
   lat: number;
   lng: number;
   cuisine: string | null;
+  address: string | null;
 };
 
 /**
@@ -17,7 +18,7 @@ export async function searchRestaurants(q: string, lat?: number, lng?: number) {
   const pool = getPool();
 
   // First check local DB for cached results
-  let sql = `select id, foursquare_id, name, lat, lng, cuisine
+  let sql = `select id, foursquare_id, name, lat, lng, cuisine, address
      from restaurants
      where name ilike $1`;
   const args: (string | number)[] = [`%${q}%`];
@@ -46,17 +47,17 @@ export async function searchRestaurants(q: string, lat?: number, lng?: number) {
     const ids: string[] = [];
     for (const v of results) {
       const res = await pool.query(
-        `insert into restaurants (foursquare_id, name, lat, lng, cuisine)
-         values ($1, $2, $3, $4, $5)
+        `insert into restaurants (foursquare_id, name, lat, lng, cuisine, address)
+         values ($1, $2, $3, $4, $5, $6)
          on conflict (foursquare_id) do update set updated_at = now()
          returning id`,
-        [v.foursquare_id, v.name, v.lat, v.lng, v.categories || null],
+        [v.foursquare_id, v.name, v.lat, v.lng, v.categories || null, v.address || null],
       );
       ids.push(res.rows[0].id);
     }
     if (ids.length > 0) {
       const fresh = await pool.query<RestaurantRow>(
-        'select id, foursquare_id, name, lat, lng, cuisine from restaurants where id = any($1)',
+        'select id, foursquare_id, name, lat, lng, cuisine, address from restaurants where id = any($1)',
         [ids],
       );
       return fresh.rows.map(rowToRestaurant);
@@ -76,14 +77,15 @@ export async function upsertRestaurant(data: {
   lat: number;
   lng: number;
   cuisine?: string;
+  address?: string;
 }): Promise<string> {
   const pool = getPool();
   const result = await pool.query(
-    `insert into restaurants (foursquare_id, name, lat, lng, cuisine)
-     values ($1, $2, $3, $4, $5)
+    `insert into restaurants (foursquare_id, name, lat, lng, cuisine, address)
+     values ($1, $2, $3, $4, $5, $6)
      on conflict (foursquare_id) do update set updated_at = now()
      returning id`,
-    [data.foursquareId, data.name, data.lat, data.lng, data.cuisine ?? null],
+    [data.foursquareId, data.name, data.lat, data.lng, data.cuisine ?? null, data.address ?? null],
   );
   return result.rows[0].id;
 }
@@ -94,7 +96,7 @@ export async function upsertRestaurant(data: {
 export async function getRestaurantById(id: string) {
   const pool = getPool();
   const res = await pool.query<RestaurantRow>(
-    'select id, foursquare_id, name, lat, lng, cuisine from restaurants where id = $1',
+    'select id, foursquare_id, name, lat, lng, cuisine, address from restaurants where id = $1',
     [id],
   );
   const row = res.rows[0];
@@ -108,7 +110,7 @@ export async function getRestaurantById(id: string) {
 export async function getRestaurantByFoursquareId(foursquareId: string) {
   const pool = getPool();
   const res = await pool.query<RestaurantRow>(
-    'select id, foursquare_id, name, lat, lng, cuisine from restaurants where foursquare_id = $1',
+    'select id, foursquare_id, name, lat, lng, cuisine, address from restaurants where foursquare_id = $1',
     [foursquareId],
   );
   return res.rows[0];
@@ -122,5 +124,6 @@ function rowToRestaurant(row: RestaurantRow) {
     lat: row.lat,
     lng: row.lng,
     cuisine: row.cuisine,
+    address: row.address,
   };
 }

@@ -7,6 +7,7 @@ export const restaurantSchema = z.object({
   lat: z.number(),
   lng: z.number(),
   cuisine: z.string().nullable(),
+  address: z.string().nullable(),
 });
 
 export type Restaurant = z.infer<typeof restaurantSchema>;

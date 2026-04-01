@@ -23,18 +23,16 @@ struct RestaurantSearchView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(restaurant.name)
                                     .font(.headline)
-                                HStack {
-                                    if let cuisine = restaurant.cuisine {
-                                        Text(cuisine)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Text(restaurant.lat, format: .number.precision(.fractionLength(4)))
-                                    Text(restaurant.lng, format: .number.precision(.fractionLength(4)))
+                                if let cuisine = restaurant.cuisine {
+                                    Text(cuisine)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
+                                if let address = restaurant.address {
+                                    Text(address)
+                                        .font(.caption)
+                                        .foregroundStyle(.tertiary)
+                                }
                             }
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)

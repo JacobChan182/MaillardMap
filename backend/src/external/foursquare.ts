@@ -4,6 +4,7 @@ export type FoursquareVenue = {
   lat: number;
   lng: number;
   categories: string;
+  address: string;
 };
 
 function fsqHeaders(key: string): Record<string, string> {
@@ -42,7 +43,7 @@ function mapVenue(r: any): FoursquareVenue {
     name: r.name,
     lat: r.latitude ?? r.geocodes?.main?.latitude ?? 0,
     lng: r.longitude ?? r.geocodes?.main?.longitude ?? 0,
-    categories: r.categories?.map((c: any) => c.name).join(',') || '',
+    address: r.location?.formatted_address ?? '',
   };
 }
 

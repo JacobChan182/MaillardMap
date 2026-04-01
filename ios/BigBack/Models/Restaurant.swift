@@ -7,6 +7,7 @@ struct Restaurant: Identifiable, Codable {
     let lat: Double
     let lng: Double
     let cuisine: String?
+    let address: String?
 }
 
 struct RestaurantSearchResult: Codable {
