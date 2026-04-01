@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.bigback.common.PreviewTheme
 import com.bigback.data.Repository
 import com.bigback.domain.Friendship
-import com.bigback.domain.RestaurantRecommendation
+import com.bigback.domain.ScoredRestaurant
 
 @Composable
 fun BlendScreen(
@@ -24,7 +24,7 @@ fun BlendScreen(
 ) {
     var friends by remember { mutableStateOf<List<Friendship>>(emptyList()) }
     var selectedFriends by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var recommendations by remember { mutableStateOf<List<RestaurantRecommendation>>(emptyList()) }
+    var recommendations by remember { mutableStateOf<List<ScoredRestaurant>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var blendLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }

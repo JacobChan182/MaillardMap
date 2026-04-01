@@ -79,7 +79,7 @@ struct CreateTab: View {
     @State private var showRestaurantPicker = false
 
     init(currentUserId: String) {
-        _createVM = StateObject(wrappedValue: CreatePostViewModel(currentUserId: currentUserId))
+        _createVM = StateObject(wrappedValue: CreatePostViewModel())
     }
 
     var body: some View {
@@ -139,7 +139,7 @@ struct MoreTab: View {
             List {
                 Section("Account") {
                     NavigationLink {
-                        FriendsView(currentUserId: auth.currentUser?.id ?? "")
+                        FriendsView()
                             .navigationTitle("Friends")
                     } label: {
                         Label("Friends", systemImage: "person.2.fill")

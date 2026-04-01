@@ -3,6 +3,7 @@ import Foundation
 @MainActor
 final class FriendsViewModel: ObservableObject {
     @Published var friends: [Friendship] = []
+    @Published var pendingRequests: [Friendship] = []
     @Published var searchResults: [User] = []
     @Published var searchQuery = ""
     @Published var errorMessage: String?
@@ -19,7 +20,8 @@ final class FriendsViewModel: ObservableObject {
         defer { isLoading = false }
         do {
             let list = try await api.getFriendsList()
-            friends = list
+            friends = list.filter { $0.status == "accepted" }
+            pendingRequests = list.filter { $0.status == "pending" }
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription

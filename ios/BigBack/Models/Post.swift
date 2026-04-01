@@ -25,9 +25,5 @@ struct PostPhoto: Identifiable, Codable, Equatable {
 struct CreatePostRequest: Codable {
     let foursquare_id: String
     let comment: String?
-    let photo_urls: [PhotoUrl]?
-
-    struct PhotoUrl: Codable {
-        let url: String
-    }
+    let photo_urls: [String]?
 }

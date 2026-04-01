@@ -94,8 +94,8 @@ private fun PostCard(
     onLike: () -> Unit,
     onViewUser: (String) -> Unit
 ) {
-    var isLiked by remember { mutableStateOf(post.isLiked) }
-    var likeCount by remember { mutableStateOf(post.likeCount) }
+    var localLiked by remember { mutableStateOf(post.liked) }
+    var localLikeCount by remember { mutableStateOf(post.likeCount) }
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
@@ -157,16 +157,17 @@ private fun PostCard(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = {
-                        isLiked = !isLiked
-                        likeCount += if (isLiked) 1 else -1
+                        localLiked = !localLiked
+                        localLikeCount += if (localLiked) 1 else -1
+                        // TODO: call API
                     }) {
                         Icon(
-                            imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            imageVector = if (localLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                             contentDescription = "like",
                             tint = MaterialTheme.colors.primary
                         )
                     }
-                    Text("$likeCount")
+                    Text("$localLikeCount")
                 }
                 IconButton(onClick = { /* saved bookmark */ }) {
                     Icon(Icons.Default.BookmarkBorder, "save", tint = MaterialTheme.colors.onSurface.copy(alpha = 0.5f))

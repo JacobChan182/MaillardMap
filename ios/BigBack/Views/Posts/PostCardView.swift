@@ -3,20 +3,16 @@ import SwiftUI
 struct PostCardView: View {
     let post: Post
     let likePost: (String) async -> Void
-    @State private var isLiked = false
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             // User header
             HStack {
-                Text(post.user?.username ?? "User")
+                Text(post.username)
                     .font(.headline)
                 Spacer()
-                if let restaurant = post.restaurant {
-                    Text(restaurant.name)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text(post.restaurantName)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             // Photos
@@ -40,20 +36,22 @@ struct PostCardView: View {
             }
 
             // Comment
-            Text(post.comment)
-                .font(.body)
-                .lineLimit(3)
+            if let comment = post.comment, !comment.isEmpty {
+                Text(comment)
+                    .font(.body)
+                    .lineLimit(3)
+            }
 
             // Actions
             HStack(spacing: 16) {
-                Button {
-                    isLiked.toggle()
-                    Task { await likePost(post.id) }
-                } label: {
-                    Label("\(isLiked ? "Liked" : "Like")",
-                          systemImage: isLiked ? "heart.fill" : "heart")
-                    .foregroundStyle(isLiked ? .red : .secondary)
-                }
+                HStack(spacing: 6) {
+                    Label(post.liked ? "Liked" : "Like",
+                          systemImage: post.liked ? "heart.fill" : "heart")
+                        .foregroundStyle(post.liked ? .red : .secondary)
+                    Text("\(post.likeCount)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }.onTapGesture { Task { await likePost(post.id) } }
 
                 if let date = ISO8601DateFormatter().date(from: post.createdAt) {
                     Text(date.formatted(date: .abbreviated, time: .shortened))

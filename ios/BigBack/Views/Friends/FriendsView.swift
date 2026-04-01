@@ -4,8 +4,8 @@ struct FriendsView: View {
     @StateObject private var vm: FriendsViewModel
     @State private var isSearching = false
 
-    init(currentUserId: String) {
-        _vm = StateObject(wrappedValue: FriendsViewModel(currentUserId: currentUserId))
+    init() {
+        _vm = StateObject(wrappedValue: FriendsViewModel())
     }
 
     var body: some View {
@@ -15,11 +15,11 @@ struct FriendsView: View {
                 Section("Friend Requests") {
                     ForEach(vm.pendingRequests) { req in
                         HStack {
-                            Text("Request from \(req.friendId)")
+                            Text("Request from \(req.friendUsername ?? req.friendId)")
                                 .font(.headline)
                             Spacer()
                             Button("Accept") {
-                                Task { await vm.acceptRequest(requestId: req.id) }
+                                Task { await vm.acceptRequest(friendId: req.friendId) }
                             }
                             .buttonStyle(.borderedProminent)
                             .tint(.orange)

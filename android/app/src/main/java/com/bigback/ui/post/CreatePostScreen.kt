@@ -18,7 +18,6 @@ import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.bigback.common.PreviewTheme
 import com.bigback.data.Repository
-import com.bigback.domain.CreatePostRequest
 import com.bigback.domain.Restaurant
 import com.bigback.ui.restaurant.RestaurantSearchDialog
 
@@ -172,11 +171,9 @@ private fun CreatePostContent(
                         try {
                             // Note: in production, upload photo URLs to S3 first
                             repository.createPost(
-                                CreatePostRequest(
-                                    restaurantId = restaurant.id,
-                                    comment = comment,
-                                    photoUrls = emptyList()
-                                )
+                                foursquareId = restaurant.foursquareId,
+                                comment = comment,
+                                photoUrls = emptyList()
                             )
                             onPostCreated()
                         } catch (e: Exception) {

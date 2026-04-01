@@ -105,7 +105,7 @@ fun FriendsScreen(
                                         val scope = rememberCoroutineScope()
                                         scope.launch {
                                             try {
-                                                repository.acceptFriend(friendship.id)
+                                                repository.acceptFriendRequest(friendship.friendId)
                                                 loadFriends()
                                             } catch (e: Exception) {
                                                 error = e.message ?: "Failed to accept"
@@ -229,7 +229,10 @@ private fun AddFriendDialog(
                     val scope = rememberCoroutineScope()
                     scope.launch {
                         try {
-                            repository.requestFriend(query)
+                            val users = repository.searchUsers(query.trim())
+                            val match = users.firstOrNull { it.username.equals(query.trim(), ignoreCase = true) }
+                                ?: throw Exception("User not found")
+                            repository.sendFriendRequest(match.id)
                             onSent()
                         } catch (e: Exception) {
                             onError(e.message ?: "Failed to send request")

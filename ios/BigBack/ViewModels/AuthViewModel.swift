@@ -19,7 +19,7 @@ final class AuthViewModel: ObservableObject {
            let _ = try? JSONDecoder.default.decode(User.self, from: data) {
             // Session exists — user is authed
             if let id = UserDefaults.standard.string(forKey: "currentUserId") {
-                self.currentUser = User(id: id, username: UserDefaults.standard.string(forKey: "currentUsername") ?? "", createdAt: nil)
+                self.currentUser = User(id: id, username: UserDefaults.standard.string(forKey: "currentUsername") ?? "", phoneOrEmail: nil, createdAt: nil)
             }
         }
     }

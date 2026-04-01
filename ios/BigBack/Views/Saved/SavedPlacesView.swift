@@ -12,13 +12,8 @@ struct SavedPlacesView: View {
                     ForEach(vm.savedPlaces) { place in
                         HStack {
                             VStack(alignment: .leading) {
-                                Text(place.restaurant?.name ?? "Unknown")
+                                Text(place.restaurantName)
                                     .font(.headline)
-                                if let cuisine = place.restaurant?.cuisine {
-                                    Text(cuisine)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
                             }
                             Spacer()
                             Button {

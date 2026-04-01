@@ -80,9 +80,9 @@ struct BlendView: View {
                                         .foregroundStyle(i < 3 ? .orange : .secondary)
 
                                     VStack(alignment: .leading) {
-                                        Text(rec.restaurant.name)
+                                        Text(rec.name)
                                             .font(.headline)
-                                        if let cuisine = rec.restaurant.cuisine {
+                                        if let cuisine = rec.cuisine {
                                             Text(cuisine)
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
@@ -93,10 +93,9 @@ struct BlendView: View {
                                 }
 
                                 HStack {
-                                    Label("\(rec.cuisineMatchScore) cuisine match",
-                                          systemImage: "fork.knife")
+                                    Label("Score: \(rec.score)", systemImage: "fork.knife")
                                     Spacer()
-                                    Label(String(format: "%.1f km away", rec.distanceToCentroid),
+                                    Label(String(format: "%.1f km away", rec.distance),
                                           systemImage: "location")
                                 }
                                 .font(.caption)

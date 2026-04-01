@@ -76,7 +76,7 @@ final class CreatePostViewModel: ObservableObject {
             let req = CreatePostRequest(
                 foursquare_id: restaurant.foursquareId,
                 comment: comment,
-                photo_urls: selectedPhotos.isEmpty ? nil : photoUrls.map { CreatePostRequest.PhotoUrl(url: $0) }
+                photo_urls: selectedPhotos.isEmpty ? nil : photoUrls
             )
             _ = try await api.createPost(req)
             didPost = true

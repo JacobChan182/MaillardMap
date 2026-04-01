@@ -223,31 +223,6 @@ struct SavedPlacesResponse: Decodable {
     let saved_places: [SavedPlace]
 }
 
-struct BlendResult: Decodable {
-    let top_cuisines: [CuisineCount]
-    let centroid: LatLong
-    let restaurants: [ScoredRestaurant]
-}
-
-struct CuisineCount: Decodable {
-    let name: String
-    let count: Int
-}
-
-struct LatLong: Decodable {
-    let lat: Double
-    let lng: Double
-}
-
-struct ScoredRestaurant: Decodable {
-    let id: String
-    let foursquare_id: String
-    let name: String
-    let cuisine: String?
-    let distance: Double
-    let score: Double
-}
-
 // MARK: - JSON Encoder/Decoder defaults
 
 extension JSONEncoder {

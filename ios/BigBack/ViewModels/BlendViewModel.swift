@@ -40,9 +40,13 @@ final class BlendViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            blendResult = try await api.blendTastes(userIds: userIds)
+            let result = try await api.blendTastes(userIds: userIds)
+            blendResult = result
+            errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
     }
+
+    var recommendations: [ScoredRestaurant] { blendResult?.restaurants ?? [] }
 }

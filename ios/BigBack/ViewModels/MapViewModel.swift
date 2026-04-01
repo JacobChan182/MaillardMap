@@ -56,12 +56,10 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
 
     private func updateAnnotations() {
         pins = posts.map { post in
-            let lat = post.restaurant?.lat ?? 0
-            let lng = post.restaurant?.lng ?? 0
-            return MapPin(
-                coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lng),
-                title: post.restaurant?.name ?? "Unknown",
-                subtitle: post.comment,
+            MapPin(
+                coordinate: CLLocationCoordinate2D(latitude: post.lat, longitude: post.lng),
+                title: post.restaurantName,
+                subtitle: post.comment ?? "",
                 isHeat: showHeatmap
             )
         }

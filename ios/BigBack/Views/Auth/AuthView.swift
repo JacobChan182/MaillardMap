@@ -20,16 +20,9 @@ struct AuthView: View {
                 .padding(.top, 40)
 
                 VStack(spacing: 16) {
-                    if auth.isSignupMode {
-                        TextField("Username", text: $auth.username)
-                            .textInputAutocapitalization(.never)
-                            .textContentType(.username)
-                    }
-
-                    TextField("Phone or Email", text: $auth.phoneOrEmail)
-                        .textContentType(.username)
-                        .keyboardType(.emailAddress)
+                    TextField("Username", text: $auth.username)
                         .textInputAutocapitalization(.never)
+                        .textContentType(.username)
                         .autocorrectionDisabled()
 
                     SecureField("Password", text: $auth.password)
