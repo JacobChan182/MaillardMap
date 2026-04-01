@@ -68,15 +68,37 @@ final class CreatePostViewModel: ObservableObject {
         defer { isPosting = false }
 
         do {
-            // TODO: Upload to S3 for real photo URLs
-            let photoUrls = selectedPhotos.indices.map { i in
-                "https://placeholder/bigback/photo-\(i).jpg"
+            let photoUrls: [String]?
+            if selectedPhotos.isEmpty {
+                photoUrls = nil
+            } else {
+                let contentType = "image/jpeg"
+                let slots = try await api.presignPhotoUploads(contentType: contentType, count: selectedPhotos.count)
+                guard slots.count == selectedPhotos.count else {
+                    errorMessage = "Upload failed: unexpected server response"
+                    return
+                }
+                var urls: [String] = []
+                urls.reserveCapacity(slots.count)
+                for (i, slot) in slots.enumerated() {
+                    guard let data = selectedPhotos[i].jpegData(compressionQuality: 0.85) else {
+                        errorMessage = "Could not prepare photo \(i + 1)"
+                        return
+                    }
+                    guard let putURL = URL(string: slot.uploadUrl) else {
+                        errorMessage = "Invalid upload URL"
+                        return
+                    }
+                    try await api.uploadToPresignedURL(putURL, data: data, contentType: contentType)
+                    urls.append(slot.publicUrl)
+                }
+                photoUrls = urls
             }
 
             let req = CreatePostRequest(
                 foursquare_id: restaurant.foursquareId,
                 comment: comment,
-                photo_urls: selectedPhotos.isEmpty ? nil : photoUrls
+                photo_urls: photoUrls
             )
             _ = try await api.createPost(req)
             didPost = true

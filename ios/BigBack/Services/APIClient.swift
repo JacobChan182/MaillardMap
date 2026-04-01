@@ -131,6 +131,29 @@ final class APIClient {
 
     // MARK: - Posts
 
+    /// Ask the API for presigned PUT URLs (R2/S3). Body uses snake_case keys (`content_type`) via default encoder.
+    func presignPhotoUploads(contentType: String, count: Int) async throws -> [PresignedUploadSlot] {
+        struct Body: Encodable {
+            let contentType: String
+            let count: Int
+        }
+        struct Resp: Decodable { let uploads: [PresignedUploadSlot] }
+        let data = try await request("uploads/presign", method: "POST", body: Body(contentType: contentType, count: count))
+        return try decode(Resp.self, from: data).uploads
+    }
+
+    /// PUT raw bytes to a presigned URL (no Authorization header).
+    func uploadToPresignedURL(_ uploadURL: URL, data: Data, contentType: String) async throws {
+        var req = URLRequest(url: uploadURL)
+        req.httpMethod = "PUT"
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        req.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        req.httpBody = data
+        let (_, response) = try await session.data(for: req)
+        guard let http = response as? HTTPURLResponse else { throw APIError.badResponse(0, nil) }
+        guard (200...299).contains(http.statusCode) else { throw APIError.badResponse(http.statusCode, nil) }
+    }
+
     func createPost(_ req: CreatePostRequest) async throws -> String {
         let data = try await request("posts", method: "POST", body: req)
         struct Resp: Decodable { var post: PostRef }
@@ -229,6 +252,11 @@ struct AuthResponse: Decodable {
     let ok: Bool
     let token: String
     let user: User
+}
+
+struct PresignedUploadSlot: Decodable {
+    let uploadUrl: String
+    let publicUrl: String
 }
 
 struct BlendRequest: Encodable {
