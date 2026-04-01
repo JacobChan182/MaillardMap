@@ -2,111 +2,85 @@ package com.bigback.data
 
 import com.bigback.domain.*
 
-/**
- * Repository that wraps API calls and handles token/session management.
- */
 class Repository(
     private val api: BigBackApi,
     private val sessionManager: SessionManager
 ) {
 
     // --- Auth ---
-    suspend fun signup(username: String, phoneOrEmail: String, password: String): AuthResponse {
-        return api.signup(SignupRequest(username, phoneOrEmail, password)).also { response ->
-            sessionManager.saveSession(response.token, response.user.toDomain())
-        }
+    suspend fun signup(username: String, password: String): AuthResponse {
+        val resp = api.signup(SignupRequest(username, password))
+        sessionManager.saveSession(resp.token, User(resp.user.id, resp.user.username, resp.user.createdAt))
+        return AuthResponse(User(resp.user.id, resp.user.username, resp.user.createdAt), resp.token)
     }
 
-    suspend fun login(phoneOrEmail: String, password: String): AuthResponse {
-        return api.login(LoginRequest(phoneOrEmail, password)).also { response ->
-            sessionManager.saveSession(response.token, response.user.toDomain())
-        }
+    suspend fun login(username: String, password: String): AuthResponse {
+        val resp = api.login(LoginRequest(username, password))
+        sessionManager.saveSession(resp.token, User(resp.user.id, resp.user.username, resp.user.createdAt))
+        return AuthResponse(User(resp.user.id, resp.user.username, resp.user.createdAt), resp.token)
     }
 
-    fun logout() {
-        sessionManager.clearSession()
-    }
-
+    fun logout() = sessionManager.clearSession()
     fun isLoggedIn(): Boolean = sessionManager.isLoggedIn()
     fun currentUserId(): String? = sessionManager.getUserId()
     fun currentUsername(): String? = sessionManager.getUsername()
 
     // --- Users ---
-    suspend fun getUser(id: String): User {
-        return api.getUser(id).toDomain()
-    }
-
-    suspend fun searchUsers(query: String): List<User> {
-        return api.searchUsers(query).map { it.toDomain() }
-    }
+    suspend fun getUser(id: String): User = api.getUser(id).toUser()
+    suspend fun searchUsers(query: String): List<User> = api.searchUsers(query).map { it.toUser() }
 
     // --- Friends ---
-    suspend fun requestFriend(username: String): Friendship {
-        return api.requestFriend(FriendRequestPayload(username)).toDomain()
-    }
-
-    suspend fun acceptFriend(friendId: String): Friendship {
-        return api.acceptFriend(mapOf("friend_id" to friendId)).toDomain()
-    }
-
-    suspend fun getFriends(): List<Friendship> {
-        return api.getFriends().map { it.toDomain() }
-    }
+    suspend fun sendFriendRequest(friendId: String) = api.sendFriendRequest(FriendRequestPayload(friendId))
+    suspend fun acceptFriendRequest(friendId: String) = api.acceptFriendRequest(mapOf("friend_id" to friendId))
+    suspend fun getFriends(): List<Friendship> = api.getFriendList().friends.map { it.toFriendship() }
 
     // --- Posts ---
-    suspend fun createPost(post: CreatePostRequest): Post {
-        return api.createPost(
-            CreatePostPayload(post.restaurantId, post.comment, post.photoUrls)
-        ).toDomain()
+    suspend fun createPost(foursquareId: String, comment: String?, photoUrls: List<String>): Map<String, Any> {
+        return api.createPost(CreatePostPayload(foursquareId, comment, photoUrls))
     }
 
-    suspend fun getFeed(page: Int = 1, limit: Int = 30): List<Post> {
-        return api.getFeed(page, limit).map { it.toDomain() }
-    }
+    suspend fun getFeed(): List<Post> = api.getFeed().posts.map { it.toPost() }
+    suspend fun getUserPosts(userId: String): List<Post> = api.getUserPosts(userId).posts.map { it.toPost() }
+    suspend fun likePost(postId: String): Map<String, Any> = api.likePost(postId)
 
-    suspend fun getUserPosts(userId: String): List<Post> {
-        return api.getUserPosts(userId).map { it.toDomain() }
-    }
-
-    suspend fun toggleLike(postId: String) {
-        api.toggleLike(postId)
-    }
-
-    // --- Saved places ---
+    // --- Saved ---
     suspend fun savePlace(restaurantId: String): SavedPlace {
-        return api.savePlace(SavePlacePayload(restaurantId)).toDomain()
+        return api.savePlace(SavePlacePayload(restaurantId)).toSavedPlace()
     }
-
-    suspend fun getSavedPlaces(): List<SavedPlace> {
-        return api.getSavedPlaces().map { it.toDomain() }
-    }
-
-    suspend fun deleteSavedPlace(restaurantId: String) {
-        api.deleteSavedPlace(restaurantId)
-    }
+    suspend fun getSavedPlaces(): List<SavedPlace> = api.getSavedPlaces().savedPlaces.map { it.toSavedPlace() }
+    suspend fun deleteSavedPlace(restaurantId: String) = api.deleteSavedPlace(restaurantId)
 
     // --- Restaurants ---
-    suspend fun searchRestaurants(query: String): List<Restaurant> {
-        return api.searchRestaurants(query).map { it.toDomain() }
+    suspend fun searchRestaurants(query: String, lat: Double? = null, lng: Double? = null): List<Restaurant> {
+        return api.searchRestaurants(query, lat, lng).map { it.toRestaurant() }
     }
-
-    suspend fun getRestaurant(id: String): Restaurant {
-        return api.getRestaurant(id).toDomain()
-    }
+    suspend fun getRestaurant(id: String): Restaurant = api.getRestaurant(id).toRestaurant()
 
     // --- Recommendations ---
-    suspend fun blendTastes(userIds: List<String>): List<RestaurantRecommendation> {
-        return api.blendTastes(BlendPayload(userIds)).restaurants.map { it.toDomain() }
-    }
-
-    // --- Health ---
-    suspend fun health(): Health {
-        return api.health().run { Health(ok, service, time) }
+    suspend fun blendTastes(userIds: List<String>): BlendResult {
+        val resp = api.blendTastes(BlendPayload(userIds))
+        return BlendResult(
+            topCuisines = resp.topCuisines.map { CuisineCount(it.name, it.count) },
+            centroid = resp.centroid?.let { LatLong(it.lat, it.lng) } ?: LatLong(0.0, 0.0),
+            restaurants = resp.restaurants.map {
+                ScoredRestaurant(
+                    id = it.id,
+                    foursquareId = it.foursquareId,
+                    name = it.name,
+                    cuisine = it.cuisine,
+                    distance = it.distance,
+                    score = it.score
+                )
+            }
+        )
     }
 }
 
-private fun com.bigback.data.UserDTO.toDomain() =
-    com.bigback.domain.User(id, username, createdAt)
-
-private fun com.bigback.data.FriendshipDTO.toDomain() =
-    Friendship(id, userId, friendId, friendUsername, status, createdAt)
+// -- DTO -> Domain mappers --
+private fun UserDTO.toUser() = User(id, username, createdAt)
+private fun FriendshipDTO.toFriendship() = Friendship(id, userId, friendId, friendUsername, status, createdAt)
+private fun PostDTO.toPost() = Post(id, userId, username, restaurantId, restaurantName, comment,
+    photos?.map { it.toPhoto() } ?: emptyList(), lat, lng, liked, likeCount, createdAt)
+private fun PostPhotoDTO.toPhoto() = PostPhoto(id ?: "", url, orderIndex)
+private fun RestaurantDTO.toRestaurant() = Restaurant(id, foursquareId, name, lat, lng, cuisine)
+private fun SavedPlaceDTO.toSavedPlace() = SavedPlace(id, restaurantId, restaurantName, savedAt)

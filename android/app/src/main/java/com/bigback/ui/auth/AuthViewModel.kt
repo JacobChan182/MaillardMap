@@ -12,30 +12,33 @@ data class AuthUiState(
     val isLoggedIn: Boolean = false
 )
 
-class AuthViewModel(
-    private val repository: Repository
-) : ViewModel() {
+class AuthViewModel(private val repository: Repository) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthUiState())
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
 
-    fun login(phoneOrEmail: String, password: String) = viewModelScope.launch {
+    fun login(username: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isLoading = true, error = null)
         try {
-            repository.login(phoneOrEmail, password)
+            repository.login(username, password)
             _state.value = _state.value.copy(isLoading = false, isLoggedIn = true)
         } catch (e: Exception) {
-            _state.value = _state.value.copy(isLoading = false, error = e.message ?: "Login failed")
+            _state.value = _state.value.copy(isLoading = false, error = "Invalid credentials")
         }
     }
 
-    fun signup(username: String, phoneOrEmail: String, password: String) = viewModelScope.launch {
+    fun signup(username: String, password: String) = viewModelScope.launch {
         _state.value = _state.value.copy(isLoading = true, error = null)
         try {
-            repository.signup(username, phoneOrEmail, password)
+            repository.signup(username, password)
             _state.value = _state.value.copy(isLoading = false, isLoggedIn = true)
         } catch (e: Exception) {
-            _state.value = _state.value.copy(isLoading = false, error = e.message ?: "Signup failed")
+            val msg = if (e.message?.contains("USERNAME_TAKEN") == true || e.message?.contains("409") == true) {
+                "Username already taken"
+            } else {
+                "Signup failed"
+            }
+            _state.value = _state.value.copy(isLoading = false, error = msg)
         }
     }
 }

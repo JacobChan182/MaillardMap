@@ -1,13 +1,9 @@
 import Foundation
 
-struct SavedPlace: Identifiable, Codable {
+struct SavedPlace: Identifiable, Codable, Equatable {
     let id: String
-    let userId: String
     let restaurantId: String
-    let restaurant: Restaurant?
-    let createdAt: String?
-}
-
-struct SavedPlacesResponse: Codable {
-    let savedPlaces: [SavedPlace]
+    let foursquareId: String?
+    let restaurantName: String
+    let savedAt: String
 }

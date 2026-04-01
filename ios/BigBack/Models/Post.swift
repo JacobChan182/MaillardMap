@@ -1,21 +1,21 @@
 import Foundation
 
-struct Post: Identifiable, Codable {
+struct Post: Identifiable, Codable, Equatable {
     let id: String
     let userId: String
-    let user: User?
+    let username: String
     let restaurantId: String
-    let restaurant: Restaurant?
-    let comment: String
+    let restaurantName: String
+    let lat: Double
+    let lng: Double
+    let comment: String?
     let photos: [PostPhoto]
+    let liked: Bool
+    let likeCount: Int
     let createdAt: String
-
-    enum CodingKeys: String, CodingKey {
-        case id, userId, user, restaurantId, restaurant, comment, photos, createdAt
-    }
 }
 
-struct PostPhoto: Identifiable, Codable {
+struct PostPhoto: Identifiable, Codable, Equatable {
     let id: String
     let postId: String
     let url: String
@@ -23,12 +23,11 @@ struct PostPhoto: Identifiable, Codable {
 }
 
 struct CreatePostRequest: Codable {
-    let userId: String
-    let restaurantId: String
-    let comment: String
-    let photoUrls: [String]?
-}
+    let foursquare_id: String
+    let comment: String?
+    let photo_urls: [PhotoUrl]?
 
-struct PostFeedResponse: Codable {
-    let posts: [Post]
+    struct PhotoUrl: Codable {
+        let url: String
+    }
 }

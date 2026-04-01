@@ -7,14 +7,11 @@ final class FriendsViewModel: ObservableObject {
     @Published var searchQuery = ""
     @Published var errorMessage: String?
     @Published var isLoading = false
-    @Published var pendingRequests: [Friendship] = []
 
     private let api: APIClient
-    private let currentUserId: String
 
-    init(api: APIClient = .live(), currentUserId: String) {
+    init(api: APIClient = .live()) {
         self.api = api
-        self.currentUserId = currentUserId
     }
 
     func loadFriends() async {
@@ -22,8 +19,8 @@ final class FriendsViewModel: ObservableObject {
         defer { isLoading = false }
         do {
             let list = try await api.getFriendsList()
-            friends = list.filter { $0.status == .accepted }
-            pendingRequests = list.filter { $0.status == .pending }
+            friends = list
+            errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -37,6 +34,7 @@ final class FriendsViewModel: ObservableObject {
         isLoading = true
         do {
             searchResults = try await api.searchUsers(query: searchQuery)
+            errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -52,10 +50,11 @@ final class FriendsViewModel: ObservableObject {
         }
     }
 
-    func acceptRequest(requestId: String) async {
+    func acceptRequest(friendId: String) async {
         do {
-            try await api.acceptFriend(requestId: requestId)
+            try await api.acceptFriendRequest(friendId: friendId)
             await loadFriends()
+            errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }

@@ -7,60 +7,56 @@ final class AuthViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var isSignupMode = false
 
-    // Form fields
     @Published var username = ""
-    @Published var phoneOrEmail = ""
     @Published var password = ""
 
     private let api: APIClient
 
     init(api: APIClient = .live()) {
         self.api = api
-        // Check for existing session
         if UserDefaults.standard.string(forKey: "authToken") != nil,
            let data = UserDefaults.standard.data(forKey: "currentUser"),
-           let user = try? JSONDecoder.default.decode(User.self, from: data) {
-            self.currentUser = user
+           let _ = try? JSONDecoder.default.decode(User.self, from: data) {
+            // Session exists — user is authed
+            if let id = UserDefaults.standard.string(forKey: "currentUserId") {
+                self.currentUser = User(id: id, username: UserDefaults.standard.string(forKey: "currentUsername") ?? "", createdAt: nil)
+            }
         }
     }
 
-    var isLoggedIn: Bool {
-        currentUser != nil
-    }
+    var isLoggedIn: Bool { currentUser != nil }
 
     func login() async {
-        guard !phoneOrEmail.isEmpty, !password.isEmpty else {
-            errorMessage = "Enter phone/email and password"
+        guard !username.isEmpty, !password.isEmpty else {
+            errorMessage = "Enter username and password"
             return
         }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
-
         do {
-            let resp = try await api.login(phoneOrEmail: phoneOrEmail, password: password)
+            let resp = try await api.login(username: username, password: password)
             currentUser = resp.user
             saveUser(resp.user)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "Invalid credentials"
         }
     }
 
     func signup() async {
-        guard !username.isEmpty, !phoneOrEmail.isEmpty, !password.isEmpty else {
-            errorMessage = "Fill in all fields"
+        guard !username.isEmpty, !password.isEmpty else {
+            errorMessage = "Enter username and password"
             return
         }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
-
         do {
-            let resp = try await api.signup(phoneOrEmail: phoneOrEmail, password: password, username: username)
+            let resp = try await api.signup(username: username, password: password)
             currentUser = resp.user
             saveUser(resp.user)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = "Signup failed"
         }
     }
 
@@ -68,12 +64,15 @@ final class AuthViewModel: ObservableObject {
         currentUser = nil
         api.clearSession()
         username = ""
-        phoneOrEmail = ""
         password = ""
         UserDefaults.standard.removeObject(forKey: "currentUser")
+        UserDefaults.standard.removeObject(forKey: "currentUserId")
+        UserDefaults.standard.removeObject(forKey: "currentUsername")
     }
 
     private func saveUser(_ user: User) {
+        UserDefaults.standard.set(user.id, forKey: "currentUserId")
+        UserDefaults.standard.set(user.username, forKey: "currentUsername")
         if let data = try? JSONEncoder.default.encode(user) {
             UserDefaults.standard.set(data, forKey: "currentUser")
         }

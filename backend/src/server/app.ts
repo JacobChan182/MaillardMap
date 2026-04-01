@@ -4,7 +4,14 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { authRouter } from '../modules/auth/auth.routes.js';
+import { friendsRouter } from '../modules/friends/friends.routes.js';
 import { healthRouter } from '../modules/health/health.routes.js';
+import { postsRouter } from '../modules/posts/posts.routes.js';
+import { recommendationsRouter } from '../modules/recommendations/recommendations.routes.js';
+import { restaurantsRouter } from '../modules/restaurants/restaurants.routes.js';
+import { savedRouter } from '../modules/saved/saved.routes.js';
+import { uploadsRouter } from '../modules/uploads/uploads.routes.js';
+import { usersRouter } from '../modules/users/users.routes.js';
 
 export function createApp() {
   const app = express();
@@ -35,8 +42,14 @@ export function createApp() {
   });
 
   app.use('/auth', authRouter);
+  app.use('/friends', friendsRouter);
   app.use('/health', healthRouter);
+  app.use('/posts', postsRouter);
+  app.use('/recommendations', recommendationsRouter);
+  app.use('/restaurants', restaurantsRouter);
+  app.use('/saved', savedRouter);
+  app.use('/uploads', uploadsRouter);
+  app.use('/users', usersRouter);
 
   return app;
 }
-

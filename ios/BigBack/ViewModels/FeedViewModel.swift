@@ -17,6 +17,7 @@ final class FeedViewModel: ObservableObject {
         defer { isLoading = false }
         do {
             posts = try await api.getFeed()
+            errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -24,7 +25,20 @@ final class FeedViewModel: ObservableObject {
 
     func likePost(postId: String) async {
         do {
-            try await api.likePost(postId: postId)
+            let liked = try await api.likePost(postId: postId)
+            if let idx = posts.firstIndex(where: { $0.id == postId }) {
+                var p = posts[idx]
+                p = Post(
+                    id: p.id, userId: p.userId, username: p.username,
+                    restaurantId: p.restaurantId, restaurantName: p.restaurantName,
+                    lat: p.lat, lng: p.lng, comment: p.comment,
+                    photos: p.photos, liked: liked,
+                    likeCount: liked ? p.likeCount + 1 : max(0, p.likeCount - 1),
+                    createdAt: p.createdAt
+                )
+                posts[idx] = p
+            }
+            errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }

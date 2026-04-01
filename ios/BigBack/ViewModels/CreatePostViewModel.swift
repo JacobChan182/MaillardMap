@@ -14,18 +14,16 @@ final class CreatePostViewModel: ObservableObject {
     @Published var didPost = false
 
     private let api: APIClient
-    private let currentUserId: String
 
     let maxPhotos = 3
     let maxCommentLength = 200
 
-    init(api: APIClient = .live(), currentUserId: String) {
+    init(api: APIClient = .live()) {
         self.api = api
-        self.currentUserId = currentUserId
     }
 
     var commentValid: Bool {
-        comment.count <= maxCommentLength
+        !comment.isEmpty && comment.count <= maxCommentLength
     }
 
     var progressString: String {
@@ -70,16 +68,15 @@ final class CreatePostViewModel: ObservableObject {
         defer { isPosting = false }
 
         do {
-            // TODO: Upload photos to S3 in production. For now, placeholder URLs.
-            let photoUrls = selectedPhotos.indices.map { i -> String in
+            // TODO: Upload to S3 for real photo URLs
+            let photoUrls = selectedPhotos.indices.map { i in
                 "https://placeholder/bigback/photo-\(i).jpg"
             }
 
             let req = CreatePostRequest(
-                userId: currentUserId,
-                restaurantId: restaurant.id,
+                foursquare_id: restaurant.foursquareId,
                 comment: comment,
-                photoUrls: selectedPhotos.isEmpty ? nil : photoUrls
+                photo_urls: selectedPhotos.isEmpty ? nil : photoUrls.map { CreatePostRequest.PhotoUrl(url: $0) }
             )
             _ = try await api.createPost(req)
             didPost = true

@@ -1,4 +1,5 @@
 import { getPool } from '../../db/pool.js';
+import { searchNearby } from '../../external/foursquare.js';
 
 type RestaurantRow = {
   id: string;
@@ -34,8 +35,29 @@ export async function searchRestaurants(q: string, lat?: number, lng?: number) {
   }
 
   // Not found locally - fetch from Foursquare
-  // Note: In production you'd call Foursquare API here.
-  // For now, return local search results (empty if none cached)
+  if (lat != null && lng != null) {
+    const results = await searchNearby(lat, lng);
+    // Cache all Foursquare results locally
+    const ids: string[] = [];
+    for (const v of results) {
+      const res = await pool.query(
+        `insert into restaurants (foursquare_id, name, lat, lng, cuisine)
+         values ($1, $2, $3, $4, $5)
+         on conflict (foursquare_id) do update set updated_at = now()
+         returning id`,
+        [v.foursquare_id, v.name, v.lat, v.lng, v.categories || null],
+      );
+      ids.push(res.rows[0].id);
+    }
+    if (ids.length > 0) {
+      const fresh = await pool.query<RestaurantRow>(
+        'select id, foursquare_id, name, lat, lng, cuisine from restaurants where id = any($1)',
+        [ids],
+      );
+      return fresh.rows.map(rowToRestaurant);
+    }
+  }
+
   return [];
 }
 

@@ -4,7 +4,7 @@ import Foundation
 final class BlendViewModel: ObservableObject {
     @Published var availableFriends: [Friendship] = []
     @Published var selectedFriendIds: Set<String> = []
-    @Published var recommendations: [BlendRecommendation] = []
+    @Published var blendResult: BlendResult?
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -18,7 +18,8 @@ final class BlendViewModel: ObservableObject {
 
     func loadFriends() async {
         do {
-            availableFriends = try await api.getFriendsList().filter { $0.status == .accepted }
+            availableFriends = try await api.getFriendsList()
+            errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -39,7 +40,7 @@ final class BlendViewModel: ObservableObject {
         defer { isLoading = false }
 
         do {
-            recommendations = try await api.blendTastes(userIds: userIds)
+            blendResult = try await api.blendTastes(userIds: userIds)
         } catch {
             errorMessage = error.localizedDescription
         }

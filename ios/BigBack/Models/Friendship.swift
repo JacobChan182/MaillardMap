@@ -1,14 +1,9 @@
 import Foundation
 
-struct Friendship: Identifiable, Codable {
+struct Friendship: Identifiable, Codable, Equatable {
     let id: String
-    let userId: String
     let friendId: String
-    let status: FriendshipStatus
-    let createdAt: String?
-}
-
-enum FriendshipStatus: String, Codable {
-    case pending
-    case accepted
+    let friendUsername: String?
+    let status: String
+    let createdAt: String
 }
