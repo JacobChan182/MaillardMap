@@ -11,7 +11,10 @@ export type FoursquareVenue = {
  */
 export async function searchNearby(lat: number, lng: number, radius = 5000, query?: string): Promise<FoursquareVenue[]> {
   const key = process.env.FOURSQUARE_API_KEY;
-  if (!key) return [];
+  if (!key) {
+    console.error('[FOURSQUARE] API key not configured — search will return empty results');
+    return [];
+  }
 
   // Category "13063" = Restaurants
   const url = `https://api.foursquare.com/v3/places/search?ll=${lat},${lng}&radius=${radius}&categories=13063&limit=30&sort=DISTANCE${query ? `&query=${encodeURIComponent(query)}` : ''}`;

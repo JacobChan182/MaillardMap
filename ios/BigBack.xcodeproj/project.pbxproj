@@ -68,7 +68,7 @@
 		E0187E503CF427B57FEE9EF1 /* Post.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Post.swift; sourceTree = "<group>"; };
 		EB38369FB0A95590AC4EF462 /* Friendship.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Friendship.swift; sourceTree = "<group>"; };
 		FF4F168D7A9221A469CC6FA1 /* BlendViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlendViewModel.swift; sourceTree = "<group>"; };
-		FFCEEB05F3D4F9E7B4BD6335 /* BigBack.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BigBack.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FFCEEB05F3D4F9E7B4BD6335 /* BigBack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BigBack.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -258,7 +258,6 @@
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					E17E571470CF10729FCD32FA = {
-						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -328,7 +327,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = HCFN7QP772;
 				INFOPLIST_FILE = BigBack/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -470,7 +469,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = HCFN7QP772;
 				INFOPLIST_FILE = BigBack/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
