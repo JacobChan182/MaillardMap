@@ -14,6 +14,11 @@ struct UserPostsView: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
+                        if let err = vm.errorMessage {
+                            Text(err)
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                        }
                         if let user = vm.user {
                             Text(user.username)
                                 .font(.subheadline)

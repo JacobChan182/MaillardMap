@@ -32,3 +32,26 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Invalid or expired token' } });
   }
 }
+
+/** Sets `userId` / `username` when a valid Bearer token is present; otherwise continues without auth. */
+export function optionalAuth(req: Request, res: Response, next: NextFunction) {
+  const header = req.headers.authorization;
+  if (!header?.startsWith('Bearer ')) {
+    return next();
+  }
+
+  const token = header.slice(7);
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, secret) as JwtPayload;
+    (req as any).userId = decoded.sub;
+    (req as any).username = decoded.username;
+  } catch {
+    /* treat as anonymous */
+  }
+  next();
+}

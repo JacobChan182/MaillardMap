@@ -9,13 +9,31 @@ export const postPhotoSchema = z.object({
 
 export type PostPhoto = z.infer<typeof postPhotoSchema>;
 
-export const createPostSchema = z.object({
-  foursquareId: z.string(),
-  comment: z.string().max(200).optional(),
-  photos: z.array(z.object({
-    url: z.string().url(),
-  })).max(3).optional(),
-});
+/** Accepts camelCase (API docs) or snake_case (iOS). */
+export const createPostSchema = z.preprocess(
+  (raw) => {
+    if (raw == null || typeof raw !== 'object') return raw;
+    const o = raw as Record<string, unknown>;
+    const foursquareId = o.foursquareId ?? o.foursquare_id;
+    let photos = o.photos;
+    if (photos == null && Array.isArray(o.photo_urls)) {
+      photos = (o.photo_urls as string[]).map((url) => ({ url }));
+    }
+    return { foursquareId, comment: o.comment, photos };
+  },
+  z.object({
+    foursquareId: z.string(),
+    comment: z.string().max(200).optional(),
+    photos: z
+      .array(
+        z.object({
+          url: z.string().url(),
+        }),
+      )
+      .max(3)
+      .optional(),
+  }),
+);
 
 export type CreatePostInput = z.infer<typeof createPostSchema>;
 

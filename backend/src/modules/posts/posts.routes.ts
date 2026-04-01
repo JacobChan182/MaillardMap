@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ZodError } from 'zod';
-import { requireAuth } from '../../middleware/auth.js';
+import { optionalAuth, requireAuth } from '../../middleware/auth.js';
 import { createPostSchema } from './posts.schemas.js';
 import { createPost, getFeed, getPostsByUser, toggleLike } from './posts.service.js';
 import { getRestaurantByFoursquareId } from '../restaurants/restaurants.service.js';
@@ -44,9 +44,10 @@ postsRouter.get('/feed', requireAuth, async (req, res) => {
   }
 });
 
-postsRouter.get('/user/:id', async (req, res) => {
+postsRouter.get('/user/:id', optionalAuth, async (req, res) => {
   try {
-    const posts = await getPostsByUser(req.params.id, (req as any).userId ?? '');
+    const likerId = (req as any).userId as string | undefined;
+    const posts = await getPostsByUser(req.params.id, likerId ?? '');
     return res.json({ posts });
   } catch {
     return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });

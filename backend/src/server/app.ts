@@ -17,6 +17,8 @@ export function createApp() {
   const app = express();
 
   app.disable('x-powered-by');
+  // Avoid 304 + empty body on JSON APIs (Express etag breaks clients that expect a body every time).
+  app.set('etag', false);
 
   app.use(
     helmet({

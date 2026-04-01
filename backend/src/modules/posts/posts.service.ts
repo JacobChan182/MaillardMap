@@ -1,6 +1,13 @@
 import type { Pool } from 'pg';
 import { getPool } from '../../db/pool.js';
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(s: string): boolean {
+  return UUID_RE.test(s);
+}
+
 type PostData = {
   id: string;
   userId: string;
@@ -10,7 +17,7 @@ type PostData = {
   lat: number;
   lng: number;
   comment: string | null;
-  photos: { id: string; url: string; orderIndex: number }[];
+  photos: { id: string; postId: string; url: string; orderIndex: number }[];
   liked: boolean;
   likeCount: number;
   createdAt: string;
@@ -118,10 +125,10 @@ export async function queryPosts(
     `select post_id, id, url, order_index from post_photos where post_id = any($1) order by post_id, order_index`,
     [postIds],
   );
-  const photosByPost = new Map<string, { id: string; url: string; orderIndex: number }[]>();
+  const photosByPost = new Map<string, { id: string; postId: string; url: string; orderIndex: number }[]>();
   for (const p of photosRes.rows) {
     const arr = photosByPost.get(p.post_id) || [];
-    arr.push({ id: p.id, url: p.url, orderIndex: p.order_index });
+    arr.push({ id: p.id, postId: p.post_id, url: p.url, orderIndex: p.order_index });
     photosByPost.set(p.post_id, arr);
   }
 
@@ -135,12 +142,15 @@ export async function queryPosts(
     likeCounts.set(r.post_id, parseInt(r.count, 10));
   }
 
-  // Fetch liked-by-liker
-  const likedRes = await pool.query<{ post_id: string }>(
-    `select post_id from likes where user_id = $1 and post_id = any($2)`,
-    [likerId, postIds],
-  );
-  const likedSet = new Set(likedRes.rows.map((r) => r.post_id));
+  // Fetch liked-by-liker (skip when anonymous or invalid — PG uuid columns reject '')
+  let likedSet = new Set<string>();
+  if (isUuid(likerId)) {
+    const likedRes = await pool.query<{ post_id: string }>(
+      `select post_id from likes where user_id = $1 and post_id = any($2)`,
+      [likerId, postIds],
+    );
+    likedSet = new Set(likedRes.rows.map((r) => r.post_id));
+  }
 
   // Build results
   const results: PostData[] = [];
