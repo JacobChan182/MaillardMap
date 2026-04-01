@@ -45,23 +45,29 @@ struct BigBackMapView: View {
                 case .callout(let c):
                     // Card only: the feed pin at this coordinate stays the marker; anchor the card’s bottom to the venue with a small gap so it sits just above the existing pin.
                     Annotation("", coordinate: item.coordinate, anchor: .bottom) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(c.name)
-                                .font(.headline)
-                                .foregroundStyle(.primary)
-                                .fixedSize(horizontal: false, vertical: true)
-                            if let addr = c.address, !addr.isEmpty {
-                                Text(addr)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                        Button {
+                            onSelectRestaurant(c.restaurantId, c.name)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(c.name)
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
                                     .fixedSize(horizontal: false, vertical: true)
+                                if let addr = c.address, !addr.isEmpty {
+                                    Text(addr)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
                             }
+                            .padding(10)
+                            .frame(maxWidth: 240, alignment: .leading)
+                            .background(Color.white)
+                            .cornerRadius(10)
+                            .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
                         }
-                        .padding(10)
-                        .frame(maxWidth: 240, alignment: .leading)
-                        .background(Color.white)
-                        .cornerRadius(10)
-                        .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Posts at \(c.name)")
                         // Keep the pin (centered on this coordinate) clear: space below the card ≈ half a title mappin + shadow.
                         .padding(.bottom, 44)
                     }
