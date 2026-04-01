@@ -21,31 +21,14 @@ struct RestaurantSearchView: View {
                 ScrollView {
                     LazyVStack(spacing: 10) {
                         ForEach(vm.results) { restaurant in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(restaurant.name)
-                                    .font(.headline)
-                                if let cuisine = restaurant.cuisine {
-                                    Text(cuisine)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                            RestaurantSearchResultRow(restaurant: restaurant)
+                                .onTapGesture {
+                                    vm.selectedRestaurant = restaurant
+                                    if let onSelect = onSelect {
+                                        onSelect(restaurant)
+                                        dismiss()
+                                    }
                                 }
-                                if let address = restaurant.address {
-                                    Text(address)
-                                        .font(.caption)
-                                        .foregroundStyle(.tertiary)
-                                }
-                            }
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(uiColor: .secondarySystemBackground))
-                            .cornerRadius(10)
-                            .onTapGesture {
-                                vm.selectedRestaurant = restaurant
-                                if let onSelect = onSelect {
-                                    onSelect(restaurant)
-                                    dismiss()
-                                }
-                            }
                         }
 
                         if vm.results.isEmpty && !vm.query.isEmpty {

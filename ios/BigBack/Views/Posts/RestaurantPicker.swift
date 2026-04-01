@@ -8,7 +8,7 @@ struct RestaurantPickerSheet: View {
     var body: some View {
         NavigationStack {
             VStack {
-                TextField("Search restaurants...", text: $searchVM.query)
+                TextField("Search restaurants by name", text: $searchVM.query)
                     .textFieldStyle(.roundedBorder)
                     .padding()
                     .onChange(of: searchVM.query) { _, _ in
@@ -19,29 +19,12 @@ struct RestaurantPickerSheet: View {
                     ProgressView()
                 } else {
                     ScrollView {
-                        LazyVStack(spacing: 8) {
+                        LazyVStack(spacing: 10) {
                             ForEach(searchVM.results) { restaurant in
                                 Button {
                                     onSelect(restaurant)
                                 } label: {
-                                    HStack {
-                                        VStack(alignment: .leading) {
-                                            Text(restaurant.name)
-                                                .font(.headline)
-                                            if let cuisine = restaurant.cuisine {
-                                                Text(cuisine)
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                        }
-                                        Spacer()
-                                        Image(systemName: "checkmark")
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .padding()
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color(uiColor: .secondarySystemBackground))
-                                    .cornerRadius(10)
+                                    RestaurantSearchResultRow(restaurant: restaurant)
                                 }
                                 .buttonStyle(.plain)
                             }
