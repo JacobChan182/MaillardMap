@@ -9,12 +9,12 @@ export type FoursquareVenue = {
 /**
  * Search places near coordinates via Foursquare Places API.
  */
-export async function searchNearby(lat: number, lng: number, radius = 5000): Promise<FoursquareVenue[]> {
+export async function searchNearby(lat: number, lng: number, radius = 5000, query?: string): Promise<FoursquareVenue[]> {
   const key = process.env.FOURSQUARE_API_KEY;
   if (!key) return [];
 
   // Category "13063" = Restaurants
-  const url = `https://api.foursquare.com/v3/places/search?ll=${lat},${lng}&radius=${radius}&categories=13063&limit=30&sort=DISTANCE`;
+  const url = `https://api.foursquare.com/v3/places/search?ll=${lat},${lng}&radius=${radius}&categories=13063&limit=30&sort=DISTANCE${query ? `&query=${encodeURIComponent(query)}` : ''}`;
   const res = await fetch(url, {
     headers: { Authorization: key, Accept: 'application/json' },
   });

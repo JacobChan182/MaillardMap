@@ -35,9 +35,14 @@ export async function searchRestaurants(q: string, lat?: number, lng?: number) {
   }
 
   // Not found locally - fetch from Foursquare
+  let results;
   if (lat != null && lng != null) {
-    const results = await searchNearby(lat, lng);
-    // Cache all Foursquare results locally
+    results = await searchNearby(lat, lng, 5000, q);
+  } else {
+    // Fallback center (NYC) when no coordinates provided
+    results = await searchNearby(40.7128, -74.006, 50000, q);
+  }
+  if (results.length > 0) {
     const ids: string[] = [];
     for (const v of results) {
       const res = await pool.query(

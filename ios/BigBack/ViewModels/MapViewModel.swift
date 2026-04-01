@@ -8,6 +8,8 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194),
         span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
     )
+    /// The actual user location, separate from the displayed region
+    @Published var userLocation: CLLocationCoordinate2D?
     @Published var pins: [MapPin] = []
     @Published var showHeatmap = true
     @Published var isLoading = false
@@ -17,6 +19,7 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
 
     private var posts: [Post] = []
     private let manager = CLLocationManager()
+    private var hasCenteredOnUserLocation = false
 
     // Threshold for zoom level: span < 0.01 = zoomed in = show pins
     let zoomThreshold: Double = 0.01
@@ -25,21 +28,45 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         self.api = api
         super.init()
         manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
         manager.requestWhenInUseAuthorization()
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.first else { return }
         Task { @MainActor in
-            region.center = location.coordinate
+            let coordinate = location.coordinate
+            // Center on first known user location
+            if !hasCenteredOnUserLocation {
+                region = MKCoordinateRegion(
+                    center: coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                )
+            }
+            userLocation = coordinate
             updateAnnotations()
+        }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        Task { @MainActor in
+            switch status {
+            case .authorizedAlways, .authorizedWhenInUse:
+                break
+            case .denied, .restricted:
+                errorMessage = "Location access denied. Enable it in Settings to see your location on the map."
+            case .notDetermined:
+                manager.requestWhenInUseAuthorization()
+            @unknown default:
+                break
+            }
         }
     }
 
     func onRegionChange(_ newRegion: MKCoordinateRegion) {
         region = newRegion
         let zoomLevel = min(newRegion.span.latitudeDelta, newRegion.span.longitudeDelta)
-        showHeatmap = zoomLevel >= zoomThreshold
+        showHeatmap = zoomLevel > zoomThreshold
         updateAnnotations()
     }
 

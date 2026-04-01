@@ -8,7 +8,7 @@ struct BigBackMapView: View {
         Map(coordinateRegion: Binding(
             get: { vm.region },
             set: { vm.onRegionChange($0) }
-        ), annotationItems: vm.pins) { pin in
+        ), showsUserLocation: true, annotationItems: vm.pins) { pin in
             if vm.showHeatmap {
                 MapMarker(coordinate: pin.coordinate)
             } else {
@@ -30,5 +30,5 @@ struct BigBackMapView: View {
 
 #Preview {
     BigBackMapView()
-        .environmentObject(MapViewModel())
+        .environmentObject(MapViewModel(api: .live()))
 }
