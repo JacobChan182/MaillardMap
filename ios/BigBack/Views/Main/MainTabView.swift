@@ -3,31 +3,43 @@ import SwiftUI
 struct MainTabView: View {
     @ObservedObject var auth: AuthViewModel
     @StateObject private var mapVM = MapViewModel()
+    @StateObject private var tabRouter = TabRouter()
 
     var body: some View {
-        TabView {
+        TabView(selection: Binding(
+            get: { tabRouter.selectedTab },
+            set: { tabRouter.selectedTab = $0 }
+        )) {
             FeedTab()
                 .tabItem { Label("Feed", systemImage: "doc.text.fill") }
+                .tag(TabRouter.Tab.feed.rawValue)
 
             MapTabView()
                 .tabItem { Label("Map", systemImage: "map.fill") }
+                .tag(TabRouter.Tab.map.rawValue)
 
             CreateTab(currentUserId: auth.currentUser?.id ?? "")
                 .tabItem { Label("Post", systemImage: "plus.circle.fill") }
+                .tag(TabRouter.Tab.create.rawValue)
 
             BlendTab(currentUserId: auth.currentUser?.id ?? "")
                 .tabItem { Label("Blend", systemImage: "sparkles") }
+                .tag(TabRouter.Tab.blend.rawValue)
 
             MoreTab(auth: auth)
                 .tabItem { Label("More", systemImage: "person.fill") }
+                .tag(TabRouter.Tab.more.rawValue)
         }
         .environmentObject(mapVM)
+        .environmentObject(tabRouter)
         .tint(.orange)
     }
 }
 
 // MARK: - Feed Tab
 struct FeedTab: View {
+    @EnvironmentObject private var mapVM: MapViewModel
+    @EnvironmentObject private var tabRouter: TabRouter
     @StateObject private var feedVM = FeedViewModel()
 
     var body: some View {
@@ -39,9 +51,14 @@ struct FeedTab: View {
                     ScrollView {
                         LazyVStack(spacing: 12) {
                             ForEach(feedVM.posts) { post in
-                                PostCardView(post: post) { postId in
-                                    await feedVM.likePost(postId: postId)
-                                }
+                                PostCardView(
+                                    post: post,
+                                    onLike: { postId in await feedVM.likePost(postId: postId) },
+                                    onRestaurantTap: {
+                                        mapVM.focusRestaurantFromPost(post)
+                                        tabRouter.openMap()
+                                    }
+                                )
                             }
                             if feedVM.posts.isEmpty && !feedVM.isLoading {
                                 ContentUnavailableView(

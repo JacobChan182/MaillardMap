@@ -6,6 +6,7 @@ struct Post: Identifiable, Codable, Equatable {
     let username: String
     let restaurantId: String
     let restaurantName: String
+    let restaurantAddress: String?
     let lat: Double
     let lng: Double
     let comment: String?

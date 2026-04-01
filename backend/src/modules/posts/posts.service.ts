@@ -14,6 +14,7 @@ type PostData = {
   username: string;
   restaurantId: string;
   restaurantName: string;
+  restaurantAddress: string | null;
   lat: number;
   lng: number;
   comment: string | null;
@@ -106,6 +107,7 @@ export async function queryPosts(
        u.username,
        p.restaurant_id,
        r.name as restaurant_name,
+       r.address as restaurant_address,
        r.lat as restaurant_lat,
        r.lng as restaurant_lng,
        p.comment,
@@ -164,6 +166,7 @@ export async function queryPosts(
       username: row.username,
       restaurantId: row.restaurant_id,
       restaurantName: row.restaurant_name,
+      restaurantAddress: row.restaurant_address,
       lat: row.restaurant_lat,
       lng: row.restaurant_lng,
       comment: row.comment,

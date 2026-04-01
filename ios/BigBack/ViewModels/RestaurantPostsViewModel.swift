@@ -33,6 +33,7 @@ final class RestaurantPostsViewModel: ObservableObject {
                 p = Post(
                     id: p.id, userId: p.userId, username: p.username,
                     restaurantId: p.restaurantId, restaurantName: p.restaurantName,
+                    restaurantAddress: p.restaurantAddress,
                     lat: p.lat, lng: p.lng, comment: p.comment,
                     photos: p.photos, liked: liked,
                     likeCount: liked ? p.likeCount + 1 : max(0, p.likeCount - 1),

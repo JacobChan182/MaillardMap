@@ -11,6 +11,10 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     /// The actual user location, separate from the displayed region
     @Published var userLocation: CLLocationCoordinate2D?
     @Published var pins: [MapPin] = []
+    /// Temporary blue callout from a post’s “restaurant” chip; cleared when the user pans/zooms the map.
+    @Published var restaurantCallout: MapRestaurantCallout?
+    /// Region snapshot when the callout was shown (iOS 17 has no `MapCameraUpdateContext.reason`; compare camera to this to detect user moves).
+    private var calloutDismissRegionAnchor: MKCoordinateRegion?
     @Published var showHeatmap = true
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -85,6 +89,53 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         updateAnnotations()
     }
 
+    /// Feed / post list: jump map here with the white callout pin.
+    func focusRestaurantFromPost(_ post: Post) {
+        restaurantCallout = MapRestaurantCallout(
+            name: post.restaurantName,
+            address: post.restaurantAddress,
+            lat: post.lat,
+            lng: post.lng
+        )
+        region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: post.lat, longitude: post.lng),
+            span: MKCoordinateSpan(latitudeDelta: 0.045, longitudeDelta: 0.045)
+        )
+        let zoomLevel = min(region.span.latitudeDelta, region.span.longitudeDelta)
+        showHeatmap = zoomLevel > zoomThreshold
+        calloutDismissRegionAnchor = region
+        updateAnnotations()
+    }
+
+    /// iOS 17: `onMapCameraChange` context has no `reason`. If the visible region drifts from the callout anchor, treat it as a user-driven move and dismiss.
+    func onMapCameraChangeEnded(region visible: MKCoordinateRegion) {
+        guard restaurantCallout != nil, let anchor = calloutDismissRegionAnchor else { return }
+        if Self.regionsMatchForCalloutDismiss(anchor, visible) { return }
+        calloutDismissRegionAnchor = nil
+        clearRestaurantCallout()
+    }
+
+    private static func regionsMatchForCalloutDismiss(_ a: MKCoordinateRegion, _ b: MKCoordinateRegion) -> Bool {
+        let cLat = abs(a.center.latitude - b.center.latitude)
+        let cLon = abs(a.center.longitude - b.center.longitude)
+        let sLat = abs(a.span.latitudeDelta - b.span.latitudeDelta)
+        let sLon = abs(a.span.longitudeDelta - b.span.longitudeDelta)
+        return cLat < 0.0002 && cLon < 0.0002 && sLat < 0.0025 && sLon < 0.0025
+    }
+
+    func clearRestaurantCallout() {
+        restaurantCallout = nil
+        calloutDismissRegionAnchor = nil
+    }
+
+    var mapAnnotations: [MapAnnotationItem] {
+        var items = pins.map { MapAnnotationItem.feed($0) }
+        if let c = restaurantCallout {
+            items.append(.callout(c))
+        }
+        return items
+    }
+
     func loadPosts() async {
         isLoading = true
         defer { isLoading = false }
@@ -115,4 +166,30 @@ struct MapPin: Identifiable {
     let restaurantName: String
     let coordinate: CLLocationCoordinate2D
     let isHeat: Bool
+}
+
+struct MapRestaurantCallout: Equatable {
+    let name: String
+    let address: String?
+    let lat: Double
+    let lng: Double
+}
+
+enum MapAnnotationItem: Identifiable {
+    case feed(MapPin)
+    case callout(MapRestaurantCallout)
+
+    var id: String {
+        switch self {
+        case .feed(let pin): return pin.id
+        case .callout: return "__bigback_callout__"
+        }
+    }
+
+    var coordinate: CLLocationCoordinate2D {
+        switch self {
+        case .feed(let pin): return pin.coordinate
+        case .callout(let c): return CLLocationCoordinate2D(latitude: c.lat, longitude: c.lng)
+        }
+    }
 }

@@ -2,20 +2,36 @@ import SwiftUI
 
 struct PostCardView: View {
     let post: Post
-    let likePost: (String) async -> Void
+    let onLike: (String) async -> Void
+    var onRestaurantTap: (() -> Void)?
+
+    init(post: Post, onLike: @escaping (String) async -> Void, onRestaurantTap: (() -> Void)? = nil) {
+        self.post = post
+        self.onLike = onLike
+        self.onRestaurantTap = onRestaurantTap
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // User header
             HStack {
                 Text(post.username)
                     .font(.headline)
                 Spacer()
-                Text(post.restaurantName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if let onRestaurantTap {
+                    Button(action: onRestaurantTap) {
+                        Text(post.restaurantName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .underline()
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Text(post.restaurantName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
-            // Photos
             if !post.photos.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 4) {
@@ -28,21 +44,19 @@ struct PostCardView: View {
                                 Color.gray.opacity(0.3)
                             }
                             .frame(height: 160)
-                            .frame(width:UIScreen.main.bounds.width * 0.7)
+                            .frame(width: UIScreen.main.bounds.width * 0.7)
                             .cornerRadius(8)
                         }
                     }
                 }
             }
 
-            // Comment
             if let comment = post.comment, !comment.isEmpty {
                 Text(comment)
                     .font(.body)
                     .lineLimit(3)
             }
 
-            // Actions
             HStack(spacing: 16) {
                 HStack(spacing: 6) {
                     Label(post.liked ? "Liked" : "Like",
@@ -51,7 +65,7 @@ struct PostCardView: View {
                     Text("\(post.likeCount)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                }.onTapGesture { Task { await likePost(post.id) } }
+                }.onTapGesture { Task { await onLike(post.id) } }
 
                 if let date = ISO8601DateFormatter().date(from: post.createdAt) {
                     Text(date.formatted(date: .abbreviated, time: .shortened))

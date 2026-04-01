@@ -23,6 +23,7 @@
 		8D91D94E89D16EAD687BFA36 /* CreatePostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB35BFE6B4063F0029E007D3 /* CreatePostView.swift */; };
 		8E18A4730E0BD2A4F2F21753 /* CreatePostViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41310478D1B7C47522772A89 /* CreatePostViewModel.swift */; };
 		91FEFE987E93FD8E43B765E2 /* BigBackApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E4129F9014643606F249F8 /* BigBackApp.swift */; };
+		B1C2D3E4F5061728394A5B6C7 /* TabRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D3E4F5061728394A5B6C7D8 /* TabRouter.swift */; };
 		958E0630F88B223A39F01399 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F5B7334131D69AD9018D536 /* APIClient.swift */; };
 		9A5E16F37D865770E10C06EC /* SavedPlace.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4DDCDF16C0DBA6DEEB1CC95 /* SavedPlace.swift */; };
 		9AD79D1DC49173921A4189D6 /* Restaurant.swift in Sources */ = {isa = PBXBuildFile; fileRef = D54682EC0DDC62F32C146CC7 /* Restaurant.swift */; };
@@ -63,6 +64,7 @@
 		8F5B7334131D69AD9018D536 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		949DBAA58ACCFFCC62FB5BB6 /* UserPostsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPostsViewModel.swift; sourceTree = "<group>"; };
 		A1E4129F9014643606F249F8 /* BigBackApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BigBackApp.swift; sourceTree = "<group>"; };
+		C2D3E4F5061728394A5B6C7D8 /* TabRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabRouter.swift; sourceTree = "<group>"; };
 		A4DDCDF16C0DBA6DEEB1CC95 /* SavedPlace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPlace.swift; sourceTree = "<group>"; };
 		A8422E1D1ED8313359A00CED /* SavedPlacesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPlacesViewModel.swift; sourceTree = "<group>"; };
 		AB35BFE6B4063F0029E007D3 /* CreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePostView.swift; sourceTree = "<group>"; };
@@ -201,6 +203,7 @@
 			isa = PBXGroup;
 			children = (
 				A1E4129F9014643606F249F8 /* BigBackApp.swift */,
+				C2D3E4F5061728394A5B6C7D8 /* TabRouter.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -299,6 +302,7 @@
 				D23E7052736E3B5D6F9F292A /* AuthView.swift in Sources */,
 				4174D20F298F669997EDCA42 /* AuthViewModel.swift in Sources */,
 				91FEFE987E93FD8E43B765E2 /* BigBackApp.swift in Sources */,
+				B1C2D3E4F5061728394A5B6C7 /* TabRouter.swift in Sources */,
 				FFCA0913430E550FC56EB692 /* Blend.swift in Sources */,
 				B641E4EE01A1F849681A621F /* BlendView.swift in Sources */,
 				3477C61B5E24372233439515 /* BlendViewModel.swift in Sources */,

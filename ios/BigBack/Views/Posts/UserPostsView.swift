@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct UserPostsView: View {
+    @EnvironmentObject private var mapVM: MapViewModel
+    @EnvironmentObject private var tabRouter: TabRouter
     @StateObject private var vm: UserPostsViewModel
 
     init(userId: String) {
@@ -25,9 +27,14 @@ struct UserPostsView: View {
                                 .foregroundStyle(.secondary)
                         }
                         ForEach(vm.posts) { post in
-                            PostCardView(post: post) { postId in
-                                await vm.likePost(postId: postId)
-                            }
+                            PostCardView(
+                                post: post,
+                                onLike: { postId in await vm.likePost(postId: postId) },
+                                onRestaurantTap: {
+                                    mapVM.focusRestaurantFromPost(post)
+                                    tabRouter.openMap()
+                                }
+                            )
                         }
                         if vm.posts.isEmpty {
                             ContentUnavailableView(

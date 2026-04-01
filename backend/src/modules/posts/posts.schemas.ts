@@ -43,6 +43,7 @@ export const postSchema = z.object({
   username: z.string(),
   restaurantId: z.string(),
   restaurantName: z.string(),
+  restaurantAddress: z.string().nullable().optional(),
   lat: z.number(),
   lng: z.number(),
   comment: z.string().nullable(),

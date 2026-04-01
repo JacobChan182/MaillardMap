@@ -8,6 +8,8 @@ struct RestaurantMapNav: Hashable, Identifiable {
 }
 
 struct RestaurantPostsView: View {
+    @EnvironmentObject private var mapVM: MapViewModel
+    @EnvironmentObject private var tabRouter: TabRouter
     let restaurantId: String
     let restaurantName: String
     @StateObject private var vm: RestaurantPostsViewModel
@@ -31,9 +33,14 @@ struct RestaurantPostsView: View {
                                 .foregroundStyle(.red)
                         }
                         ForEach(vm.posts) { post in
-                            PostCardView(post: post) { postId in
-                                await vm.likePost(postId: postId)
-                            }
+                            PostCardView(
+                                post: post,
+                                onLike: { postId in await vm.likePost(postId: postId) },
+                                onRestaurantTap: {
+                                    mapVM.focusRestaurantFromPost(post)
+                                    tabRouter.openMap()
+                                }
+                            )
                         }
                         if vm.posts.isEmpty && !vm.isLoading {
                             ContentUnavailableView(
