@@ -7,6 +7,7 @@ import { getPool } from '../../db/pool.js';
 type UserRow = {
   id: string;
   username: string;
+  phone_or_email: string | null;
   password_hash: string;
   created_at: string;
 };
@@ -25,14 +26,15 @@ function getJwtSecret(): string {
 export async function signup(input: SignupInput) {
   const pool = getPool();
   const passwordHash = await bcrypt.hash(input.password, 12);
+  const phoneOrEmail = input.phoneOrEmail?.trim() || null;
   try {
     const res = await pool.query<UserRow>(
       `
-        insert into users (username, password_hash)
-        values ($1, $2)
-        returning id, username, created_at, password_hash
+        insert into users (username, password_hash, phone_or_email)
+        values ($1, $2, $3)
+        returning id, username, phone_or_email, created_at, password_hash
       `,
-      [input.username, passwordHash],
+      [input.username, passwordHash, phoneOrEmail],
     );
 
     const user = res.rows[0]!;
@@ -41,11 +43,19 @@ export async function signup(input: SignupInput) {
       getJwtSecret(),
       { expiresIn: '7d' },
     );
-    return { ok: true as const, token, user: { id: user.id, username: user.username, createdAt: user.created_at } };
+    return {
+      ok: true as const,
+      token,
+      user: { id: user.id, username: user.username, phoneOrEmail: user.phone_or_email, createdAt: user.created_at },
+    };
   } catch (e) {
     const err = e as Partial<DatabaseError>;
     if (err.code === '23505') {
-      return { ok: false as const, status: 409, code: 'USERNAME_TAKEN' as const };
+      const detail = (err as any).detail as string | undefined;
+      if (detail?.includes('phone_or_email')) {
+        return { ok: false as const, status: 409, code: 'EMAIL_OR_PHONE_TAKEN' as const, message: 'That email or phone is already in use' };
+      }
+      return { ok: false as const, status: 409, code: 'USERNAME_TAKEN' as const, message: 'That username is already taken' };
     }
     throw e;
   }
@@ -54,18 +64,18 @@ export async function signup(input: SignupInput) {
 export async function login(input: LoginInput) {
   const pool = getPool();
   const res = await pool.query<UserRow>(
-    'select id, username, password_hash, created_at from users where username = $1 or phone_or_email = $1',
+    'select id, username, phone_or_email, password_hash, created_at from users where username = $1 or phone_or_email = $1',
     [input.username],
   );
 
   const user = res.rows[0];
   if (!user) {
-    return { ok: false as const, status: 401, code: 'INVALID_CREDENTIALS' as const };
+    return { ok: false as const, status: 401, code: 'INVALID_CREDENTIALS' as const, message: 'No account found with that username or email' };
   }
 
   const valid = await bcrypt.compare(input.password, user.password_hash);
   if (!valid) {
-    return { ok: false as const, status: 401, code: 'INVALID_CREDENTIALS' as const };
+    return { ok: false as const, status: 401, code: 'INVALID_CREDENTIALS' as const, message: 'Incorrect password' };
   }
 
   const token = jwt.sign(
@@ -74,6 +84,10 @@ export async function login(input: LoginInput) {
     { expiresIn: '7d' },
   );
 
-  return { ok: true as const, token, user: { id: user.id, username: user.username, createdAt: user.created_at } };
+  return {
+    ok: true as const,
+    token,
+    user: { id: user.id, username: user.username, phoneOrEmail: user.phone_or_email, createdAt: user.created_at },
+  };
 }
 

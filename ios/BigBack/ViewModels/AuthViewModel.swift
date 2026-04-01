@@ -9,6 +9,7 @@ final class AuthViewModel: ObservableObject {
 
     @Published var username = ""
     @Published var password = ""
+    @Published var phoneOrEmail = ""
 
     private let api: APIClient
 
@@ -27,8 +28,16 @@ final class AuthViewModel: ObservableObject {
     var isLoggedIn: Bool { currentUser != nil }
 
     func login() async {
-        guard !username.isEmpty, !password.isEmpty else {
-            errorMessage = "Enter username and password"
+        guard !username.isEmpty else {
+            errorMessage = "Enter your username or email"
+            return
+        }
+        guard !password.isEmpty else {
+            errorMessage = "Enter your password"
+            return
+        }
+        guard password.count >= 8 else {
+            errorMessage = "Password must be at least 8 characters"
             return
         }
         isLoading = true
@@ -39,24 +48,37 @@ final class AuthViewModel: ObservableObject {
             currentUser = resp.user
             saveUser(resp.user)
         } catch {
-            errorMessage = "Invalid credentials"
+            errorMessage = error.localizedDescription
         }
     }
 
     func signup() async {
-        guard !username.isEmpty, !password.isEmpty else {
-            errorMessage = "Enter username and password"
+        guard !username.isEmpty else {
+            errorMessage = "Choose a username"
+            return
+        }
+        guard username.count >= 3 else {
+            errorMessage = "Username must be at least 3 characters"
+            return
+        }
+        guard !password.isEmpty else {
+            errorMessage = "Choose a password"
+            return
+        }
+        guard password.count >= 8 else {
+            errorMessage = "Password must be at least 8 characters"
             return
         }
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
         do {
-            let resp = try await api.signup(username: username, password: password)
+            let contact = phoneOrEmail.trimmingCharacters(in: .whitespacesAndNewlines)
+            let resp = try await api.signup(username: username, password: password, phoneOrEmail: contact.isEmpty ? nil : contact)
             currentUser = resp.user
             saveUser(resp.user)
         } catch {
-            errorMessage = "Signup failed"
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -65,6 +87,7 @@ final class AuthViewModel: ObservableObject {
         api.clearSession()
         username = ""
         password = ""
+        phoneOrEmail = ""
         UserDefaults.standard.removeObject(forKey: "currentUser")
         UserDefaults.standard.removeObject(forKey: "currentUserId")
         UserDefaults.standard.removeObject(forKey: "currentUsername")

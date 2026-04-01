@@ -11,13 +11,26 @@ enum APIError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unauthorized: return "Unauthorized. Please log in again."
-        case .badResponse(let code, _): return "Server returned \(code)"
-        case .networkError(let e): return e.localizedDescription
-        case .decodingError(let e): return "Data error: \(e.localizedDescription)"
+        case .unauthorized: return "Session expired. Please log in again."
+        case .badResponse(_, let data):
+            if let data, let body = try? JSONDecoder().decode(ServerError.self, from: data) {
+                return body.error.message
+            }
+            return "Something went wrong. Please try again."
+        case .networkError: return "Unable to connect. Check your internet and try again."
+        case .decodingError: return "Unexpected response from the server."
         case .invalidURL: return "Invalid URL"
         }
     }
+}
+
+private struct ServerError: Decodable {
+    let error: ServerErrorDetail
+}
+
+private struct ServerErrorDetail: Decodable {
+    let code: String?
+    let message: String
 }
 
 // MARK: - API Client
@@ -68,8 +81,8 @@ final class APIClient {
 
     // MARK: - Auth
 
-    func signup(username: String, password: String) async throws -> (user: User, token: String) {
-        let req = AuthRequest(username: username, password: password)
+    func signup(username: String, password: String, phoneOrEmail: String?) async throws -> (user: User, token: String) {
+        let req = SignupRequest(username: username, password: password, phoneOrEmail: phoneOrEmail)
         let data = try await request("auth/signup", method: "POST", body: req)
         let resp = try decode(AuthResponse.self, from: data)
         authToken = resp.token
@@ -203,6 +216,12 @@ final class APIClient {
 struct AuthRequest: Encodable {
     let username: String
     let password: String
+}
+
+struct SignupRequest: Encodable {
+    let username: String
+    let password: String
+    let phoneOrEmail: String?
 }
 
 struct AuthResponse: Decodable {

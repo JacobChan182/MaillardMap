@@ -20,13 +20,21 @@ struct AuthView: View {
                 .padding(.top, 40)
 
                 VStack(spacing: 16) {
-                    TextField("Username", text: $auth.username)
+                    TextField(auth.isSignupMode ? "Username" : "Username or email", text: $auth.username)
                         .textInputAutocapitalization(.never)
                         .textContentType(.username)
                         .autocorrectionDisabled()
 
+                    if auth.isSignupMode {
+                        TextField("Email or phone (optional)", text: $auth.phoneOrEmail)
+                            .textInputAutocapitalization(.never)
+                            .textContentType(.emailAddress)
+                            .keyboardType(.emailAddress)
+                            .autocorrectionDisabled()
+                    }
+
                     SecureField("Password", text: $auth.password)
-                        .textContentType(.password)
+                        .textContentType(auth.isSignupMode ? .newPassword : .password)
 
                     Button {
                         Task {
