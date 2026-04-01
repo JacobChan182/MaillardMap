@@ -36,7 +36,12 @@ export async function signup(input: SignupInput) {
     );
 
     const user = res.rows[0]!;
-    return { ok: true as const, user: { id: user.id, username: user.username, createdAt: user.created_at } };
+    const token = jwt.sign(
+      { sub: user.id, username: user.username },
+      getJwtSecret(),
+      { expiresIn: '7d' },
+    );
+    return { ok: true as const, token, user: { id: user.id, username: user.username, createdAt: user.created_at } };
   } catch (e) {
     const err = e as Partial<DatabaseError>;
     if (err.code === '23505') {
@@ -49,7 +54,7 @@ export async function signup(input: SignupInput) {
 export async function login(input: LoginInput) {
   const pool = getPool();
   const res = await pool.query<UserRow>(
-    'select id, username, password_hash, created_at from users where username = $1',
+    'select id, username, password_hash, created_at from users where username = $1 or phone_or_email = $1',
     [input.username],
   );
 
