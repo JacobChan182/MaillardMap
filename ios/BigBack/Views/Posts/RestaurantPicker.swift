@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct RestaurantPickerSheet: View {
+    @EnvironmentObject private var mapVM: MapViewModel
     @StateObject private var searchVM = RestaurantSearchViewModel()
     var onSelect: (Restaurant) -> Void
 
@@ -11,7 +12,7 @@ struct RestaurantPickerSheet: View {
                     .textFieldStyle(.roundedBorder)
                     .padding()
                     .onChange(of: searchVM.query) { _, _ in
-                        Task { await searchVM.search() }
+                        Task { await searchVM.search(near: mapVM.searchAnchor) }
                     }
 
                 if searchVM.isLoading {
@@ -63,6 +64,17 @@ struct RestaurantPickerSheet: View {
                         // Presented as sheet, dismiss handled by parent
                     }
                 }
+            }
+            .onAppear {
+                Task {
+                    if !searchVM.query.isEmpty {
+                        await searchVM.search(near: mapVM.searchAnchor)
+                    }
+                }
+            }
+            .onChange(of: mapVM.userLocation?.latitude) { _, _ in
+                guard !searchVM.query.isEmpty else { return }
+                Task { await searchVM.search(near: mapVM.searchAnchor) }
             }
         }
     }

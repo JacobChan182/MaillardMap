@@ -24,12 +24,27 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     // Threshold for zoom level: span < 0.01 = zoomed in = show pins
     let zoomThreshold: Double = 0.01
 
+    /// For restaurant search: GPS when available, otherwise the map’s visible center (initial default is SF, not NYC).
+    var searchAnchor: CLLocationCoordinate2D {
+        userLocation ?? region.center
+    }
+
     init(api: APIClient = .live()) {
         self.api = api
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
         manager.requestWhenInUseAuthorization()
+        startLocationUpdatesIfAllowed()
+    }
+
+    private func startLocationUpdatesIfAllowed() {
+        switch manager.authorizationStatus {
+        case .authorizedAlways, .authorizedWhenInUse:
+            manager.startUpdatingLocation()
+        default:
+            break
+        }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -52,7 +67,7 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         Task { @MainActor in
             switch status {
             case .authorizedAlways, .authorizedWhenInUse:
-                break
+                self.startLocationUpdatesIfAllowed()
             case .denied, .restricted:
                 errorMessage = "Location access denied. Enable it in Settings to see your location on the map."
             case .notDetermined:

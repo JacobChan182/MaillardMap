@@ -1,4 +1,5 @@
 import Foundation
+import CoreLocation
 
 @MainActor
 final class RestaurantSearchViewModel: ObservableObject {
@@ -14,7 +15,8 @@ final class RestaurantSearchViewModel: ObservableObject {
         self.api = api
     }
 
-    func search() async {
+    /// Prefer coordinates from the shared `MapViewModel` (`userLocation` or map `region.center`) so search matches what the map shows.
+    func search(near coordinate: CLLocationCoordinate2D) async {
         guard !query.isEmpty else {
             results = []
             return
@@ -22,7 +24,11 @@ final class RestaurantSearchViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
-            results = try await api.searchRestaurants(query: query)
+            results = try await api.searchRestaurants(
+                query: query,
+                lat: coordinate.latitude,
+                lng: coordinate.longitude
+            )
         } catch {
             errorMessage = error.localizedDescription
         }

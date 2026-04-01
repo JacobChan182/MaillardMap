@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainTabView: View {
     @ObservedObject var auth: AuthViewModel
+    @StateObject private var mapVM = MapViewModel()
 
     var body: some View {
         TabView {
@@ -20,6 +21,7 @@ struct MainTabView: View {
             MoreTab(auth: auth)
                 .tabItem { Label("More", systemImage: "person.fill") }
         }
+        .environmentObject(mapVM)
         .tint(.orange)
     }
 }
@@ -61,7 +63,7 @@ struct FeedTab: View {
 
 // MARK: - Map Tab
 struct MapTabView: View {
-    @StateObject private var mapVM = MapViewModel()
+    @EnvironmentObject private var mapVM: MapViewModel
 
     var body: some View {
         NavigationStack {
@@ -75,6 +77,7 @@ struct MapTabView: View {
 
 // MARK: - Create Tab
 struct CreateTab: View {
+    @EnvironmentObject private var mapVM: MapViewModel
     @StateObject private var createVM: CreatePostViewModel
     @State private var showRestaurantPicker = false
 
@@ -93,6 +96,7 @@ struct CreateTab: View {
                                 showRestaurantPicker = false
                             }
                         )
+                        .environmentObject(mapVM)
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
                                 Button("Cancel") {
