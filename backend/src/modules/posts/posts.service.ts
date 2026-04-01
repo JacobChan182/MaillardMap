@@ -1,3 +1,4 @@
+import type { Pool } from 'pg';
 import { getPool } from '../../db/pool.js';
 
 type PostData = {
@@ -62,7 +63,7 @@ export async function createPost(userId: string, input: {
 /**
  * Get friend IDs (bidirectional) for a user.
  */
-export async function getFriendIds(pool: ReturnType<typeof getPool>, userId: string): Promise<string[]> {
+export async function getFriendIds(pool: Pool, userId: string): Promise<string[]> {
   const res = await pool.query<{ id: string }>(
     `select friend_id as id from friendships where user_id = $1 and status = 'accepted'
      union
@@ -76,7 +77,7 @@ export async function getFriendIds(pool: ReturnType<typeof getPool>, userId: str
  * Query a set of posts with all joined data, photos, like counts, and liked status for a specific user.
  */
 export async function queryPosts(
-  pool: ReturnType<typeof getPool>,
+  pool: Pool,
   userIds: string[],
   likerId: string,
 ): Promise<PostData[]> {

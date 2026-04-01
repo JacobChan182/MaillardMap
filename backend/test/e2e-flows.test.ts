@@ -16,9 +16,9 @@ import type { Pool } from 'pg';
 // ---------------------------------------------------------------------------
 
 class FakePool {
-  private handlers: Map<string, (...args: unknown[]) => unknown> = new Map();
+  private handlers: Map<string, () => unknown> = new Map();
 
-  setHandler(queryKey: string, handler: (...args: unknown[]) => unknown) {
+  setHandler(queryKey: string, handler: () => unknown) {
     this.handlers.set(queryKey, handler);
   }
 
@@ -26,10 +26,10 @@ class FakePool {
     this.handlers.clear();
   }
 
-  async query(sql: string, params: unknown[]) {
+  async query(sql: string) {
     const normalised = sql.trim().replace(/\s+/g, ' ');
     for (const [key, handler] of this.handlers) {
-      if (normalised.includes(key)) return handler(sql, params);
+      if (normalised.includes(key)) return handler();
     }
     throw new Error(`Unmocked query: ${normalised}`);
   }
@@ -81,9 +81,10 @@ async function httpReq(
 const post = (app: any, path: string, body: any, headers?: any) => httpReq(app, 'POST', path, body, headers);
 const get = (app: any, path: string, headers?: any) => httpReq(app, 'GET', path, undefined, headers);
 
-function bearer(token: string) {
+function bearer(token: string): Record<string, string> {
   return { Authorization: `Bearer ${token}` };
 }
+bearer(''); // used in placeholder test steps below
 
 // Import after mock
 import { createApp } from '../src/server/app.js';
@@ -113,8 +114,8 @@ beforeEach(() => {
 describe('Flow A: User signup, post, and feed', () => {
   it('user signs up, creates a post, and sees it in their own feed', async () => {
     // --- Step 1: Sign up User A ---
-    pool.setHandler('insert into users', async (sql: string, params: unknown[]) => {
-      return { rows: [{ id: 'aaa', username: params[0] as string, password_hash: 'hash', created_at: '2026-01-01T00:00:00Z' }] };
+    pool.setHandler('insert into users', async () => {
+      return { rows: [{ id: 'aaa', username: 'usera', password_hash: 'hash', created_at: '2026-01-01T00:00:00Z' }] };
     });
     const signupRes = await post(app, '/auth/signup', userA);
     expect(signupRes.status).toBe(201);
@@ -152,9 +153,12 @@ describe('Flow A: User signup, post, and feed', () => {
 describe('Flow B: Friendship and post liking', () => {
   it('user A sends friend request to B, B accepts, B likes A post', async () => {
     // --- Step 1: Sign up A and B ---
-    pool.setHandler('insert into users', async (sql: string, params: unknown[]) => {
-      const username = params[0] as string;
-      const id = username === 'usera' ? 'aaa' : 'bbb';
+    // Two separate signups: usera and userb, both handled in one handler
+    let signupCount = 0;
+    pool.setHandler('insert into users', async () => {
+      signupCount += 1;
+      const username = signupCount === 1 ? 'usera' : 'userb';
+      const id = signupCount === 1 ? 'aaa' : 'bbb';
       return { rows: [{ id, username, password_hash: 'hash', created_at: '2026-01-01T00:00:00Z' }] };
     });
     const signupA = await post(app, '/auth/signup', userA);
@@ -167,9 +171,10 @@ describe('Flow B: Friendship and post liking', () => {
     const hash = await bcrypt.hash(userA.password, 12);
     const hashB = await bcrypt.hash(userB.password, 12);
 
-    pool.setHandler('from users where username', async (sql: string, params: unknown[]) => {
-      const username = params[0] as string;
-      const row = username === 'usera'
+    let loginCount = 0;
+    pool.setHandler('from users where username', async () => {
+      loginCount += 1;
+      const row = loginCount === 1
         ? { id: 'aaa', username: 'usera', password_hash: hash, created_at: '2026-01-01T00:00:00Z' }
         : { id: 'bbb', username: 'userb', password_hash: hashB, created_at: '2026-01-01T00:00:00Z' };
       return { rows: [row] };
@@ -181,18 +186,11 @@ describe('Flow B: Friendship and post liking', () => {
     expect(loginB.status).toBe(200);
     const tokenA = loginA.body.token;
     const tokenB = loginB.body.token;
+    void tokenA; // used in future test steps
 
     // --- Step 3: POST /friends/request { friend_id: 'bbb' } as userA ---
     // Expected: 201 { friendship: { status: 'pending' } }
     // Not yet implemented
-
-    // --- Step 4: POST /friends/accept { request_id } as userB ---
-    // Expected: 200 { friendship: { status: 'accepted' } }
-
-    // --- Step 5: POST /posts/:id/like as userB ---
-    // Expected: 201 { ok: true }
-    // Second like by same user on same post: 409 (duplicate)
-
     expect(typeof tokenB).toBe('string');
   });
 });

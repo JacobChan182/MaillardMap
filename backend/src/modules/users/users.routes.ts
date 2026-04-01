@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { ZodError } from 'zod';
-import { requireAuth } from '../../middleware/auth.js';
 import { getUserById, searchUsers } from './users.service.js';
 
 export const usersRouter = Router();

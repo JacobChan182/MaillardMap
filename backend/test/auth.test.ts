@@ -19,7 +19,7 @@ class FakePool {
     this.mockResult = null;
   }
 
-  async query(_sql: string, _params: unknown[]) {
+  async query() {
     if (this.mockError) throw this.mockError;
     return this.mockResult || { rows: [] };
   }

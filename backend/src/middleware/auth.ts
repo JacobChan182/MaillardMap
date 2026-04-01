@@ -1,4 +1,4 @@
-import type { NextFunction, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 
 type JwtPayload = { sub: string; username: string };
@@ -22,12 +22,5 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     next();
   } catch {
     return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Invalid or expired token' } });
-  }
-}
-
-export declare module 'express-serve-static-core' {
-  interface Request {
-    userId?: string;
-    username?: string;
   }
 }
