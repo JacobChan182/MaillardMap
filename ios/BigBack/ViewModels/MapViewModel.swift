@@ -132,6 +132,23 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         }
     }
 
+    /// Map pin tap: show the white card above the venue; tap the card to open restaurant posts.
+    func showCalloutForMapPin(restaurantId: String, name: String, coordinate: CLLocationCoordinate2D) {
+        calloutDelayedDismissTask?.cancel()
+        calloutDelayedDismissTask = nil
+        restaurantCallout = MapRestaurantCallout(
+            restaurantId: restaurantId,
+            name: name,
+            address: nil,
+            lat: coordinate.latitude,
+            lng: coordinate.longitude
+        )
+        calloutDismissRegionAnchor = region
+        calloutDismissSkipCameraEndsRemaining = 0
+        updateAnnotations()
+        Task { await enrichCalloutAddress(restaurantId: restaurantId) }
+    }
+
     /// Feed JSON often omits address when the DB row was created before we stored it; fill from `GET /restaurants/:id`.
     private func enrichCalloutAddress(restaurantId: String) async {
         do {

@@ -25,7 +25,11 @@ struct BigBackMapView: View {
                 case .feed(let pin):
                     Annotation("", coordinate: item.coordinate) {
                         Button {
-                            onSelectRestaurant(pin.restaurantId, pin.restaurantName)
+                            vm.showCalloutForMapPin(
+                                restaurantId: pin.restaurantId,
+                                name: pin.restaurantName,
+                                coordinate: pin.coordinate
+                            )
                         } label: {
                             if pin.isHeat {
                                 Circle()
@@ -40,7 +44,7 @@ struct BigBackMapView: View {
                             }
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("Posts at \(pin.restaurantName)")
+                        .accessibilityLabel("Show place card for \(pin.restaurantName)")
                     }
                 case .callout(let c):
                     // Card only: the feed pin at this coordinate stays the marker; anchor the card’s bottom to the venue with a small gap so it sits just above the existing pin.
