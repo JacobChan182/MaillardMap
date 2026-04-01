@@ -43,40 +43,27 @@ struct BigBackMapView: View {
                         .accessibilityLabel("Posts at \(pin.restaurantName)")
                     }
                 case .callout(let c):
-                    Annotation("", coordinate: item.coordinate) {
-                        VStack(spacing: 6) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(c.name)
-                                    .font(.headline)
-                                    .foregroundStyle(.primary)
+                    // Card only: the feed pin at this coordinate stays the marker; anchor the card’s bottom to the venue with a small gap so it sits just above the existing pin.
+                    Annotation("", coordinate: item.coordinate, anchor: .bottom) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(c.name)
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if let addr = c.address, !addr.isEmpty {
+                                Text(addr)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)
-                                if let addr = c.address, !addr.isEmpty {
-                                    Text(addr)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            }
-                            .padding(10)
-                            .frame(maxWidth: 240, alignment: .leading)
-                            .background(Color.white)
-                            .cornerRadius(10)
-                            .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
-                            Group {
-                                if vm.showHeatmap {
-                                    Circle()
-                                        .fill(Color.orange.opacity(0.8))
-                                        .frame(width: 14, height: 14)
-                                        .shadow(radius: 1)
-                                } else {
-                                    Image(systemName: "mappin.circle.fill")
-                                        .font(.title)
-                                        .foregroundStyle(.orange)
-                                        .shadow(radius: 1)
-                                }
                             }
                         }
-                        .offset(y: -10)
+                        .padding(10)
+                        .frame(maxWidth: 240, alignment: .leading)
+                        .background(Color.white)
+                        .cornerRadius(10)
+                        .shadow(color: .black.opacity(0.25), radius: 4, y: 2)
+                        // Keep the pin (centered on this coordinate) clear: space below the card ≈ half a title mappin + shadow.
+                        .padding(.bottom, 44)
                     }
                 }
             }

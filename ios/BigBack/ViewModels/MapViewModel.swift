@@ -15,6 +15,10 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     @Published var restaurantCallout: MapRestaurantCallout?
     /// Region snapshot when the callout was shown (iOS 17 has no `MapCameraUpdateContext.reason`; compare camera to this to detect user moves).
     private var calloutDismissRegionAnchor: MKCoordinateRegion?
+    /// After `focusRestaurantFromPost`, MapKit emits `onMapCameraChange` ends that don’t numerically match our anchor; skip dismissing for a few events so the white card can appear.
+    private var calloutDismissSkipCameraEndsRemaining = 0
+    /// When the user moves the map off the callout anchor, dismiss the card after a short beat (debounced per gesture end).
+    private var calloutDelayedDismissTask: Task<Void, Never>?
     @Published var showHeatmap = true
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -91,9 +95,26 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
 
     /// Feed / post list: jump map here with the white callout pin.
     func focusRestaurantFromPost(_ post: Post) {
+        calloutDelayedDismissTask?.cancel()
+        calloutDelayedDismissTask = nil
+        let trimmed = post.restaurantAddress?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        // #region agent log
+        #if DEBUG
+        AgentMapDebug.log(
+            hypothesisId: "H1",
+            location: "MapViewModel.focusRestaurantFromPost",
+            message: "restaurant chip tap",
+            data: [
+                "addrFromPostLen": "\(trimmed.count)",
+                "restaurantId8": String(post.restaurantId.prefix(8)),
+            ]
+        )
+        #endif
+        // #endregion
         restaurantCallout = MapRestaurantCallout(
+            restaurantId: post.restaurantId,
             name: post.restaurantName,
-            address: post.restaurantAddress,
+            address: trimmed.isEmpty ? nil : trimmed,
             lat: post.lat,
             lng: post.lng
         )
@@ -104,15 +125,98 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         let zoomLevel = min(region.span.latitudeDelta, region.span.longitudeDelta)
         showHeatmap = zoomLevel > zoomThreshold
         calloutDismissRegionAnchor = region
+        calloutDismissSkipCameraEndsRemaining = 3
         updateAnnotations()
+        if trimmed.isEmpty {
+            Task { await enrichCalloutAddress(restaurantId: post.restaurantId) }
+        }
     }
 
-    /// iOS 17: `onMapCameraChange` context has no `reason`. If the visible region drifts from the callout anchor, treat it as a user-driven move and dismiss.
+    /// Feed JSON often omits address when the DB row was created before we stored it; fill from `GET /restaurants/:id`.
+    private func enrichCalloutAddress(restaurantId: String) async {
+        do {
+            let r = try await api.getRestaurant(id: restaurantId)
+            let addr = r.address?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            guard !addr.isEmpty else {
+                // #region agent log
+                #if DEBUG
+                AgentMapDebug.log(
+                    hypothesisId: "H5",
+                    location: "MapViewModel.enrichCalloutAddress",
+                    message: "no address from getRestaurant",
+                    data: ["restaurantId8": String(restaurantId.prefix(8))]
+                )
+                #endif
+                // #endregion
+                return
+            }
+            guard let c = restaurantCallout, c.restaurantId == restaurantId else { return }
+            restaurantCallout = MapRestaurantCallout(
+                restaurantId: c.restaurantId,
+                name: c.name,
+                address: addr,
+                lat: c.lat,
+                lng: c.lng
+            )
+            // #region agent log
+            #if DEBUG
+            AgentMapDebug.log(
+                hypothesisId: "H5",
+                location: "MapViewModel.enrichCalloutAddress",
+                message: "callout address enriched",
+                data: ["addrLen": "\(addr.count)"]
+            )
+            #endif
+            // #endregion
+        } catch {
+            // #region agent log
+            #if DEBUG
+            AgentMapDebug.log(
+                hypothesisId: "H5",
+                location: "MapViewModel.enrichCalloutAddress",
+                message: "getRestaurant failed",
+                data: ["err": String(describing: type(of: error))]
+            )
+            #endif
+            // #endregion
+        }
+    }
+
+    /// iOS 17: no `MapCameraUpdateContext.reason`. Programmatic recenter often reports a `visible` region that doesn’t match our anchor numerically, which used to clear the callout instantly; we skip a few `onEnd` callbacks, then compare loosely to detect real pans/zooms.
     func onMapCameraChangeEnded(region visible: MKCoordinateRegion) {
-        guard restaurantCallout != nil, let anchor = calloutDismissRegionAnchor else { return }
-        if Self.regionsMatchForCalloutDismiss(anchor, visible) { return }
-        calloutDismissRegionAnchor = nil
-        clearRestaurantCallout()
+        guard restaurantCallout != nil else { return }
+        if calloutDismissSkipCameraEndsRemaining > 0 {
+            calloutDismissSkipCameraEndsRemaining -= 1
+            calloutDismissRegionAnchor = visible
+            calloutDelayedDismissTask?.cancel()
+            calloutDelayedDismissTask = nil
+            return
+        }
+        guard let anchor = calloutDismissRegionAnchor else { return }
+        if Self.regionsMatchForCalloutDismiss(anchor, visible) {
+            calloutDismissRegionAnchor = visible
+            calloutDelayedDismissTask?.cancel()
+            calloutDelayedDismissTask = nil
+            return
+        }
+        guard let rid = restaurantCallout?.restaurantId else { return }
+        calloutDelayedDismissTask?.cancel()
+        calloutDelayedDismissTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            guard !Task.isCancelled else { return }
+            guard let c = restaurantCallout, c.restaurantId == rid else { return }
+            // #region agent log
+            #if DEBUG
+            AgentMapDebug.log(
+                hypothesisId: "H6",
+                location: "MapViewModel.callout delayed dismiss",
+                message: "dismissing callout after user map interaction",
+                data: [:]
+            )
+            #endif
+            // #endregion
+            clearRestaurantCallout()
+        }
     }
 
     private static func regionsMatchForCalloutDismiss(_ a: MKCoordinateRegion, _ b: MKCoordinateRegion) -> Bool {
@@ -120,12 +224,15 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         let cLon = abs(a.center.longitude - b.center.longitude)
         let sLat = abs(a.span.latitudeDelta - b.span.latitudeDelta)
         let sLon = abs(a.span.longitudeDelta - b.span.longitudeDelta)
-        return cLat < 0.0002 && cLon < 0.0002 && sLat < 0.0025 && sLon < 0.0025
+        return cLat < 0.001 && cLon < 0.001 && sLat < 0.012 && sLon < 0.012
     }
 
     func clearRestaurantCallout() {
+        calloutDelayedDismissTask?.cancel()
+        calloutDelayedDismissTask = nil
         restaurantCallout = nil
         calloutDismissRegionAnchor = nil
+        calloutDismissSkipCameraEndsRemaining = 0
     }
 
     var mapAnnotations: [MapAnnotationItem] {
@@ -169,6 +276,7 @@ struct MapPin: Identifiable {
 }
 
 struct MapRestaurantCallout: Equatable {
+    let restaurantId: String
     let name: String
     let address: String?
     let lat: Double
@@ -193,3 +301,30 @@ enum MapAnnotationItem: Identifiable {
         }
     }
 }
+
+#if DEBUG
+private enum AgentMapDebug {
+    private static let ingestURL = URL(string: "http://127.0.0.1:7707/ingest/d9fc1c80-35fe-4ab7-aba1-28f71cd71200")!
+
+    static func log(hypothesisId: String, location: String, message: String, data: [String: String] = [:]) {
+        var payload: [String: Any] = [
+            "sessionId": "38d789",
+            "hypothesisId": hypothesisId,
+            "location": location,
+            "message": message,
+            "timestamp": Int(Date().timeIntervalSince1970 * 1000),
+        ]
+        if !data.isEmpty { payload["data"] = data }
+        guard JSONSerialization.isValidJSONObject(payload),
+              let body = try? JSONSerialization.data(withJSONObject: payload) else { return }
+        var req = URLRequest(url: ingestURL)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue("38d789", forHTTPHeaderField: "X-Debug-Session-Id")
+        req.httpBody = body
+        Task.detached(priority: .utility) {
+            _ = try? await URLSession.shared.data(for: req)
+        }
+    }
+}
+#endif
