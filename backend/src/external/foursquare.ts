@@ -6,6 +6,11 @@ export type FoursquareVenue = {
   categories: string;
 };
 
+function fsqHeaders(key: string): Record<string, string> {
+  const auth = key.startsWith('Bearer ') ? key : `Bearer ${key}`;
+  return { Authorization: auth, Accept: 'application/json', 'X-Places-Api-Version': '2025-06-17' };
+}
+
 /**
  * Search places near coordinates via Foursquare Places API.
  */
@@ -16,21 +21,29 @@ export async function searchNearby(lat: number, lng: number, radius = 5000, quer
     return [];
   }
 
-  // Category "13063" = Restaurants
-  const url = `https://api.foursquare.com/v3/places/search?ll=${lat},${lng}&radius=${radius}&categories=13063&limit=30&sort=DISTANCE${query ? `&query=${encodeURIComponent(query)}` : ''}`;
-  const res = await fetch(url, {
-    headers: { Authorization: key, Accept: 'application/json' },
-  });
+  // Category "13065" = Restaurants (Foursquare Places API)
+  const url = `https://places-api.foursquare.com/places/search?ll=${lat},${lng}&radius=${radius}&categories=13065&limit=30&sort=DISTANCE${query ? `&query=${encodeURIComponent(query)}` : ''}`;
+  let res;
+  try {
+    res = await fetch(url, { headers: fsqHeaders(key) });
+  } catch (e: any) {
+    console.error('[FOURSQUARE] fetch error:', e.message);
+    return [];
+  }
   if (!res.ok) return [];
 
   const data = await res.json();
-  return (data.results || []).map((r: any) => ({
-    foursquare_id: r.fsq_id,
+  return (data.results || []).map(mapVenue);
+}
+
+function mapVenue(r: any): FoursquareVenue {
+  return {
+    foursquare_id: r.fsq_place_id ?? r.fsq_id,
     name: r.name,
-    lat: r.geocodes?.main?.latitude ?? 0,
-    lng: r.geocodes?.main?.longitude ?? 0,
+    lat: r.latitude ?? r.geocodes?.main?.latitude ?? 0,
+    lng: r.longitude ?? r.geocodes?.main?.longitude ?? 0,
     categories: r.categories?.map((c: any) => c.name).join(',') || '',
-  }));
+  };
 }
 
 /**
@@ -40,18 +53,12 @@ export async function getPlaceDetails(foursquareId: string): Promise<FoursquareV
   const key = process.env.FOURSQUARE_API_KEY;
   if (!key) return null;
 
-  const url = `https://api.foursquare.com/v3/places/${foursquareId}`;
-  const res = await fetch(url, {
-    headers: { Authorization: key, Accept: 'application/json' },
-  });
-  if (!res.ok) return null;
-
-  const data = await res.json();
-  return {
-    foursquare_id: data.fsq_id,
-    name: data.name,
-    lat: data.geocodes?.main?.latitude ?? 0,
-    lng: data.geocodes?.main?.longitude ?? 0,
-    categories: data.categories?.map((c: any) => c.name).join(',') || '',
-  };
+  const url = `https://places-api.foursquare.com/places/${foursquareId}`;
+  try {
+    const res = await fetch(url, { headers: fsqHeaders(key) });
+    if (!res.ok) return null;
+    return mapVenue(await res.json());
+  } catch {
+    return null;
+  }
 }
