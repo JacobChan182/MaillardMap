@@ -54,7 +54,7 @@ final class APIClient {
     }
 
     private func request(_ path: String, method: String = "GET", body: Encodable? = nil) async throws -> Data {
-        guard var url = URL(string: path, relativeTo: baseURL) else { throw APIError.invalidURL }
+        guard let url = URL(string: path, relativeTo: baseURL) else { throw APIError.invalidURL }
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.cachePolicy = .reloadIgnoringLocalCacheData
@@ -171,6 +171,13 @@ final class APIClient {
     func getUserPosts(userId: String) async throws -> [Post] {
         struct Resp: Decodable { var posts: [Post] }
         let data = try await request("posts/user/\(userId)")
+        return try decode(Resp.self, from: data).posts
+    }
+
+    /// Posts at this restaurant from you + friends (same scope as the feed).
+    func getPostsForRestaurant(restaurantId: String) async throws -> [Post] {
+        struct Resp: Decodable { var posts: [Post] }
+        let data = try await request("posts/restaurant/\(restaurantId)")
         return try decode(Resp.self, from: data).posts
     }
 

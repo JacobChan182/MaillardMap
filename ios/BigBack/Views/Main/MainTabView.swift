@@ -64,12 +64,18 @@ struct FeedTab: View {
 // MARK: - Map Tab
 struct MapTabView: View {
     @EnvironmentObject private var mapVM: MapViewModel
+    @State private var restaurantNav: RestaurantMapNav?
 
     var body: some View {
         NavigationStack {
-            BigBackMapView()
-                .environmentObject(mapVM)
-                .navigationTitle("Map")
+            BigBackMapView { restaurantId, name in
+                restaurantNav = RestaurantMapNav(restaurantId: restaurantId, name: name)
+            }
+            .environmentObject(mapVM)
+            .navigationTitle("Map")
+            .navigationDestination(item: $restaurantNav) { nav in
+                RestaurantPostsView(restaurantId: nav.restaurantId, restaurantName: nav.name)
+            }
         }
         .task { await mapVM.loadPosts() }
     }

@@ -99,9 +99,10 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     private func updateAnnotations() {
         pins = posts.map { post in
             MapPin(
+                id: post.id,
+                restaurantId: post.restaurantId,
+                restaurantName: post.restaurantName,
                 coordinate: CLLocationCoordinate2D(latitude: post.lat, longitude: post.lng),
-                title: post.restaurantName,
-                subtitle: post.comment ?? "",
                 isHeat: showHeatmap
             )
         }
@@ -109,9 +110,9 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
 }
 
 struct MapPin: Identifiable {
-    let id = UUID()
+    let id: String
+    let restaurantId: String
+    let restaurantName: String
     let coordinate: CLLocationCoordinate2D
-    let title: String
-    let subtitle: String
     let isHeat: Bool
 }

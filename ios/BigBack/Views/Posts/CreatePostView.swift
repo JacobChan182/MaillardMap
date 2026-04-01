@@ -33,7 +33,7 @@ struct CreatePostView: View {
                     .cornerRadius(12)
                 }
 
-                // Photos
+                // Photos (thumbnails in main body; PhotosPicker label stays Sendable-safe)
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text("Photos")
@@ -44,34 +44,32 @@ struct CreatePostView: View {
                             .foregroundStyle(.secondary)
                     }
 
+                    if !vm.selectedPhotos.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(vm.selectedPhotos.indices, id: \.self) { i in
+                                    Image(uiImage: vm.selectedPhotos[i])
+                                        .resizable()
+                                        .scaledToFill()
+                                        .frame(width: 100, height: 100)
+                                        .cornerRadius(8)
+                                }
+                            }
+                        }
+                        .frame(height: 120)
+                    }
+
                     PhotosPicker(
                         selection: $vm.selectedPhotoItems,
                         maxSelectionCount: vm.maxPhotos,
                         matching: .images
                     ) {
-                        HStack {
-                            if vm.selectedPhotos.isEmpty {
-                                Label("Add up to \(vm.maxPhotos) photos", systemImage: "photo.badge.plus")
-                                    .foregroundStyle(.secondary)
-                                    .frame(maxWidth: .infinity)
-                                    .padding()
-                            } else {
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 8) {
-                                        ForEach(vm.selectedPhotos.indices, id: \.self) { i in
-                                            Image(uiImage: vm.selectedPhotos[i])
-                                                .resizable()
-                                                .scaledToFill()
-                                                .frame(width: 100, height: 100)
-                                                .cornerRadius(8)
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        .frame(height: vm.selectedPhotos.isEmpty ? nil : 120)
-                        .background(Color(uiColor: .secondarySystemBackground))
-                        .cornerRadius(12)
+                        Label("Add or change photos", systemImage: "photo.badge.plus")
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color(uiColor: .secondarySystemBackground))
+                            .cornerRadius(12)
                     }
                     .onChange(of: vm.selectedPhotoItems) { _, items in
                         Task { await vm.loadPhotos(from: items) }

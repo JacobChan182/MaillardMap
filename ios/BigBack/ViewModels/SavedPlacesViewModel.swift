@@ -24,7 +24,7 @@ final class SavedPlacesViewModel: ObservableObject {
 
     func savePlace(restaurantId: String) async {
         do {
-            try await api.savePlace(restaurantId: restaurantId)
+            _ = try await api.savePlace(restaurantId: restaurantId)
             await loadPlaces()
         } catch {
             errorMessage = error.localizedDescription

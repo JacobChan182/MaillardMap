@@ -28,7 +28,7 @@ final class UserPostsViewModel: ObservableObject {
 
     func likePost(postId: String) async {
         do {
-            try await api.likePost(postId: postId)
+            _ = try await api.likePost(postId: postId)
         } catch {
             errorMessage = error.localizedDescription
         }

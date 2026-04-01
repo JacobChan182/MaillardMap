@@ -36,6 +36,8 @@
 		D68E3D8157BFB753C2A9978F /* RestaurantPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A7A677FC0F94DA00838BC90 /* RestaurantPicker.swift */; };
 		F1D43428B3770225F9C94B35 /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D93172FAB1B47B933A95B9C4 /* MapView.swift */; };
 		FFCA0913430E550FC56EB692 /* Blend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEA0271F1C2F1CCF528237B /* Blend.swift */; };
+		A911C2293FE84B1D8C2E6F0A /* RestaurantPostsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B822D33A4FC95E2B9D1C8A7F /* RestaurantPostsView.swift */; };
+		A922D33A4FE95F3C0E2D709B /* RestaurantPostsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C933E44B5AF0A1C2D3E4B8A0 /* RestaurantPostsViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -69,6 +71,8 @@
 		EB38369FB0A95590AC4EF462 /* Friendship.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Friendship.swift; sourceTree = "<group>"; };
 		FF4F168D7A9221A469CC6FA1 /* BlendViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlendViewModel.swift; sourceTree = "<group>"; };
 		FFCEEB05F3D4F9E7B4BD6335 /* BigBack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BigBack.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B822D33A4FC95E2B9D1C8A7F /* RestaurantPostsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantPostsView.swift; sourceTree = "<group>"; };
+		C933E44B5AF0A1C2D3E4B8A0 /* RestaurantPostsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantPostsViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -150,6 +154,7 @@
 				099607FB36423A20A5355EF4 /* FeedViewModel.swift */,
 				5927FF9CA847F50EA7AE0821 /* FriendsViewModel.swift */,
 				078ABA905B7BC1757E4C68A8 /* MapViewModel.swift */,
+				C933E44B5AF0A1C2D3E4B8A0 /* RestaurantPostsViewModel.swift */,
 				7A5FA7346CF7017D5D9F4D09 /* RestaurantSearchViewModel.swift */,
 				A8422E1D1ED8313359A00CED /* SavedPlacesViewModel.swift */,
 				949DBAA58ACCFFCC62FB5BB6 /* UserPostsViewModel.swift */,
@@ -202,6 +207,7 @@
 			children = (
 				AB35BFE6B4063F0029E007D3 /* CreatePostView.swift */,
 				5AE5455B22B5810BE63A2EA3 /* PostCardView.swift */,
+				B822D33A4FC95E2B9D1C8A7F /* RestaurantPostsView.swift */,
 				4A7A677FC0F94DA00838BC90 /* RestaurantPicker.swift */,
 				38E12EDDC7172C41B2119DDB /* UserPostsView.swift */,
 			);
@@ -306,6 +312,8 @@
 				573A205C42B48543DEF68F37 /* Post.swift in Sources */,
 				28728D36DC1BD33561601F70 /* PostCardView.swift in Sources */,
 				9AD79D1DC49173921A4189D6 /* Restaurant.swift in Sources */,
+				A911C2293FE84B1D8C2E6F0A /* RestaurantPostsView.swift in Sources */,
+				A922D33A4FE95F3C0E2D709B /* RestaurantPostsViewModel.swift in Sources */,
 				D68E3D8157BFB753C2A9978F /* RestaurantPicker.swift in Sources */,
 				0DAF4B2527E1872DFF547055 /* RestaurantSearchView.swift in Sources */,
 				2088A930C2261B3A9984F28C /* RestaurantSearchViewModel.swift in Sources */,

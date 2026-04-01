@@ -96,7 +96,9 @@ export async function queryPosts(
   pool: Pool,
   userIds: string[],
   likerId: string,
+  options?: { restaurantId?: string },
 ): Promise<PostData[]> {
+  const restaurantId = options?.restaurantId;
   const postsRes = await pool.query(
     `select
        p.id as post_id,
@@ -112,8 +114,9 @@ export async function queryPosts(
      join users u on u.id = p.user_id
      join restaurants r on r.id = p.restaurant_id
      where p.user_id = any($1)
+     ${restaurantId ? 'and p.restaurant_id = $2' : ''}
      order by p.created_at desc`,
-    [userIds],
+    restaurantId ? [userIds, restaurantId] : [userIds],
   );
 
   if (postsRes.rows.length === 0) return [];
@@ -182,6 +185,17 @@ export async function getFeed(userId: string): Promise<PostData[]> {
   const friendIds = await getFriendIds(pool, userId);
   const allIds = friendIds.length > 0 ? [...friendIds, userId] : [userId];
   return queryPosts(pool, allIds, userId);
+}
+
+/**
+ * Posts at one restaurant from friends + self (same visibility as feed), newest first.
+ */
+export async function getFeedPostsByRestaurant(userId: string, restaurantId: string): Promise<PostData[]> {
+  if (!isUuid(restaurantId)) return [];
+  const pool = getPool();
+  const friendIds = await getFriendIds(pool, userId);
+  const allIds = friendIds.length > 0 ? [...friendIds, userId] : [userId];
+  return queryPosts(pool, allIds, userId, { restaurantId });
 }
 
 /**
