@@ -62,7 +62,7 @@ export async function createPost(userId: string, input: {
 /**
  * Get friend IDs (bidirectional) for a user.
  */
-export async function getFriendIds(pool: ReturnType<typeof getPool>, userId: string): Promise<string>[]> {
+export async function getFriendIds(pool: ReturnType<typeof getPool>, userId: string): Promise<string[]> {
   const res = await pool.query<{ id: string }>(
     `select friend_id as id from friendships where user_id = $1 and status = 'accepted'
      union

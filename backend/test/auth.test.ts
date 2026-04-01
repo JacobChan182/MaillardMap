@@ -1,6 +1,5 @@
-import { describe, expect, it, beforeEach, vi, beforeAll } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import bcrypt from 'bcryptjs';
-import type { Pool } from 'pg';
 
 // ---------------------------------------------------------------------------
 // Mock the DB pool so we can unit-test auth services in isolation

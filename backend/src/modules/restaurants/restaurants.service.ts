@@ -12,7 +12,7 @@ type RestaurantRow = {
 /**
  * Search restaurants from Foursquare, caching results locally.
  */
-export async function searchRestaurants(q: string, lat?: number, lng?: number) {
+export async function searchRestaurants(q: string) {
   const pool = getPool();
 
   // First check local DB for cached results

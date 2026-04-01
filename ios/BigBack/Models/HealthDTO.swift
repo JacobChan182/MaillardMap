@@ -5,4 +5,3 @@ struct HealthDTO: Decodable {
     let service: String
     let time: String?
 }
-
