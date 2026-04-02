@@ -46,6 +46,7 @@ struct FeedTab: View {
     @EnvironmentObject private var mapVM: MapViewModel
     @EnvironmentObject private var tabRouter: TabRouter
     @StateObject private var feedVM = FeedViewModel()
+    @State private var selectedPost: Post?
 
     var body: some View {
         NavigationStack {
@@ -62,7 +63,8 @@ struct FeedTab: View {
                                     onRestaurantTap: {
                                         mapVM.focusRestaurantFromPost(post)
                                         tabRouter.openMap()
-                                    }
+                                    },
+                                    onOpenDetail: { selectedPost = post }
                                 )
                             }
                             if feedVM.posts.isEmpty && !feedVM.isLoading {
@@ -87,6 +89,16 @@ struct FeedTab: View {
                         Image(systemName: "bell")
                     }
                 }
+            }
+            .navigationDestination(item: $selectedPost) { p in
+                PostDetailView(
+                    post: p,
+                    onLike: { postId in await feedVM.likePost(postId: postId) },
+                    onRestaurantTap: {
+                        mapVM.focusRestaurantFromPost(p)
+                        tabRouter.openMap()
+                    }
+                )
             }
         }
         .task { await feedVM.loadFeed() }

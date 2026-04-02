@@ -13,6 +13,7 @@ struct RestaurantPostsView: View {
     let restaurantId: String
     let restaurantName: String
     @StateObject private var vm: RestaurantPostsViewModel
+    @State private var selectedPost: Post?
 
     init(restaurantId: String, restaurantName: String) {
         self.restaurantId = restaurantId
@@ -57,7 +58,8 @@ struct RestaurantPostsView: View {
                                     onRestaurantTap: {
                                         mapVM.focusRestaurantFromPost(post)
                                         tabRouter.openMap()
-                                    }
+                                    },
+                                    onOpenDetail: { selectedPost = post }
                                 )
                             }
                             if vm.posts.isEmpty && !vm.isLoading {
@@ -75,6 +77,16 @@ struct RestaurantPostsView: View {
         }
         .navigationTitle(restaurantName)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(item: $selectedPost) { p in
+            PostDetailView(
+                post: p,
+                onLike: { postId in await vm.likePost(postId: postId) },
+                onRestaurantTap: {
+                    mapVM.focusRestaurantFromPost(p)
+                    tabRouter.openMap()
+                }
+            )
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {

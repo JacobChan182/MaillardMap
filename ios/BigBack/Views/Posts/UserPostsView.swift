@@ -7,6 +7,7 @@ struct UserPostsView: View {
     @StateObject private var vm: UserPostsViewModel
     @State private var showShareRestaurantPicker = false
     @State private var shareRestaurantError: String?
+    @State private var selectedPost: Post?
 
     init(userId: String) {
         _vm = StateObject(wrappedValue: UserPostsViewModel(userId: userId))
@@ -63,7 +64,8 @@ struct UserPostsView: View {
                                 onRestaurantTap: {
                                     mapVM.focusRestaurantFromPost(post)
                                     tabRouter.openMap()
-                                }
+                                },
+                                onOpenDetail: { selectedPost = post }
                             )
                         }
                         if vm.postsHidden {
@@ -88,6 +90,16 @@ struct UserPostsView: View {
         }
         .navigationTitle(navigationTagTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(item: $selectedPost) { p in
+            PostDetailView(
+                post: p,
+                onLike: { postId in await vm.likePost(postId: postId) },
+                onRestaurantTap: {
+                    mapVM.focusRestaurantFromPost(p)
+                    tabRouter.openMap()
+                }
+            )
+        }
         .toolbar {
             if let me = auth.currentUser?.id, me != vm.userId {
                 ToolbarItem(placement: .topBarTrailing) {

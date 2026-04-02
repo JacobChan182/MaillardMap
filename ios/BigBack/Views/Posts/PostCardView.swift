@@ -87,10 +87,21 @@ private struct PostCardStackedPhotos: View {
     }
 }
 
+enum PostCardVariant {
+    /// Feed / profile lists: capped caption, card chrome, optional comments sheet.
+    case feed
+    /// Full-screen post detail: full caption, no card border.
+    case detail
+}
+
 struct PostCardView: View {
     let post: Post
-    let onLike: (String) async -> Void
+    /// Return updated post after toggling like, or `nil` on failure / no local change.
+    let onLike: (String) async -> Post?
     var onRestaurantTap: (() -> Void)?
+    var variant: PostCardVariant = .feed
+    /// When set, tapping the card (or comment affordance) opens post detail instead of a sheet.
+    var onOpenDetail: (() -> Void)? = nil
 
     @State private var showComments = false
 
@@ -111,10 +122,39 @@ struct PostCardView: View {
         return n.isEmpty ? post.username : n
     }
 
-    init(post: Post, onLike: @escaping (String) async -> Void, onRestaurantTap: (() -> Void)? = nil) {
+    init(
+        post: Post,
+        onLike: @escaping (String) async -> Post?,
+        onRestaurantTap: (() -> Void)? = nil,
+        variant: PostCardVariant = .feed,
+        onOpenDetail: (() -> Void)? = nil
+    ) {
         self.post = post
         self.onLike = onLike
         self.onRestaurantTap = onRestaurantTap
+        self.variant = variant
+        self.onOpenDetail = onOpenDetail
+    }
+
+    private var useCommentsSheet: Bool {
+        variant == .feed && onOpenDetail == nil
+    }
+
+    private func openCommentsOrDetail() {
+        if let onOpenDetail {
+            onOpenDetail()
+        } else if variant == .feed {
+            showComments = true
+        }
+    }
+
+    private var commentsSheetPresented: Binding<Bool> {
+        Binding(
+            get: { showComments && useCommentsSheet },
+            set: { newVal in
+                if !newVal { showComments = false }
+            }
+        )
     }
 
     var body: some View {
@@ -170,28 +210,34 @@ struct PostCardView: View {
             if let comment = post.comment, !comment.isEmpty {
                 Text(comment)
                     .font(.body)
-                    .lineLimit(3)
+                    .lineLimit(variant == .feed ? 3 : nil)
             }
 
             HStack(alignment: .firstTextBaseline) {
                 HStack(spacing: 16) {
-                    HStack(spacing: 6) {
-                        Image(systemName: post.liked ? "heart.fill" : "heart")
-                            .foregroundStyle(post.liked ? .red : .secondary)
-                        Text(likeCountLabel)
-                            .foregroundStyle(.secondary)
+                    Button {
+                        Task { _ = await onLike(post.id) }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: post.liked ? "heart.fill" : "heart")
+                                .foregroundStyle(post.liked ? .red : .secondary)
+                            Text(likeCountLabel)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .font(.caption)
-                    .onTapGesture { Task { await onLike(post.id) } }
+                    .buttonStyle(.plain)
 
-                    HStack(spacing: 6) {
-                        Image(systemName: "text.bubble")
-                            .foregroundStyle(.secondary)
-                        Text(commentCountLabel)
-                            .foregroundStyle(.secondary)
+                    Button(action: openCommentsOrDetail) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "text.bubble")
+                                .foregroundStyle(.secondary)
+                            Text(commentCountLabel)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .font(.caption)
-                    .onTapGesture { showComments = true }
+                    .buttonStyle(.plain)
                 }
                 Spacer(minLength: 8)
                 if let created = postCreatedDate(from: post.createdAt) {
@@ -203,15 +249,22 @@ struct PostCardView: View {
             }
             .padding(.top, 2)
         }
-        .padding()
+        .padding(variant == .feed ? 16 : 0)
+        .padding(.bottom, variant == .detail ? 8 : 0)
         .background(Color(uiColor: .systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .clipShape(RoundedRectangle(cornerRadius: variant == .feed ? 12 : 0))
         .overlay {
-            RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(Color.gray.opacity(0.35), lineWidth: 1)
+            if variant == .feed {
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(Color.gray.opacity(0.35), lineWidth: 1)
+            }
         }
-        .shadow(radius: 2)
-        .sheet(isPresented: $showComments) {
+        .shadow(color: variant == .feed ? .black.opacity(0.12) : .clear, radius: 2, x: 0, y: 1)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if onOpenDetail != nil { openCommentsOrDetail() }
+        }
+        .sheet(isPresented: commentsSheetPresented) {
             NavigationStack {
                 CommentsView(postId: post.id)
                     .navigationTitle("Comments")

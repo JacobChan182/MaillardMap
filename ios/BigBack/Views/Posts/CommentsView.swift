@@ -205,49 +205,49 @@ private struct MentionPickerSheet: View {
     }
 }
 
-// MARK: - Comments screen
+// MARK: - Shared thread list + composer (sheet + post detail)
 
-struct CommentsView: View {
-    let postId: String
-    @StateObject private var vm: CommentsViewModel
-    @FocusState private var fieldFocused: Bool
-    @State private var replyingTo: Comment?
-    @State private var showMentionPicker = false
-
-    init(postId: String) {
-        self.postId = postId
-        _vm = StateObject(wrappedValue: CommentsViewModel())
-    }
+struct CommentsThreadListContent: View {
+    let comments: [Comment]
+    let isLoading: Bool
+    let onReply: (Comment) -> Void
 
     private var topLevelComments: [Comment] {
-        vm.comments
+        comments
             .filter { $0.parentId == nil }
             .sorted { $0.createdAt < $1.createdAt }
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if vm.isLoading {
+        LazyVStack(alignment: .leading, spacing: 16) {
+            if isLoading && comments.isEmpty {
                 ProgressView()
+                    .frame(maxWidth: .infinity)
                     .padding()
             }
-
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 16) {
-                    if vm.comments.isEmpty && !vm.isLoading {
-                        Text("No comments yet")
-                            .foregroundStyle(.secondary)
-                            .padding()
-                    }
-                    ForEach(topLevelComments) { comment in
-                        CommentThreadBlock(comment: comment, all: vm.comments, depth: 0) { target in
-                            startReply(to: target)
-                        }
-                    }
-                }
-                .padding(.vertical)
+            if comments.isEmpty && !isLoading {
+                Text("No comments yet")
+                    .foregroundStyle(.secondary)
+                    .padding()
             }
+            ForEach(topLevelComments) { comment in
+                CommentThreadBlock(comment: comment, all: comments, depth: 0, onReply: onReply)
+            }
+        }
+        .padding(.vertical)
+    }
+}
 
+struct CommentsInputPanel: View {
+    @ObservedObject var vm: CommentsViewModel
+    let postId: String
+    @Binding var replyingTo: Comment?
+    var fieldFocused: FocusState<Bool>.Binding
+    @Binding var showMentionPicker: Bool
+    var onCommentPosted: (() -> Void)?
+
+    var body: some View {
+        VStack(spacing: 0) {
             if let err = vm.errorMessage, !err.isEmpty {
                 Text(err)
                     .font(.caption)
@@ -288,7 +288,7 @@ struct CommentsView: View {
 
                 TextField(replyingTo == nil ? "Add a comment..." : "Reply...", text: $vm.newCommentText, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
-                    .focused($fieldFocused)
+                    .focused(fieldFocused)
                     .submitLabel(.send)
                     .onSubmit {
                         Task { await send() }
@@ -302,10 +302,10 @@ struct CommentsView: View {
             }
             .padding()
         }
+        .background(Color(uiColor: .systemBackground))
         .sheet(isPresented: $showMentionPicker) {
             MentionPickerSheet(targetText: $vm.newCommentText)
         }
-        .task { await vm.loadComments(postId: postId) }
     }
 
     private func replyAuthorLabel(_ c: Comment) -> String {
@@ -313,14 +313,59 @@ struct CommentsView: View {
         return n.isEmpty ? "User" : n
     }
 
-    private func startReply(to comment: Comment) {
-        replyingTo = comment
-        fieldFocused = true
-    }
-
     private func send() async {
         let parentId = replyingTo?.id
         let ok = await vm.submitComment(postId: postId, parentCommentId: parentId)
-        if ok { replyingTo = nil }
+        if ok {
+            replyingTo = nil
+            onCommentPosted?()
+        }
+    }
+}
+
+// MARK: - Comments screen
+
+struct CommentsView: View {
+    let postId: String
+    @StateObject private var vm: CommentsViewModel
+    @FocusState private var fieldFocused: Bool
+    @State private var replyingTo: Comment?
+    @State private var showMentionPicker = false
+
+    init(postId: String) {
+        self.postId = postId
+        _vm = StateObject(wrappedValue: CommentsViewModel())
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            if vm.isLoading {
+                ProgressView()
+                    .padding()
+            }
+
+            ScrollView {
+                CommentsThreadListContent(
+                    comments: vm.comments,
+                    isLoading: false,
+                    onReply: startReply
+                )
+            }
+
+            CommentsInputPanel(
+                vm: vm,
+                postId: postId,
+                replyingTo: $replyingTo,
+                fieldFocused: $fieldFocused,
+                showMentionPicker: $showMentionPicker,
+                onCommentPosted: nil
+            )
+        }
+        .task { await vm.loadComments(postId: postId) }
+    }
+
+    private func startReply(to comment: Comment) {
+        replyingTo = comment
+        fieldFocused = true
     }
 }

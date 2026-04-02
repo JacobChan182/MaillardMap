@@ -1,6 +1,6 @@
 import Foundation
 
-struct Post: Identifiable, Codable, Equatable {
+struct Post: Identifiable, Codable, Equatable, Hashable {
     let id: String
     let userId: String
     let username: String
@@ -21,7 +21,7 @@ struct Post: Identifiable, Codable, Equatable {
     let createdAt: String
 }
 
-struct PostPhoto: Identifiable, Codable, Equatable {
+struct PostPhoto: Identifiable, Codable, Equatable, Hashable {
     let id: String
     let postId: String
     let url: String

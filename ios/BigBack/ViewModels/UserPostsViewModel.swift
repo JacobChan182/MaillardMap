@@ -33,11 +33,32 @@ final class UserPostsViewModel: ObservableObject {
         }
     }
 
-    func likePost(postId: String) async {
+    @discardableResult
+    func likePost(postId: String) async -> Post? {
         do {
-            _ = try await api.likePost(postId: postId)
+            let liked = try await api.likePost(postId: postId)
+            if let idx = posts.firstIndex(where: { $0.id == postId }) {
+                var p = posts[idx]
+                p = Post(
+                    id: p.id, userId: p.userId, username: p.username,
+                    displayName: p.displayName, avatarUrl: p.avatarUrl,
+                    restaurantId: p.restaurantId, restaurantName: p.restaurantName,
+                    restaurantAddress: p.restaurantAddress,
+                    lat: p.lat, lng: p.lng, comment: p.comment,
+                    rating: p.rating,
+                    photos: p.photos, liked: liked,
+                    likeCount: liked ? p.likeCount + 1 : max(0, p.likeCount - 1),
+                    commentCount: p.commentCount,
+                    createdAt: p.createdAt
+                )
+                posts[idx] = p
+                errorMessage = nil
+                return p
+            }
+            errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
+        return nil
     }
 }

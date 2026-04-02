@@ -47,6 +47,7 @@
 		A911C2293FE84B1D8C2E6F0A /* RestaurantPostsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B822D33A4FC95E2B9D1C8A7F /* RestaurantPostsView.swift */; };
 		A922D33A4FE95F3C0E2D709B /* RestaurantPostsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C933E44B5AF0A1C2D3E4B8A0 /* RestaurantPostsViewModel.swift */; };
 		A1F2E3D4C5B6A798877665501 /* CommentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2E3D4C5B6A798877665500 /* CommentsView.swift */; };
+		E2B3C4D5E6F708192A3B4C5E /* PostDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2B3C4D5E6F708192A3B4C5D /* PostDetailView.swift */; };
 		A1F2E3D4C5B6A798877665503 /* CommentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2E3D4C5B6A798877665502 /* CommentsViewModel.swift */; };
 		B8C9D0E1F2A3B4C5D6E7F809 /* EditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C9D0E1F2A3B4C5D6E7F808 /* EditProfileView.swift */; };
 		C9D0E1F2A3B4C5D6E7F8090A /* ProfileAvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D0E1F2A3B4C5D6E7F80909 /* ProfileAvatarView.swift */; };
@@ -94,6 +95,7 @@
 		B822D33A4FC95E2B9D1C8A7F /* RestaurantPostsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantPostsView.swift; sourceTree = "<group>"; };
 		C933E44B5AF0A1C2D3E4B8A0 /* RestaurantPostsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantPostsViewModel.swift; sourceTree = "<group>"; };
 		A1F2E3D4C5B6A798877665500 /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsView.swift; sourceTree = "<group>"; };
+		E2B3C4D5E6F708192A3B4C5D /* PostDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostDetailView.swift; sourceTree = "<group>"; };
 		A1F2E3D4C5B6A798877665502 /* CommentsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsViewModel.swift; sourceTree = "<group>"; };
 		B8C9D0E1F2A3B4C5D6E7F808 /* EditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
 		C9D0E1F2A3B4C5D6E7F80909 /* ProfileAvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileAvatarView.swift; sourceTree = "<group>"; };
@@ -244,6 +246,7 @@
 				A1F2E3D4C5B6A798877665500 /* CommentsView.swift */,
 				AB35BFE6B4063F0029E007D3 /* CreatePostView.swift */,
 				5AE5455B22B5810BE63A2EA3 /* PostCardView.swift */,
+				E2B3C4D5E6F708192A3B4C5D /* PostDetailView.swift */,
 				B822D33A4FC95E2B9D1C8A7F /* RestaurantPostsView.swift */,
 				F2E1D0C9B8A7765544332211 /* StarRatingControl.swift */,
 				4A7A677FC0F94DA00838BC90 /* RestaurantPicker.swift */,
@@ -369,6 +372,7 @@
 				A168EE13974681D39D210BE0 /* MapViewModel.swift in Sources */,
 				573A205C42B48543DEF68F37 /* Post.swift in Sources */,
 				28728D36DC1BD33561601F70 /* PostCardView.swift in Sources */,
+				E2B3C4D5E6F708192A3B4C5E /* PostDetailView.swift in Sources */,
 				F2E1D0C9B8A7765544332212 /* StarRatingControl.swift in Sources */,
 				9AD79D1DC49173921A4189D6 /* Restaurant.swift in Sources */,
 				A911C2293FE84B1D8C2E6F0A /* RestaurantPostsView.swift in Sources */,

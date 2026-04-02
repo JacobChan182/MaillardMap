@@ -83,27 +83,26 @@ struct NotificationPostView: View {
     var body: some View {
         Group {
             if let post {
-                ScrollView {
-                    PostCardView(
-                        post: post,
-                        onLike: { id in await toggleLike(id: id) },
-                        onRestaurantTap: nil
-                    )
-                    .padding()
-                }
+                PostDetailView(
+                    post: post,
+                    onLike: { id in await toggleLike(id: id) },
+                    onRestaurantTap: nil
+                )
             } else if isLoading {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .navigationTitle("Post")
+                    .navigationBarTitleDisplayMode(.inline)
             } else {
                 ContentUnavailableView(
                     "Post unavailable",
                     systemImage: "doc.text",
                     description: Text(loadError ?? "You may not be able to see this post anymore.")
                 )
+                .navigationTitle("Post")
+                .navigationBarTitleDisplayMode(.inline)
             }
         }
-        .navigationTitle("Post")
-        .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
     }
 
@@ -119,8 +118,8 @@ struct NotificationPostView: View {
         }
     }
 
-    private func toggleLike(id: String) async {
-        guard var p = post else { return }
+    private func toggleLike(id: String) async -> Post? {
+        guard var p = post else { return nil }
         do {
             let liked = try await api.likePost(postId: id)
             p = Post(
@@ -136,7 +135,10 @@ struct NotificationPostView: View {
                 createdAt: p.createdAt
             )
             post = p
-        } catch {}
+            return p
+        } catch {
+            return nil
+        }
     }
 }
 

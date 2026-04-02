@@ -23,7 +23,8 @@ final class FeedViewModel: ObservableObject {
         }
     }
 
-    func likePost(postId: String) async {
+    @discardableResult
+    func likePost(postId: String) async -> Post? {
         do {
             let liked = try await api.likePost(postId: postId)
             if let idx = posts.firstIndex(where: { $0.id == postId }) {
@@ -41,10 +42,13 @@ final class FeedViewModel: ObservableObject {
                     createdAt: p.createdAt
                 )
                 posts[idx] = p
+                errorMessage = nil
+                return p
             }
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
         }
+        return nil
     }
 }
