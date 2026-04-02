@@ -7,6 +7,7 @@ type UserRow = {
   phone_or_email: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  bio: string | null;
   created_at: string;
 };
 
@@ -16,6 +17,7 @@ export type PublicUser = {
   phoneOrEmail?: string | null;
   displayName: string | null;
   avatarUrl: string | null;
+  bio: string | null;
   createdAt: string;
 };
 
@@ -25,6 +27,7 @@ function rowToPublic(r: UserRow, includeContact: boolean): PublicUser {
     username: r.username,
     displayName: r.display_name,
     avatarUrl: rewritePublicMediaUrl(r.avatar_url),
+    bio: r.bio,
     createdAt: r.created_at,
   };
   if (includeContact) {
@@ -44,7 +47,7 @@ export function isAvatarUrlFromOurStorage(url: string): boolean {
 export async function getUserById(id: string): Promise<PublicUser | null> {
   const pool = getPool();
   const res = await pool.query<UserRow>(
-    `select id, username, phone_or_email, display_name, avatar_url, created_at
+    `select id, username, phone_or_email, display_name, avatar_url, bio, created_at
      from users where id = $1`,
     [id],
   );
@@ -56,7 +59,7 @@ export async function getUserById(id: string): Promise<PublicUser | null> {
 export async function getUserByIdWithContact(id: string): Promise<PublicUser | null> {
   const pool = getPool();
   const res = await pool.query<UserRow>(
-    `select id, username, phone_or_email, display_name, avatar_url, created_at
+    `select id, username, phone_or_email, display_name, avatar_url, bio, created_at
      from users where id = $1`,
     [id],
   );
@@ -68,7 +71,7 @@ export async function getUserByIdWithContact(id: string): Promise<PublicUser | n
 export async function searchUsers(q: string): Promise<PublicUser[]> {
   const pool = getPool();
   const res = await pool.query<UserRow>(
-    `select id, username, phone_or_email, display_name, avatar_url, created_at
+    `select id, username, phone_or_email, display_name, avatar_url, bio, created_at
      from users
      where username ilike $1
      limit 30`,
@@ -79,7 +82,7 @@ export async function searchUsers(q: string): Promise<PublicUser[]> {
 
 export async function updateMyProfile(
   userId: string,
-  input: { displayName?: string | null; avatarUrl?: string | null },
+  input: { displayName?: string | null; avatarUrl?: string | null; bio?: string | null },
 ): Promise<{ ok: true; user: PublicUser } | { ok: false; status: number; code: string; message: string }> {
   const pool = getPool();
 
@@ -103,6 +106,22 @@ export async function updateMyProfile(
     return { ok: false, status: 400, code: 'INVALID_AVATAR_URL', message: 'avatarUrl must be from this app storage' };
   }
 
+  let normalizedBio: string | null | undefined;
+  if (input.bio !== undefined) {
+    if (input.bio === null) {
+      normalizedBio = null;
+    } else {
+      const b = input.bio.trim();
+      if (b.length === 0) {
+        normalizedBio = null;
+      } else if (b.length > 200) {
+        return { ok: false, status: 400, code: 'VALIDATION_ERROR', message: 'bio must be at most 200 characters' };
+      } else {
+        normalizedBio = b;
+      }
+    }
+  }
+
   const sets: string[] = [];
   const values: unknown[] = [];
   let i = 1;
@@ -114,6 +133,10 @@ export async function updateMyProfile(
   if (input.avatarUrl !== undefined) {
     sets.push(`avatar_url = $${i++}`);
     values.push(input.avatarUrl);
+  }
+  if (normalizedBio !== undefined) {
+    sets.push(`bio = $${i++}`);
+    values.push(normalizedBio);
   }
 
   if (sets.length === 0) {

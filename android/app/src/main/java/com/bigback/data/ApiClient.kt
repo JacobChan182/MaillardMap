@@ -47,7 +47,8 @@ data class BlendPayload(
 data class UserDTO(
     val id: String,
     val username: String,
-    @SerializedName("created_at") val createdAt: String? = null
+    @SerializedName("created_at") val createdAt: String? = null,
+    val bio: String? = null
 )
 
 data class AuthResponse(

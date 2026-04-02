@@ -14,6 +14,11 @@ struct UserPostsView: View {
         return n.isEmpty ? user.username : n
     }
 
+    private var navigationTagTitle: String {
+        if let u = vm.user { return "@\(u.username)" }
+        return "Profile"
+    }
+
     var body: some View {
         Group {
             if vm.isLoading {
@@ -28,13 +33,22 @@ struct UserPostsView: View {
                         }
                         if let user = vm.user {
                             let name = profileDisplayName(user)
+                            let bioText = user.bio?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                             VStack(spacing: 8) {
                                 ProfileAvatarView(url: user.avatarUrl, name: name, size: 64)
                                 Text(name)
                                     .font(.title3.weight(.semibold))
-                                Text("@\(user.username)")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                                if bioText.isEmpty {
+                                    Text("No bio yet")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.tertiary)
+                                } else {
+                                    Text(bioText)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                        .multilineTextAlignment(.center)
+                                        .frame(maxWidth: .infinity)
+                                }
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
@@ -61,6 +75,8 @@ struct UserPostsView: View {
                 .refreshable { await vm.loadPosts() }
             }
         }
+        .navigationTitle(navigationTagTitle)
+        .navigationBarTitleDisplayMode(.inline)
         .task { await vm.loadPosts() }
     }
 }

@@ -207,7 +207,6 @@ struct MoreTab: View {
 
                     NavigationLink {
                         UserPostsView(userId: auth.currentUser?.id ?? "")
-                            .navigationTitle("My Posts")
                     } label: {
                         Label("My Posts", systemImage: "doc.text.fill")
                     }

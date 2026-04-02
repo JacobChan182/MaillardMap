@@ -83,7 +83,7 @@ class Repository(
 }
 
 // -- DTO -> Domain mappers --
-private fun UserDTO.toUser() = User(id, username, createdAt)
+private fun UserDTO.toUser() = User(id, username, createdAt, bio)
 private fun FriendshipDTO.toFriendship() = Friendship(id, userId, friendId, friendUsername, status, createdAt, incomingPending)
 private fun PostDTO.toPost() = Post(
     id = id,

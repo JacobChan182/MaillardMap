@@ -5,6 +5,7 @@ export const userPublicSchema = z.object({
   username: z.string(),
   displayName: z.string().nullable(),
   avatarUrl: z.string().nullable(),
+  bio: z.string().nullable().optional(),
   createdAt: z.string(),
 });
 
@@ -21,11 +22,13 @@ export const patchMeSchema = z.preprocess(
     return {
       displayName: o.displayName ?? o.display_name,
       avatarUrl: o.avatarUrl ?? o.avatar_url,
+      bio: o.bio,
     };
   },
   z.object({
     displayName: optionalNullableString,
     avatarUrl: optionalNullableString,
+    bio: optionalNullableString,
   }),
 );
 

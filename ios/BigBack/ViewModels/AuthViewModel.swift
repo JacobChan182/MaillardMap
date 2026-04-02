@@ -27,6 +27,7 @@ final class AuthViewModel: ObservableObject {
                 phoneOrEmail: nil,
                 displayName: nil,
                 avatarUrl: nil,
+                bio: nil,
                 createdAt: nil
             )
         }

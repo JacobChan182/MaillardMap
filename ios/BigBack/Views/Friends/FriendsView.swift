@@ -111,7 +111,6 @@ struct FriendsView: View {
                 ForEach(vm.friends) { friendship in
                     NavigationLink {
                         UserPostsView(userId: friendship.friendId)
-                            .navigationTitle("Posts")
                     } label: {
                         HStack {
                             ProfileAvatarView(

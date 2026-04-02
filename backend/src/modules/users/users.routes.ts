@@ -26,9 +26,9 @@ usersRouter.get('/search', async (req, res) => {
 usersRouter.patch('/me', requireAuth, async (req, res) => {
   try {
     const input = patchMeSchema.parse(req.body);
-    if (input.displayName === undefined && input.avatarUrl === undefined) {
+    if (input.displayName === undefined && input.avatarUrl === undefined && input.bio === undefined) {
       return res.status(400).json({
-        error: { code: 'VALIDATION_ERROR', message: 'Provide displayName and/or avatarUrl' },
+        error: { code: 'VALIDATION_ERROR', message: 'Provide displayName, avatarUrl, and/or bio' },
       });
     }
     let displayName: string | null | undefined = input.displayName;
@@ -36,10 +36,16 @@ usersRouter.patch('/me', requireAuth, async (req, res) => {
       const t = displayName.trim();
       displayName = t.length === 0 ? null : t;
     }
+    let bio: string | null | undefined = input.bio;
+    if (bio !== undefined && bio !== null) {
+      const t = bio.trim();
+      bio = t.length === 0 ? null : t;
+    }
     const userId = (req as { userId: string }).userId;
     const result = await updateMyProfile(userId, {
       displayName,
       avatarUrl: input.avatarUrl,
+      bio,
     });
     if (!result.ok) {
       return res.status(result.status).json({ error: { code: result.code, message: result.message } });

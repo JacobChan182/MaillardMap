@@ -9,6 +9,7 @@ struct EditProfileView: View {
     private var api: APIClient { auth.api }
 
     @State private var displayName: String = ""
+    @State private var bio: String = ""
     /// Local avatar URL after successful upload, or existing profile URL.
     @State private var avatarPublicUrl: String?
     @State private var pickerItem: PhotosPickerItem?
@@ -48,6 +49,14 @@ struct EditProfileView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("Bio") {
+                TextField("Tell friends about you", text: $bio, axis: .vertical)
+                    .lineLimit(3 ... 8)
+                Text("\(bio.count)/200")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             if let errorMessage {
                 Section {
                     Text(errorMessage).foregroundStyle(.red)
@@ -76,9 +85,11 @@ struct EditProfileView: View {
         do {
             let u = try await api.getUser(id: id)
             displayName = u.displayName ?? ""
+            bio = u.bio ?? ""
             avatarPublicUrl = u.avatarUrl
         } catch {
             displayName = auth.currentUser?.displayName ?? ""
+            bio = auth.currentUser?.bio ?? ""
             avatarPublicUrl = auth.currentUser?.avatarUrl
         }
     }
@@ -112,11 +123,15 @@ struct EditProfileView: View {
 
     private func save() async {
         guard let _ = auth.currentUser?.id else { return }
+        guard bio.count <= 200 else {
+            errorMessage = "Bio must be 200 characters or less."
+            return
+        }
         isBusy = true
         errorMessage = nil
         defer { isBusy = false }
         do {
-            let u = try await api.updateMyProfile(displayName: displayName, avatarUrl: avatarPublicUrl)
+            let u = try await api.updateMyProfile(displayName: displayName, avatarUrl: avatarPublicUrl, bio: bio)
             auth.replaceCurrentUser(u)
             dismiss()
         } catch {

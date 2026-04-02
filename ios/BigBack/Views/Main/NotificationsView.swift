@@ -175,7 +175,6 @@ struct NotificationsView: View {
         case .friendAccept:
             NavigationLink {
                 UserPostsView(userId: item.actorId)
-                    .navigationTitle("Posts")
             } label: {
                 NotificationRow(item: item)
             }

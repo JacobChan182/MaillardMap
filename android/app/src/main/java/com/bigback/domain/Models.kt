@@ -3,7 +3,8 @@ package com.bigback.domain
 data class User(
     val id: String,
     val username: String,
-    val createdAt: String? = null
+    val createdAt: String? = null,
+    val bio: String? = null
 )
 
 enum class FriendshipStatus { accepted, pending }

@@ -11,6 +11,7 @@ type UserRow = {
   phone_or_email: string | null;
   display_name: string | null;
   avatar_url: string | null;
+  bio: string | null;
   password_hash: string;
   created_at: string;
 };
@@ -35,7 +36,7 @@ export async function signup(input: SignupInput) {
       `
         insert into users (username, password_hash, phone_or_email)
         values ($1, $2, $3)
-        returning id, username, phone_or_email, display_name, avatar_url, created_at, password_hash
+        returning id, username, phone_or_email, display_name, avatar_url, bio, created_at, password_hash
       `,
       [input.username, passwordHash, phoneOrEmail],
     );
@@ -55,6 +56,7 @@ export async function signup(input: SignupInput) {
         phoneOrEmail: user.phone_or_email,
         displayName: user.display_name,
         avatarUrl: rewritePublicMediaUrl(user.avatar_url),
+        bio: user.bio,
         createdAt: user.created_at,
       },
     };
@@ -74,7 +76,7 @@ export async function signup(input: SignupInput) {
 export async function login(input: LoginInput) {
   const pool = getPool();
   const res = await pool.query<UserRow>(
-    `select id, username, phone_or_email, display_name, avatar_url, password_hash, created_at
+    `select id, username, phone_or_email, display_name, avatar_url, bio, password_hash, created_at
      from users where username = $1 or phone_or_email = $1`,
     [input.username],
   );
@@ -104,6 +106,7 @@ export async function login(input: LoginInput) {
       phoneOrEmail: user.phone_or_email,
       displayName: user.display_name,
       avatarUrl: rewritePublicMediaUrl(user.avatar_url),
+      bio: user.bio,
       createdAt: user.created_at,
     },
   };

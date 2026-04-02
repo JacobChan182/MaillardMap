@@ -131,12 +131,14 @@ final class APIClient {
         return try decode([User].self, from: data)
     }
 
-    /// PATCH `users/me` — use empty `displayName` to clear; `avatarUrl` nil/empty clears photo (JSON `null`).
-    func updateMyProfile(displayName: String, avatarUrl: String?) async throws -> User {
+    /// PATCH `users/me` — empty strings clear; `avatarUrl` nil/empty clears photo (JSON `null`).
+    func updateMyProfile(displayName: String, avatarUrl: String?, bio: String) async throws -> User {
         guard let url = URL(string: "users/me", relativeTo: baseURL) else { throw APIError.invalidURL }
         let t = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let b = bio.trimmingCharacters(in: .whitespacesAndNewlines)
         var payload: [String: Any] = [
             "displayName": t.isEmpty ? NSNull() : t,
+            "bio": b.isEmpty ? NSNull() : b,
         ]
         if let u = avatarUrl, !u.isEmpty {
             payload["avatarUrl"] = u
