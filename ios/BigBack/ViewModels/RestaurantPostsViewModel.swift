@@ -43,6 +43,7 @@ final class RestaurantPostsViewModel: ObservableObject {
                     lat: p.lat, lng: p.lng, comment: p.comment,
                     photos: p.photos, liked: liked,
                     likeCount: liked ? p.likeCount + 1 : max(0, p.likeCount - 1),
+                    commentCount: p.commentCount,
                     createdAt: p.createdAt
                 )
                 posts[idx] = p

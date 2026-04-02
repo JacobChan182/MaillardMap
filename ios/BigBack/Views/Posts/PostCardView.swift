@@ -1,9 +1,58 @@
 import SwiftUI
 
+/// Parses post `createdAt` ISO8601 strings from the API (with or without fractional seconds).
+private func postCreatedDate(from iso: String) -> Date? {
+    let f = ISO8601DateFormatter()
+    f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    if let d = f.date(from: iso) { return d }
+    f.formatOptions = [.withInternetDateTime]
+    return f.date(from: iso)
+}
+
+/// Relative age for feed cards: days (<14), then weeks (<30 days), then months (<365 days), then years.
+private func relativePostAge(from postDate: Date, now: Date = Date()) -> String {
+    let cal = Calendar.current
+    let startPost = cal.startOfDay(for: postDate)
+    let startNow = cal.startOfDay(for: now)
+    guard let days = cal.dateComponents([.day], from: startPost, to: startNow).day else {
+        return ""
+    }
+    if days <= 0 {
+        return "Today"
+    }
+    if days < 14 {
+        return "\(days) \(days == 1 ? "day" : "days") ago"
+    }
+    if days < 30 {
+        let weeks = days / 7
+        return "\(weeks) \(weeks == 1 ? "week" : "weeks") ago"
+    }
+    if days < 365 {
+        let months = max(1, days / 30)
+        return "\(months) \(months == 1 ? "month" : "months") ago"
+    }
+    let years = max(1, days / 365)
+    return "\(years) \(years == 1 ? "year" : "years") ago"
+}
+
 struct PostCardView: View {
     let post: Post
     let onLike: (String) async -> Void
     var onRestaurantTap: (() -> Void)?
+
+    @State private var showComments = false
+
+    private var commentCountForDisplay: Int {
+        post.commentCount
+    }
+
+    private var likeCountLabel: String {
+        post.likeCount == 1 ? "1 Like" : "\(post.likeCount) Likes"
+    }
+
+    private var commentCountLabel: String {
+        commentCountForDisplay == 1 ? "1 Comment" : "\(commentCountForDisplay) Comments"
+    }
 
     init(post: Post, onLike: @escaping (String) async -> Void, onRestaurantTap: (() -> Void)? = nil) {
         self.post = post
@@ -57,21 +106,28 @@ struct PostCardView: View {
                     .lineLimit(3)
             }
 
-            HStack(spacing: 16) {
-                HStack(spacing: 6) {
-                    Label(post.liked ? "Liked" : "Like",
-                          systemImage: post.liked ? "heart.fill" : "heart")
-                        .foregroundStyle(post.liked ? .red : .secondary)
-                    Text("\(post.likeCount)")
+            HStack(alignment: .firstTextBaseline) {
+                HStack(spacing: 16) {
+                    HStack(spacing: 6) {
+                        Image(systemName: post.liked ? "heart.fill" : "heart")
+                            .foregroundStyle(post.liked ? .red : .secondary)
+                        Text(likeCountLabel)
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.caption)
+                    .onTapGesture { Task { await onLike(post.id) } }
+
+                    Text(commentCountLabel)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                }.onTapGesture { Task { await onLike(post.id) } }
-
-                if let date = ISO8601DateFormatter().date(from: post.createdAt) {
-                    Text(date.formatted(date: .abbreviated, time: .shortened))
+                        .onTapGesture { showComments = true }
+                }
+                Spacer(minLength: 8)
+                if let created = postCreatedDate(from: post.createdAt) {
+                    Text(relativePostAge(from: created))
                         .font(.caption)
                         .foregroundStyle(.tertiary)
-                    Spacer()
+                        .multilineTextAlignment(.trailing)
                 }
             }
         }
@@ -79,5 +135,13 @@ struct PostCardView: View {
         .background(Color(uiColor: .systemBackground))
         .cornerRadius(12)
         .shadow(radius: 2)
+        .sheet(isPresented: $showComments) {
+            NavigationStack {
+                CommentsView(postId: post.id)
+                    .navigationTitle("Comments")
+                    .navigationBarTitleDisplayMode(NavigationBarItem.TitleDisplayMode.inline)
+            }
+            .presentationDetents([.medium, .large])
+        }
     }
 }

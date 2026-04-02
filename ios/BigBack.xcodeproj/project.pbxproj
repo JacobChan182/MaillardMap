@@ -40,6 +40,8 @@
 		FFCA0913430E550FC56EB692 /* Blend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AEA0271F1C2F1CCF528237B /* Blend.swift */; };
 		A911C2293FE84B1D8C2E6F0A /* RestaurantPostsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B822D33A4FC95E2B9D1C8A7F /* RestaurantPostsView.swift */; };
 		A922D33A4FE95F3C0E2D709B /* RestaurantPostsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C933E44B5AF0A1C2D3E4B8A0 /* RestaurantPostsViewModel.swift */; };
+		A1F2E3D4C5B6A798877665501 /* CommentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2E3D4C5B6A798877665500 /* CommentsView.swift */; };
+		A1F2E3D4C5B6A798877665503 /* CommentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2E3D4C5B6A798877665502 /* CommentsViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -77,6 +79,8 @@
 		FFCEEB05F3D4F9E7B4BD6335 /* BigBack.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BigBack.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B822D33A4FC95E2B9D1C8A7F /* RestaurantPostsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantPostsView.swift; sourceTree = "<group>"; };
 		C933E44B5AF0A1C2D3E4B8A0 /* RestaurantPostsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantPostsViewModel.swift; sourceTree = "<group>"; };
+		A1F2E3D4C5B6A798877665500 /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsView.swift; sourceTree = "<group>"; };
+		A1F2E3D4C5B6A798877665502 /* CommentsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsViewModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -155,6 +159,7 @@
 			children = (
 				28834C88D12ECD0A6EF224DD /* AuthViewModel.swift */,
 				FF4F168D7A9221A469CC6FA1 /* BlendViewModel.swift */,
+				A1F2E3D4C5B6A798877665502 /* CommentsViewModel.swift */,
 				41310478D1B7C47522772A89 /* CreatePostViewModel.swift */,
 				099607FB36423A20A5355EF4 /* FeedViewModel.swift */,
 				5927FF9CA847F50EA7AE0821 /* FriendsViewModel.swift */,
@@ -211,6 +216,7 @@
 		B7782D342E44512CE5976E9F /* Posts */ = {
 			isa = PBXGroup;
 			children = (
+				A1F2E3D4C5B6A798877665500 /* CommentsView.swift */,
 				AB35BFE6B4063F0029E007D3 /* CreatePostView.swift */,
 				5AE5455B22B5810BE63A2EA3 /* PostCardView.swift */,
 				B822D33A4FC95E2B9D1C8A7F /* RestaurantPostsView.swift */,
@@ -306,6 +312,8 @@
 				FFCA0913430E550FC56EB692 /* Blend.swift in Sources */,
 				B641E4EE01A1F849681A621F /* BlendView.swift in Sources */,
 				3477C61B5E24372233439515 /* BlendViewModel.swift in Sources */,
+				A1F2E3D4C5B6A798877665501 /* CommentsView.swift in Sources */,
+				A1F2E3D4C5B6A798877665503 /* CommentsViewModel.swift in Sources */,
 				8D91D94E89D16EAD687BFA36 /* CreatePostView.swift in Sources */,
 				8E18A4730E0BD2A4F2F21753 /* CreatePostViewModel.swift in Sources */,
 				1759D4B330CEF8B7CEB54CCE /* FeedViewModel.swift in Sources */,

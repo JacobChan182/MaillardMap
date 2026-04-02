@@ -73,7 +73,7 @@ struct BigBackMapView: View {
                         .buttonStyle(.plain)
                         .accessibilityLabel("Posts at \(c.name)")
                         // Keep the pin (centered on this coordinate) clear: space below the card ≈ half a title mappin + shadow.
-                        .padding(.bottom, 44)
+                        .padding(.bottom, 38)
                     }
                 }
             }

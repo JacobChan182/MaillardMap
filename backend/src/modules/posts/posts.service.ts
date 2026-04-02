@@ -21,6 +21,7 @@ type PostData = {
   photos: { id: string; postId: string; url: string; orderIndex: number }[];
   liked: boolean;
   likeCount: number;
+  commentCount: number;
   createdAt: string;
 };
 
@@ -120,6 +121,7 @@ export async function queryPosts(
        r.lat as restaurant_lat,
        r.lng as restaurant_lng,
        p.comment,
+       p.comment_count,
        p.created_at
      from posts p
      join users u on u.id = p.user_id
@@ -182,6 +184,7 @@ export async function queryPosts(
       photos: photosByPost.get(row.post_id) || [],
       liked: likedSet.has(row.post_id),
       likeCount: likeCounts.get(row.post_id) || 0,
+      commentCount: row.comment_count || 0,
       createdAt: row.created_at,
     });
   }
@@ -244,4 +247,57 @@ export async function toggleLike(userId: string, postId: string): Promise<boolea
     }
     throw e;
   }
+}
+
+// ─── Comments ───────────────────────────────────────────────────────
+
+type CommentRow = {
+  id: string;
+  user_id: string;
+  username: string;
+  text: string;
+  created_at: string;
+};
+
+/**
+ * Get all comments for a post, ordered oldest first.
+ */
+export async function getCommentsByPost(postId: string): Promise<
+  { id: string; userId: string; username: string; text: string; createdAt: string }[]
+> {
+  const pool = getPool();
+  const res = await pool.query<CommentRow>(
+    `select c.id, c.user_id, c.text, c.created_at, u.username
+     from comments c
+     join users u on u.id = c.user_id
+     where c.post_id = $1
+     order by c.created_at asc`,
+    [postId],
+  );
+  return res.rows.map((r) => ({
+    id: r.id,
+    userId: r.user_id,
+    username: r.username,
+    text: r.text,
+    createdAt: r.created_at,
+  }));
+}
+
+/**
+ * Add a comment to a post. Returns the new comment.
+ */
+export async function addComment(userId: string, postId: string, text: string) {
+  const pool = getPool();
+  const commentRes = await pool.query(
+    `insert into comments (user_id, post_id, text) values ($1, $2, $3) returning id`,
+    [userId, postId, text],
+  );
+  const commentId = commentRes.rows[0].id;
+
+  // Increment post's comment_count so feed cards show live count
+  await pool.query(`update posts set comment_count = comment_count + 1 where id = $1`, [postId]);
+
+  // Re-fetch to return username
+  const comments = await getCommentsByPost(postId);
+  return comments.find((c) => c.id === commentId)!;
 }

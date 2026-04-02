@@ -17,7 +17,7 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     private var calloutDismissRegionAnchor: MKCoordinateRegion?
     /// After `focusRestaurantFromPost`, MapKit emits `onMapCameraChange` ends that don’t numerically match our anchor; skip dismissing for a few events so the white card can appear.
     private var calloutDismissSkipCameraEndsRemaining = 0
-    /// When the user moves the map off the callout anchor, dismiss the card after a short beat (debounced per gesture end).
+    /// When the user moves the map off the callout anchor, dismiss the card after 0.1s (debounced per gesture end).
     private var calloutDelayedDismissTask: Task<Void, Never>?
     @Published var showHeatmap = true
     @Published var isLoading = false
@@ -219,7 +219,7 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         guard let rid = restaurantCallout?.restaurantId else { return }
         calloutDelayedDismissTask?.cancel()
         calloutDelayedDismissTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 500_000_000)
+            try? await Task.sleep(nanoseconds: 100_000_000)
             guard !Task.isCancelled else { return }
             guard let c = restaurantCallout, c.restaurantId == rid else { return }
             // #region agent log

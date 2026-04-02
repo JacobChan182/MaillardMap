@@ -187,6 +187,19 @@ final class APIClient {
         return try decode(Resp.self, from: data).liked
     }
 
+    func getComments(postId: String) async throws -> [Comment] {
+        struct Resp: Decodable { let comments: [Comment] }
+        let data = try await request("posts/\(postId)/comments")
+        return try decode(Resp.self, from: data).comments
+    }
+
+    func addComment(postId: String, text: String) async throws -> Comment {
+        struct Body: Encodable { let text: String }
+        struct Resp: Decodable { let comment: Comment }
+        let data = try await request("posts/\(postId)/comments", method: "POST", body: Body(text: text))
+        return try decode(Resp.self, from: data).comment
+    }
+
     // MARK: - Saved Places
 
     func savePlace(restaurantId: String) async throws -> SavedPlace {

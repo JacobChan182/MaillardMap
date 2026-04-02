@@ -2,7 +2,15 @@ import { Router } from 'express';
 import { ZodError } from 'zod';
 import { optionalAuth, requireAuth } from '../../middleware/auth.js';
 import { createPostSchema } from './posts.schemas.js';
-import { createPost, getFeed, getFeedPostsByRestaurant, getPostsByUser, toggleLike } from './posts.service.js';
+import {
+  addComment,
+  createPost,
+  getCommentsByPost,
+  getFeed,
+  getFeedPostsByRestaurant,
+  getPostsByUser,
+  toggleLike,
+} from './posts.service.js';
 import { getRestaurantByFoursquareId } from '../restaurants/restaurants.service.js';
 
 export const postsRouter = Router();
@@ -69,6 +77,35 @@ postsRouter.post('/:id/like', requireAuth, async (req, res) => {
     const liked = await toggleLike((req as any).userId, req.params.id);
     return res.json({ ok: true, liked });
   } catch {
+    return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
+  }
+});
+
+postsRouter.get('/:id/comments', requireAuth, async (req, res) => {
+  try {
+    const comments = await getCommentsByPost(req.params.id);
+    return res.json({ comments });
+  } catch {
+    return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
+  }
+});
+
+postsRouter.post('/:id/comments', requireAuth, async (req, res) => {
+  try {
+    const { text } = req.body as { text?: string };
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'text is required' } });
+    }
+    const comment = await addComment((req as any).userId, req.params.id, text.trim());
+    return res.status(201).json({ comment });
+  } catch (err) {
+    const zErr = err as { code?: string; message?: string };
+    if (zErr.code === '23503') {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Post not found' } });
+    }
+    if (zErr.code === '23514') {
+      return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Comment text is invalid' } });
+    }
     return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
   }
 });

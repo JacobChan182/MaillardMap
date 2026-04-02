@@ -13,6 +13,7 @@ struct Post: Identifiable, Codable, Equatable {
     let photos: [PostPhoto]
     let liked: Bool
     let likeCount: Int
+    let commentCount: Int
     let createdAt: String
 }
 
@@ -21,6 +22,14 @@ struct PostPhoto: Identifiable, Codable, Equatable {
     let postId: String
     let url: String
     let orderIndex: Int
+}
+
+struct Comment: Identifiable, Codable, Equatable {
+    let id: String
+    let userId: String
+    let username: String
+    let text: String
+    let createdAt: String
 }
 
 struct CreatePostRequest: Codable {
