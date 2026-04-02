@@ -9,7 +9,7 @@ import {
   getFeed,
   getFeedPostsByRestaurant,
   getPostByIdForViewer,
-  getPostsByUser,
+  getPostsByUserForProfile,
   getRestaurantPostRatingSummary,
   toggleLike,
 } from './posts.service.js';
@@ -71,9 +71,9 @@ postsRouter.get('/restaurant/:restaurantId', requireAuth, async (req, res) => {
 
 postsRouter.get('/user/:id', optionalAuth, async (req, res) => {
   try {
-    const likerId = (req as any).userId as string | undefined;
-    const posts = await getPostsByUser(req.params.id, likerId ?? '');
-    return res.json({ posts });
+    const viewerId = (req as any).userId as string | undefined;
+    const result = await getPostsByUserForProfile(req.params.id, viewerId ?? null);
+    return res.json({ posts: result.posts, postsHidden: result.postsHidden });
   } catch {
     return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
   }

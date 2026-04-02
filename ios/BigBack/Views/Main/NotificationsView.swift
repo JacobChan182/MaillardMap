@@ -53,26 +53,23 @@ private func notificationBody(_ item: AppNotification) -> some View {
     .multilineTextAlignment(.leading)
 }
 
-private func notificationAvatar(_ item: AppNotification) -> some View {
-    ProfileAvatarLink(
-        userId: item.actorId,
-        url: item.actorAvatarUrl,
-        name: actorTitle(item),
-        size: 44
-    )
-}
-
-/// Non-interactive row (avatar + body).
-private struct NotificationRow: View {
+/// Non-interactive row (avatar supplied by caller; avoids `NavigationLink` chevrons in lists).
+private struct NotificationRow<A: View>: View {
     let item: AppNotification
+    @ViewBuilder var avatar: () -> A
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            notificationAvatar(item)
+            avatar()
             notificationBody(item)
         }
         .padding(.vertical, 4)
     }
+}
+
+private enum NotificationNav: Hashable {
+    case userProfile(String)
+    case post(String)
 }
 
 struct NotificationPostView: View {
@@ -147,6 +144,7 @@ struct NotificationsView: View {
     @EnvironmentObject private var mapVM: MapViewModel
     @EnvironmentObject private var tabRouter: TabRouter
     @StateObject private var vm = NotificationsViewModel()
+    @State private var notificationNav: NotificationNav?
 
     var body: some View {
         Group {
@@ -167,8 +165,29 @@ struct NotificationsView: View {
         }
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(item: $notificationNav) { dest in
+            switch dest {
+            case .userProfile(let id):
+                UserPostsView(userId: id)
+            case .post(let id):
+                NotificationPostView(postId: id)
+            }
+        }
         .refreshable { await vm.load() }
         .task { await vm.load() }
+    }
+
+    private func notificationActorAvatar(_ item: AppNotification) -> some View {
+        Button {
+            notificationNav = .userProfile(item.actorId)
+        } label: {
+            ProfileAvatarView(
+                url: item.actorAvatarUrl,
+                name: actorTitle(item),
+                size: 44
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -176,7 +195,9 @@ struct NotificationsView: View {
         switch item.type {
         case .friendRequest:
             VStack(alignment: .leading, spacing: 8) {
-                NotificationRow(item: item)
+                NotificationRow(item: item) {
+                    notificationActorAvatar(item)
+                }
                 Button {
                     Task { await vm.acceptFriendRequest(actorId: item.actorId) }
                 } label: {
@@ -189,9 +210,9 @@ struct NotificationsView: View {
             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
         case .friendAccept:
             HStack(alignment: .top, spacing: 12) {
-                notificationAvatar(item)
-                NavigationLink {
-                    UserPostsView(userId: item.actorId)
+                notificationActorAvatar(item)
+                Button {
+                    notificationNav = .userProfile(item.actorId)
                 } label: {
                     notificationBody(item)
                         .contentShape(Rectangle())
@@ -202,7 +223,7 @@ struct NotificationsView: View {
         case .restaurantShare:
             if let rid = item.restaurantId, !rid.isEmpty {
                 HStack(alignment: .top, spacing: 12) {
-                    notificationAvatar(item)
+                    notificationActorAvatar(item)
                     Button {
                         Task {
                             let ok = await mapVM.focusRestaurantFromShare(restaurantId: rid)
@@ -216,14 +237,16 @@ struct NotificationsView: View {
                 }
                 .padding(.vertical, 4)
             } else {
-                NotificationRow(item: item)
+                NotificationRow(item: item) {
+                    notificationActorAvatar(item)
+                }
             }
         default:
             if let pid = item.postId {
                 HStack(alignment: .top, spacing: 12) {
-                    notificationAvatar(item)
-                    NavigationLink {
-                        NotificationPostView(postId: pid)
+                    notificationActorAvatar(item)
+                    Button {
+                        notificationNav = .post(pid)
                     } label: {
                         notificationBody(item)
                             .contentShape(Rectangle())
@@ -232,7 +255,9 @@ struct NotificationsView: View {
                 }
                 .padding(.vertical, 4)
             } else {
-                NotificationRow(item: item)
+                NotificationRow(item: item) {
+                    notificationActorAvatar(item)
+                }
             }
         }
     }

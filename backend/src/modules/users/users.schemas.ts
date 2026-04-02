@@ -7,6 +7,7 @@ export const userPublicSchema = z.object({
   avatarUrl: z.string().nullable(),
   bio: z.string().nullable().optional(),
   createdAt: z.string(),
+  profilePrivate: z.boolean().optional(),
 });
 
 export type UserPublic = z.infer<typeof userPublicSchema>;
@@ -23,12 +24,14 @@ export const patchMeSchema = z.preprocess(
       displayName: o.displayName ?? o.display_name,
       avatarUrl: o.avatarUrl ?? o.avatar_url,
       bio: o.bio,
+      profilePrivate: o.profilePrivate ?? o.profile_private,
     };
   },
   z.object({
     displayName: optionalNullableString,
     avatarUrl: optionalNullableString,
     bio: optionalNullableString,
+    profilePrivate: z.boolean().optional(),
   }),
 );
 

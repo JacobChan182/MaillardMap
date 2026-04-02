@@ -10,16 +10,32 @@ final class FriendsViewModel: ObservableObject {
     /// Filters the accepted friends list (username / display name).
     @Published var friendsListSearch = ""
     @Published var errorMessage: String?
-    @Published var isLoading = false
+    /// Find Friends `users/search` failure only (not cleared by `loadFriends`).
+    @Published var findFriendsSearchError: String?
+    /// Loading the friends/pending/sent lists (not the username search).
+    @Published var isLoadingFriends = false
+    /// In-flight `users/search` request.
+    @Published var isSearchingUsers = false
 
     /// Excludes self from Find Friends results when set.
     var currentUserId: String?
 
     private var lastRawSearchResults: [User] = []
 
+    /// Normalized text used for `users/search` (trim + drop leading `@`).
+    var trimmedFindFriendsQuery: String {
+        let t = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        if t.hasPrefix("@") {
+            return String(t.dropFirst()).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return t
+    }
+
+    private var trimmedSearchQuery: String { trimmedFindFriendsQuery }
+
     /// Find Friends query returned users, but all are already friends, pending, or you.
     var findFriendsAllExcluded: Bool {
-        !searchQuery.isEmpty && !lastRawSearchResults.isEmpty && searchResults.isEmpty && !isLoading
+        !trimmedSearchQuery.isEmpty && !lastRawSearchResults.isEmpty && searchResults.isEmpty && !isSearchingUsers
     }
 
     private let api: APIClient
@@ -56,7 +72,7 @@ final class FriendsViewModel: ObservableObject {
 
     /// Re-filter Find Friends after friendship lists or `currentUserId` change (no new network call).
     func reapplyFindFriendsSearchFilter() {
-        if searchQuery.isEmpty {
+        if trimmedSearchQuery.isEmpty {
             searchResults = []
             lastRawSearchResults = []
         } else {
@@ -65,8 +81,8 @@ final class FriendsViewModel: ObservableObject {
     }
 
     func loadFriends() async {
-        isLoading = true
-        defer { isLoading = false }
+        isLoadingFriends = true
+        defer { isLoadingFriends = false }
         do {
             let list = try await api.getFriendsList()
             friends = list.filter { $0.status == "accepted" }
@@ -80,20 +96,24 @@ final class FriendsViewModel: ObservableObject {
     }
 
     func searchUsers() async {
-        guard !searchQuery.isEmpty else {
+        let q = trimmedSearchQuery
+        guard !q.isEmpty else {
             searchResults = []
             lastRawSearchResults = []
+            findFriendsSearchError = nil
             return
         }
-        isLoading = true
+        isSearchingUsers = true
+        defer { isSearchingUsers = false }
         do {
-            lastRawSearchResults = try await api.searchUsers(query: searchQuery)
+            lastRawSearchResults = try await api.searchUsers(query: q)
             searchResults = applyFindFriendsFilter(lastRawSearchResults)
-            errorMessage = nil
+            findFriendsSearchError = nil
         } catch {
-            errorMessage = error.localizedDescription
+            findFriendsSearchError = error.localizedDescription
+            lastRawSearchResults = []
+            searchResults = []
         }
-        isLoading = false
     }
 
     func sendFriendRequest(userId: String) async {

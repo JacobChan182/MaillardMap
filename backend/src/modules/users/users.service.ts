@@ -9,6 +9,7 @@ type UserRow = {
   avatar_url: string | null;
   bio: string | null;
   created_at: string;
+  profile_private: boolean;
 };
 
 export type PublicUser = {
@@ -19,6 +20,7 @@ export type PublicUser = {
   avatarUrl: string | null;
   bio: string | null;
   createdAt: string;
+  profilePrivate: boolean;
 };
 
 function rowToPublic(r: UserRow, includeContact: boolean): PublicUser {
@@ -29,6 +31,7 @@ function rowToPublic(r: UserRow, includeContact: boolean): PublicUser {
     avatarUrl: rewritePublicMediaUrl(r.avatar_url),
     bio: r.bio,
     createdAt: r.created_at,
+    profilePrivate: r.profile_private,
   };
   if (includeContact) {
     base.phoneOrEmail = r.phone_or_email;
@@ -47,7 +50,7 @@ export function isAvatarUrlFromOurStorage(url: string): boolean {
 export async function getUserById(id: string): Promise<PublicUser | null> {
   const pool = getPool();
   const res = await pool.query<UserRow>(
-    `select id, username, phone_or_email, display_name, avatar_url, bio, created_at
+    `select id, username, phone_or_email, display_name, avatar_url, bio, created_at, profile_private
      from users where id = $1`,
     [id],
   );
@@ -59,7 +62,7 @@ export async function getUserById(id: string): Promise<PublicUser | null> {
 export async function getUserByIdWithContact(id: string): Promise<PublicUser | null> {
   const pool = getPool();
   const res = await pool.query<UserRow>(
-    `select id, username, phone_or_email, display_name, avatar_url, bio, created_at
+    `select id, username, phone_or_email, display_name, avatar_url, bio, created_at, profile_private
      from users where id = $1`,
     [id],
   );
@@ -70,19 +73,27 @@ export async function getUserByIdWithContact(id: string): Promise<PublicUser | n
 
 export async function searchUsers(q: string): Promise<PublicUser[]> {
   const pool = getPool();
+  let term = q.trim();
+  if (term.startsWith('@')) term = term.slice(1).trim();
+  if (term.length === 0) return [];
   const res = await pool.query<UserRow>(
-    `select id, username, phone_or_email, display_name, avatar_url, bio, created_at
+    `select id, username, phone_or_email, display_name, avatar_url, bio, created_at, profile_private
      from users
      where username ilike $1
      limit 30`,
-    [`%${q}%`],
+    [`%${term}%`],
   );
   return res.rows.map((r) => rowToPublic(r, false));
 }
 
 export async function updateMyProfile(
   userId: string,
-  input: { displayName?: string | null; avatarUrl?: string | null; bio?: string | null },
+  input: {
+    displayName?: string | null;
+    avatarUrl?: string | null;
+    bio?: string | null;
+    profilePrivate?: boolean;
+  },
 ): Promise<{ ok: true; user: PublicUser } | { ok: false; status: number; code: string; message: string }> {
   const pool = getPool();
 
@@ -137,6 +148,10 @@ export async function updateMyProfile(
   if (normalizedBio !== undefined) {
     sets.push(`bio = $${i++}`);
     values.push(normalizedBio);
+  }
+  if (input.profilePrivate !== undefined) {
+    sets.push(`profile_private = $${i++}`);
+    values.push(input.profilePrivate);
   }
 
   if (sets.length === 0) {

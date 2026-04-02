@@ -1,4 +1,5 @@
 import type { Pool } from 'pg';
+import { areMutualFriends } from '../friends/friends.service.js';
 import { getPool } from '../../db/pool.js';
 import { rewritePublicMediaUrl } from '../../services/s3.js';
 
@@ -283,11 +284,38 @@ export async function getRestaurantPostRatingSummary(
 }
 
 /**
- * Get all posts by a specific user.
+ * Posts on a user's profile. When `profile_private` is on, only that user and accepted friends see posts.
  */
-export async function getPostsByUser(targetUserId: string, likerId: string): Promise<PostData[]> {
+export async function getPostsByUserForProfile(
+  targetUserId: string,
+  viewerId: string | null,
+): Promise<{ posts: PostData[]; postsHidden: boolean }> {
+  if (!isUuid(targetUserId)) {
+    return { posts: [], postsHidden: false };
+  }
   const pool = getPool();
-  return queryPosts(pool, [targetUserId], likerId);
+  const ures = await pool.query<{ profile_private: boolean }>(
+    'select profile_private from users where id = $1',
+    [targetUserId],
+  );
+  const urow = ures.rows[0];
+  if (!urow) {
+    return { posts: [], postsHidden: false };
+  }
+
+  const likerForQuery = viewerId ?? '';
+  const canSeePosts =
+    !urow.profile_private ||
+    (viewerId != null &&
+      viewerId !== '' &&
+      (viewerId === targetUserId || (await areMutualFriends(viewerId, targetUserId))));
+
+  if (!canSeePosts) {
+    return { posts: [], postsHidden: true };
+  }
+
+  const posts = await queryPosts(pool, [targetUserId], likerForQuery);
+  return { posts, postsHidden: false };
 }
 
 /**

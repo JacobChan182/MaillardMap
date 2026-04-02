@@ -48,7 +48,8 @@ data class UserDTO(
     val id: String,
     val username: String,
     @SerializedName("created_at") val createdAt: String? = null,
-    val bio: String? = null
+    val bio: String? = null,
+    val profilePrivate: Boolean? = null
 )
 
 data class AuthResponse(
@@ -138,7 +139,8 @@ data class HealthDTO(
 
 // Wrapper for paginated responses
 data class PostsListResponse(
-    val posts: List<PostDTO> = emptyList()
+    val posts: List<PostDTO> = emptyList(),
+    val postsHidden: Boolean? = null
 )
 
 data class SavedPlacesResponse(

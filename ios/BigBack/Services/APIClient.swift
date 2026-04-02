@@ -132,13 +132,14 @@ final class APIClient {
     }
 
     /// PATCH `users/me` — empty strings clear; `avatarUrl` nil/empty clears photo (JSON `null`).
-    func updateMyProfile(displayName: String, avatarUrl: String?, bio: String) async throws -> User {
+    func updateMyProfile(displayName: String, avatarUrl: String?, bio: String, profilePrivate: Bool) async throws -> User {
         guard let url = URL(string: "users/me", relativeTo: baseURL) else { throw APIError.invalidURL }
         let t = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         let b = bio.trimmingCharacters(in: .whitespacesAndNewlines)
         var payload: [String: Any] = [
             "displayName": t.isEmpty ? NSNull() : t,
             "bio": b.isEmpty ? NSNull() : b,
+            "profilePrivate": profilePrivate,
         ]
         if let u = avatarUrl, !u.isEmpty {
             payload["avatarUrl"] = u
@@ -243,10 +244,14 @@ final class APIClient {
         return try decode(Resp.self, from: data).post
     }
 
-    func getUserPosts(userId: String) async throws -> [Post] {
-        struct Resp: Decodable { var posts: [Post] }
+    func getUserPosts(userId: String) async throws -> (posts: [Post], postsHidden: Bool) {
+        struct Resp: Decodable {
+            var posts: [Post]
+            var postsHidden: Bool?
+        }
         let data = try await request("posts/user/\(userId)")
-        return try decode(Resp.self, from: data).posts
+        let r = try decode(Resp.self, from: data)
+        return (r.posts, r.postsHidden ?? false)
     }
 
     /// Posts at this restaurant from you + friends (same scope as the feed), plus aggregate rating stats.

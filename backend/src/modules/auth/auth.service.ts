@@ -14,6 +14,7 @@ type UserRow = {
   bio: string | null;
   password_hash: string;
   created_at: string;
+  profile_private: boolean;
 };
 
 function getJwtSecret(): string {
@@ -36,7 +37,7 @@ export async function signup(input: SignupInput) {
       `
         insert into users (username, password_hash, phone_or_email)
         values ($1, $2, $3)
-        returning id, username, phone_or_email, display_name, avatar_url, bio, created_at, password_hash
+        returning id, username, phone_or_email, display_name, avatar_url, bio, created_at, password_hash, profile_private
       `,
       [input.username, passwordHash, phoneOrEmail],
     );
@@ -58,6 +59,7 @@ export async function signup(input: SignupInput) {
         avatarUrl: rewritePublicMediaUrl(user.avatar_url),
         bio: user.bio,
         createdAt: user.created_at,
+        profilePrivate: user.profile_private,
       },
     };
   } catch (e) {
@@ -76,7 +78,7 @@ export async function signup(input: SignupInput) {
 export async function login(input: LoginInput) {
   const pool = getPool();
   const res = await pool.query<UserRow>(
-    `select id, username, phone_or_email, display_name, avatar_url, bio, password_hash, created_at
+    `select id, username, phone_or_email, display_name, avatar_url, bio, password_hash, created_at, profile_private
      from users where username = $1 or phone_or_email = $1`,
     [input.username],
   );
@@ -108,6 +110,7 @@ export async function login(input: LoginInput) {
       avatarUrl: rewritePublicMediaUrl(user.avatar_url),
       bio: user.bio,
       createdAt: user.created_at,
+      profilePrivate: user.profile_private,
     },
   };
 }

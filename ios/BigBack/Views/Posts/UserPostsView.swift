@@ -66,7 +66,15 @@ struct UserPostsView: View {
                                 }
                             )
                         }
-                        if vm.posts.isEmpty {
+                        if vm.postsHidden {
+                            ContentUnavailableView(
+                                "Private profile",
+                                systemImage: "lock.fill",
+                                description: Text(
+                                    "Only friends can see \(vm.user.map { profileDisplayName($0) } ?? "this user")'s posts."
+                                )
+                            )
+                        } else if vm.posts.isEmpty {
                             ContentUnavailableView(
                                 "No posts yet",
                                 systemImage: "doc.text"

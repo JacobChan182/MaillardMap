@@ -3,6 +3,8 @@ import Foundation
 @MainActor
 final class UserPostsViewModel: ObservableObject {
     @Published var posts: [Post] = []
+    /// Server withheld posts (private profile, viewer not a friend).
+    @Published var postsHidden = false
     @Published var errorMessage: String?
     @Published var isLoading = false
     @Published var user: User?
@@ -19,8 +21,13 @@ final class UserPostsViewModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
-            posts = try await api.getUserPosts(userId: userId)
-            user = try await api.getUser(id: userId)
+            async let userTask = api.getUser(id: userId)
+            async let postsTask = api.getUserPosts(userId: userId)
+            let loadedUser = try await userTask
+            let (loadedPosts, hidden) = try await postsTask
+            user = loadedUser
+            posts = loadedPosts
+            postsHidden = hidden
         } catch {
             errorMessage = error.localizedDescription
         }

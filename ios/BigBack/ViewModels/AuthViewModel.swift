@@ -28,7 +28,8 @@ final class AuthViewModel: ObservableObject {
                 displayName: nil,
                 avatarUrl: nil,
                 bio: nil,
-                createdAt: nil
+                createdAt: nil,
+                profilePrivate: nil
             )
         }
     }

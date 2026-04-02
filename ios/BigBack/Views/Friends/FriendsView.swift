@@ -28,11 +28,15 @@ struct FriendsView: View {
                         Task { await vm.searchUsers() }
                     }
 
-                if vm.searchQuery.isEmpty {
+                if vm.trimmedFindFriendsQuery.isEmpty {
                     Text("Type a username to search")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                } else if vm.searchResults.isEmpty && !vm.isLoading {
+                } else if let err = vm.findFriendsSearchError, !err.isEmpty, vm.searchResults.isEmpty, !vm.isSearchingUsers {
+                    Text(err)
+                        .font(.subheadline)
+                        .foregroundStyle(.red)
+                } else if vm.searchResults.isEmpty && !vm.isSearchingUsers {
                     Text(vm.findFriendsAllExcluded
                          ? "Everyone matching is already a friend or has a pending request"
                          : "No users match")
@@ -193,7 +197,7 @@ struct FriendsView: View {
             vm.reapplyFindFriendsSearchFilter()
         }
         .overlay {
-            if vm.isLoading && !vm.searchQuery.isEmpty {
+            if vm.isSearchingUsers && !vm.trimmedFindFriendsQuery.isEmpty {
                 ProgressView()
             }
         }

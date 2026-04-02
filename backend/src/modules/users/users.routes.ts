@@ -12,7 +12,7 @@ usersRouter.get('/search', async (req, res) => {
     if (typeof q !== 'string' || q.length === 0) {
       return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'q parameter is required' } });
     }
-    const results = await searchUsers(q);
+    const results = await searchUsers(q.trim());
     return res.json(results);
   } catch (err) {
     if (err instanceof ZodError) {
@@ -26,9 +26,17 @@ usersRouter.get('/search', async (req, res) => {
 usersRouter.patch('/me', requireAuth, async (req, res) => {
   try {
     const input = patchMeSchema.parse(req.body);
-    if (input.displayName === undefined && input.avatarUrl === undefined && input.bio === undefined) {
+    if (
+      input.displayName === undefined &&
+      input.avatarUrl === undefined &&
+      input.bio === undefined &&
+      input.profilePrivate === undefined
+    ) {
       return res.status(400).json({
-        error: { code: 'VALIDATION_ERROR', message: 'Provide displayName, avatarUrl, and/or bio' },
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Provide displayName, avatarUrl, bio, and/or profilePrivate',
+        },
       });
     }
     let displayName: string | null | undefined = input.displayName;
@@ -46,6 +54,7 @@ usersRouter.patch('/me', requireAuth, async (req, res) => {
       displayName,
       avatarUrl: input.avatarUrl,
       bio,
+      profilePrivate: input.profilePrivate,
     });
     if (!result.ok) {
       return res.status(result.status).json({ error: { code: result.code, message: result.message } });

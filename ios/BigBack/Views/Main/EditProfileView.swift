@@ -10,6 +10,7 @@ struct EditProfileView: View {
 
     @State private var displayName: String = ""
     @State private var bio: String = ""
+    @State private var profilePrivate = false
     /// Local avatar URL after successful upload, or existing profile URL.
     @State private var avatarPublicUrl: String?
     @State private var pickerItem: PhotosPickerItem?
@@ -57,6 +58,13 @@ struct EditProfileView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section {
+                Toggle("Private profile", isOn: $profilePrivate)
+            } footer: {
+                Text("Only accepted friends can see your posts. Your name and photo still appear when people search for you.")
+                    .font(.caption)
+            }
+
             if let errorMessage {
                 Section {
                     Text(errorMessage).foregroundStyle(.red)
@@ -87,10 +95,12 @@ struct EditProfileView: View {
             displayName = u.displayName ?? ""
             bio = u.bio ?? ""
             avatarPublicUrl = u.avatarUrl
+            profilePrivate = u.profilePrivate == true
         } catch {
             displayName = auth.currentUser?.displayName ?? ""
             bio = auth.currentUser?.bio ?? ""
             avatarPublicUrl = auth.currentUser?.avatarUrl
+            profilePrivate = auth.currentUser?.profilePrivate == true
         }
     }
 
@@ -131,7 +141,12 @@ struct EditProfileView: View {
         errorMessage = nil
         defer { isBusy = false }
         do {
-            let u = try await api.updateMyProfile(displayName: displayName, avatarUrl: avatarPublicUrl, bio: bio)
+            let u = try await api.updateMyProfile(
+                displayName: displayName,
+                avatarUrl: avatarPublicUrl,
+                bio: bio,
+                profilePrivate: profilePrivate
+            )
             auth.replaceCurrentUser(u)
             dismiss()
         } catch {
