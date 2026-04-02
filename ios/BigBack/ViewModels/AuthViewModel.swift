@@ -11,17 +11,24 @@ final class AuthViewModel: ObservableObject {
     @Published var password = ""
     @Published var phoneOrEmail = ""
 
-    private let api: APIClient
+    let api: APIClient
 
     init(api: APIClient = .live()) {
         self.api = api
         if UserDefaults.standard.string(forKey: "authToken") != nil,
            let data = UserDefaults.standard.data(forKey: "currentUser"),
-           let _ = try? JSONDecoder.default.decode(User.self, from: data) {
-            // Session exists — user is authed
-            if let id = UserDefaults.standard.string(forKey: "currentUserId") {
-                self.currentUser = User(id: id, username: UserDefaults.standard.string(forKey: "currentUsername") ?? "", phoneOrEmail: nil, createdAt: nil)
-            }
+           let user = try? JSONDecoder.default.decode(User.self, from: data) {
+            currentUser = user
+        } else if UserDefaults.standard.string(forKey: "authToken") != nil,
+                  let id = UserDefaults.standard.string(forKey: "currentUserId") {
+            currentUser = User(
+                id: id,
+                username: UserDefaults.standard.string(forKey: "currentUsername") ?? "",
+                phoneOrEmail: nil,
+                displayName: nil,
+                avatarUrl: nil,
+                createdAt: nil
+            )
         }
     }
 
@@ -80,6 +87,11 @@ final class AuthViewModel: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func replaceCurrentUser(_ user: User) {
+        currentUser = user
+        saveUser(user)
     }
 
     func logout() {

@@ -10,6 +10,8 @@ export const friendshipSchema = z.object({
   id: z.string(),
   friendId: z.string(),
   friendUsername: z.string(),
+  friendDisplayName: z.string().nullable().optional(),
+  friendAvatarUrl: z.string().nullable().optional(),
   status: z.enum(['pending', 'accepted']),
   createdAt: z.string(),
 });

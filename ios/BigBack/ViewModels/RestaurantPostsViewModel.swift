@@ -38,6 +38,7 @@ final class RestaurantPostsViewModel: ObservableObject {
                 var p = posts[idx]
                 p = Post(
                     id: p.id, userId: p.userId, username: p.username,
+                    displayName: p.displayName, avatarUrl: p.avatarUrl,
                     restaurantId: p.restaurantId, restaurantName: p.restaurantName,
                     restaurantAddress: p.restaurantAddress,
                     lat: p.lat, lng: p.lng, comment: p.comment,

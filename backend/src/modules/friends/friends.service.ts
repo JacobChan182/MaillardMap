@@ -6,6 +6,8 @@ type FriendshipRow = {
   id: string;
   friend_id: string;
   friend_username: string;
+  friend_display_name: string | null;
+  friend_avatar_url: string | null;
   status: string;
   created_at: string;
 };
@@ -66,6 +68,8 @@ export async function getFriendsList(userId: string) {
        f.id,
        f.user_id as friend_id,
        u.username as friend_username,
+       u.display_name as friend_display_name,
+       u.avatar_url as friend_avatar_url,
        f.status,
        f.created_at
      from friendships f
@@ -78,6 +82,8 @@ export async function getFriendsList(userId: string) {
        f.id,
        f.friend_id as friend_id,
        u.username as friend_username,
+       u.display_name as friend_display_name,
+       u.avatar_url as friend_avatar_url,
        f.status,
        f.created_at
      from friendships f
@@ -92,6 +98,8 @@ export async function getFriendsList(userId: string) {
     id: r.id,
     friendId: r.friend_id,
     friendUsername: r.friend_username,
+    friendDisplayName: r.friend_display_name,
+    friendAvatarUrl: r.friend_avatar_url,
     status: 'accepted' as const,
     createdAt: r.created_at,
   }));

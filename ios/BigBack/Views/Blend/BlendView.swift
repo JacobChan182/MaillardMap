@@ -3,6 +3,11 @@ import SwiftUI
 struct BlendView: View {
     @EnvironmentObject var vm: BlendViewModel
 
+    private func blendFriendTitle(_ f: Friendship) -> String {
+        let n = f.friendDisplayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return n.isEmpty ? (f.friendUsername ?? f.friendId) : n
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -25,6 +30,7 @@ struct BlendView: View {
 
                     ForEach(vm.availableFriends) { friendship in
                         let friendId = friendship.friendId
+                        let title = blendFriendTitle(friendship)
                         Button {
                             if vm.selectedFriendIds.contains(friendId) {
                                 vm.selectedFriendIds.remove(friendId)
@@ -38,8 +44,16 @@ struct BlendView: View {
                                       : "circle")
                                 .foregroundStyle(vm.selectedFriendIds.contains(friendId) ? .orange : .secondary)
 
-                                Text("Friend")
-                                    .foregroundStyle(.primary)
+                                ProfileAvatarView(url: friendship.friendAvatarUrl, name: title, size: 32)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(title)
+                                        .foregroundStyle(.primary)
+                                    if let u = friendship.friendUsername {
+                                        Text("@\(u)")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
                                 Spacer()
                             }
                         }

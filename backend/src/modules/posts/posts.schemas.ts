@@ -41,6 +41,8 @@ export const postSchema = z.object({
   id: z.string(),
   userId: z.string(),
   username: z.string(),
+  displayName: z.string().nullable().optional(),
+  avatarUrl: z.string().nullable().optional(),
   restaurantId: z.string(),
   restaurantName: z.string(),
   restaurantAddress: z.string().nullable().optional(),
@@ -50,6 +52,7 @@ export const postSchema = z.object({
   photos: z.array(postPhotoSchema),
   liked: z.boolean(),
   likeCount: z.number(),
+  commentCount: z.number(),
   createdAt: z.string(),
 });
 

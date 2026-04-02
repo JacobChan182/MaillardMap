@@ -111,6 +111,41 @@ final class APIClient {
         return try decode([User].self, from: data)
     }
 
+    /// PATCH `users/me` — use empty `displayName` to clear; `avatarUrl` nil/empty clears photo (JSON `null`).
+    func updateMyProfile(displayName: String, avatarUrl: String?) async throws -> User {
+        guard let url = URL(string: "users/me", relativeTo: baseURL) else { throw APIError.invalidURL }
+        let t = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        var payload: [String: Any] = [
+            "displayName": t.isEmpty ? NSNull() : t,
+        ]
+        if let u = avatarUrl, !u.isEmpty {
+            payload["avatarUrl"] = u
+        } else {
+            payload["avatarUrl"] = NSNull()
+        }
+        var req = URLRequest(url: url)
+        req.httpMethod = "PATCH"
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let token = authToken {
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+        req.httpBody = try JSONSerialization.data(withJSONObject: payload)
+        let (data, response) = try await session.data(for: req)
+        guard let http = response as? HTTPURLResponse else { throw APIError.badResponse(0, data) }
+        if http.statusCode == 401 { throw APIError.unauthorized }
+        guard (200...299).contains(http.statusCode) else { throw APIError.badResponse(http.statusCode, data) }
+        struct Resp: Decodable { let user: User }
+        return try decode(Resp.self, from: data).user
+    }
+
+    /// Single presigned slot for profile photo (`POST uploads/presign-avatar`).
+    func presignAvatarUpload(contentType: String) async throws -> PresignedUploadSlot {
+        struct Body: Encodable { let contentType: String }
+        let data = try await request("uploads/presign-avatar", method: "POST", body: Body(contentType: contentType))
+        return try decode(PresignedUploadSlot.self, from: data)
+    }
+
     // MARK: - Friends
 
     func sendFriendRequest(friendId: String) async throws {

@@ -166,6 +166,12 @@ struct MoreTab: View {
             List {
                 Section("Account") {
                     NavigationLink {
+                        EditProfileView()
+                    } label: {
+                        Label("Edit profile", systemImage: "person.crop.circle")
+                    }
+
+                    NavigationLink {
                         FriendsView()
                             .navigationTitle("Friends")
                     } label: {

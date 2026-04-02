@@ -54,6 +54,11 @@ struct PostCardView: View {
         commentCountForDisplay == 1 ? "1 Comment" : "\(commentCountForDisplay) Comments"
     }
 
+    private var authorDisplayName: String {
+        let n = post.displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return n.isEmpty ? post.username : n
+    }
+
     init(post: Post, onLike: @escaping (String) async -> Void, onRestaurantTap: (() -> Void)? = nil) {
         self.post = post
         self.onLike = onLike
@@ -62,10 +67,20 @@ struct PostCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(post.username)
-                    .font(.headline)
-                Spacer()
+            HStack(alignment: .center, spacing: 10) {
+                ProfileAvatarView(url: post.avatarUrl, name: authorDisplayName, size: 40)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(authorDisplayName)
+                        .font(.headline)
+                    if post.displayName != nil,
+                       let dn = post.displayName?.trimmingCharacters(in: .whitespacesAndNewlines), !dn.isEmpty,
+                       dn.caseInsensitiveCompare(post.username) != .orderedSame {
+                        Text("@\(post.username)")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 if let onRestaurantTap {
                     Button(action: onRestaurantTap) {
                         Text(post.restaurantName)

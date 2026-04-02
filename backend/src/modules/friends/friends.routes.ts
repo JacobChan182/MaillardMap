@@ -40,7 +40,7 @@ friendsRouter.get('/list', requireAuth, async (req, res) => {
   try {
     const userId = req.userId!;
     const friends = await getFriendsList(userId);
-    return res.json(friends);
+    return res.json({ friends });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });

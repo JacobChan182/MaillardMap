@@ -42,6 +42,8 @@
 		A922D33A4FE95F3C0E2D709B /* RestaurantPostsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C933E44B5AF0A1C2D3E4B8A0 /* RestaurantPostsViewModel.swift */; };
 		A1F2E3D4C5B6A798877665501 /* CommentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2E3D4C5B6A798877665500 /* CommentsView.swift */; };
 		A1F2E3D4C5B6A798877665503 /* CommentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F2E3D4C5B6A798877665502 /* CommentsViewModel.swift */; };
+		B8C9D0E1F2A3B4C5D6E7F809 /* EditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C9D0E1F2A3B4C5D6E7F808 /* EditProfileView.swift */; };
+		C9D0E1F2A3B4C5D6E7F8090A /* ProfileAvatarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9D0E1F2A3B4C5D6E7F80909 /* ProfileAvatarView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -81,6 +83,8 @@
 		C933E44B5AF0A1C2D3E4B8A0 /* RestaurantPostsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantPostsViewModel.swift; sourceTree = "<group>"; };
 		A1F2E3D4C5B6A798877665500 /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsView.swift; sourceTree = "<group>"; };
 		A1F2E3D4C5B6A798877665502 /* CommentsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsViewModel.swift; sourceTree = "<group>"; };
+		B8C9D0E1F2A3B4C5D6E7F808 /* EditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
+		C9D0E1F2A3B4C5D6E7F80909 /* ProfileAvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileAvatarView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -148,8 +152,10 @@
 		5E49387C5B868F2A9C949C57 /* Main */ = {
 			isa = PBXGroup;
 			children = (
+				B8C9D0E1F2A3B4C5D6E7F808 /* EditProfileView.swift */,
 				3C391A1B6186EBFD07661889 /* MainTabView.swift */,
 				D93172FAB1B47B933A95B9C4 /* MapView.swift */,
+				C9D0E1F2A3B4C5D6E7F80909 /* ProfileAvatarView.swift */,
 			);
 			path = Main;
 			sourceTree = "<group>";
@@ -316,6 +322,7 @@
 				A1F2E3D4C5B6A798877665503 /* CommentsViewModel.swift in Sources */,
 				8D91D94E89D16EAD687BFA36 /* CreatePostView.swift in Sources */,
 				8E18A4730E0BD2A4F2F21753 /* CreatePostViewModel.swift in Sources */,
+				B8C9D0E1F2A3B4C5D6E7F809 /* EditProfileView.swift in Sources */,
 				1759D4B330CEF8B7CEB54CCE /* FeedViewModel.swift in Sources */,
 				AE43C52C1D53EE2BAD4DB6E9 /* FriendsView.swift in Sources */,
 				6C8FC53D1469DB80CDCB8164 /* FriendsViewModel.swift in Sources */,
@@ -323,6 +330,7 @@
 				B28CCEF0837ECA41C13BFA49 /* HealthDTO.swift in Sources */,
 				9EFCEF126F4568853F97236E /* MainTabView.swift in Sources */,
 				F1D43428B3770225F9C94B35 /* MapView.swift in Sources */,
+				C9D0E1F2A3B4C5D6E7F8090A /* ProfileAvatarView.swift in Sources */,
 				A168EE13974681D39D210BE0 /* MapViewModel.swift in Sources */,
 				573A205C42B48543DEF68F37 /* Post.swift in Sources */,
 				28728D36DC1BD33561601F70 /* PostCardView.swift in Sources */,

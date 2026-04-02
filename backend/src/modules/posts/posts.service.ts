@@ -12,6 +12,8 @@ type PostData = {
   id: string;
   userId: string;
   username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
   restaurantId: string;
   restaurantName: string;
   restaurantAddress: string | null;
@@ -115,6 +117,8 @@ export async function queryPosts(
        p.id as post_id,
        p.user_id,
        u.username,
+       u.display_name,
+       u.avatar_url,
        p.restaurant_id,
        r.name as restaurant_name,
        r.address as restaurant_address,
@@ -175,6 +179,8 @@ export async function queryPosts(
       id: row.post_id,
       userId: row.user_id,
       username: row.username,
+      displayName: row.display_name,
+      avatarUrl: row.avatar_url,
       restaurantId: row.restaurant_id,
       restaurantName: row.restaurant_name,
       restaurantAddress: row.restaurant_address,
@@ -255,6 +261,8 @@ type CommentRow = {
   id: string;
   user_id: string;
   username: string;
+  display_name: string | null;
+  avatar_url: string | null;
   text: string;
   created_at: string;
 };
@@ -263,11 +271,19 @@ type CommentRow = {
  * Get all comments for a post, ordered oldest first.
  */
 export async function getCommentsByPost(postId: string): Promise<
-  { id: string; userId: string; username: string; text: string; createdAt: string }[]
+  {
+    id: string;
+    userId: string;
+    username: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+    text: string;
+    createdAt: string;
+  }[]
 > {
   const pool = getPool();
   const res = await pool.query<CommentRow>(
-    `select c.id, c.user_id, c.text, c.created_at, u.username
+    `select c.id, c.user_id, c.text, c.created_at, u.username, u.display_name, u.avatar_url
      from comments c
      join users u on u.id = c.user_id
      where c.post_id = $1
@@ -278,6 +294,8 @@ export async function getCommentsByPost(postId: string): Promise<
     id: r.id,
     userId: r.user_id,
     username: r.username,
+    displayName: r.display_name,
+    avatarUrl: r.avatar_url,
     text: r.text,
     createdAt: r.created_at,
   }));

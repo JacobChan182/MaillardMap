@@ -4,6 +4,8 @@ struct Post: Identifiable, Codable, Equatable {
     let id: String
     let userId: String
     let username: String
+    let displayName: String?
+    let avatarUrl: String?
     let restaurantId: String
     let restaurantName: String
     let restaurantAddress: String?
@@ -28,6 +30,8 @@ struct Comment: Identifiable, Codable, Equatable {
     let id: String
     let userId: String
     let username: String
+    let displayName: String?
+    let avatarUrl: String?
     let text: String
     let createdAt: String
 }

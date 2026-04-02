@@ -68,3 +68,26 @@ export async function generatePresignedUpload(contentType: string) {
 
   return { uploadUrl, publicUrl };
 }
+
+/** Profile photo; scoped under `avatars/{userId}/` to reduce abuse. */
+export async function generateAvatarPresignedUpload(userId: string, contentType: string) {
+  const ext = MIME_TO_EXT[contentType];
+  if (!ext) throw new Error(`Unsupported content type: ${contentType}`);
+
+  const key = `avatars/${userId}/${randomUUID()}.${ext}`;
+  const bucket = getBucket();
+
+  const command = new PutObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    ContentType: contentType,
+  });
+
+  const uploadUrl = await getSignedUrl(getClient(), command, {
+    expiresIn: PRESIGN_EXPIRES_IN,
+  });
+
+  const publicUrl = `${getPublicUrl()}/${key}`;
+
+  return { uploadUrl, publicUrl };
+}

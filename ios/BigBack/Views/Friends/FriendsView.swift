@@ -8,6 +8,16 @@ struct FriendsView: View {
         _vm = StateObject(wrappedValue: FriendsViewModel())
     }
 
+    private func userListTitle(_ u: User) -> String {
+        let n = u.displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return n.isEmpty ? u.username : n
+    }
+
+    private func friendListTitle(_ f: Friendship) -> String {
+        let n = f.friendDisplayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return n.isEmpty ? (f.friendUsername ?? f.friendId) : n
+    }
+
     var body: some View {
         List {
             // Pending requests
@@ -15,7 +25,7 @@ struct FriendsView: View {
                 Section("Friend Requests") {
                     ForEach(vm.pendingRequests) { req in
                         HStack {
-                            Text("Request from \(req.friendUsername ?? req.friendId)")
+                            Text("Request from \(req.friendDisplayName ?? req.friendUsername ?? req.friendId)")
                                 .font(.headline)
                             Spacer()
                             Button("Accept") {
@@ -38,7 +48,14 @@ struct FriendsView: View {
                 if !vm.searchResults.isEmpty {
                     ForEach(vm.searchResults) { user in
                         HStack {
-                            Text(user.username)
+                            ProfileAvatarView(url: user.avatarUrl, name: userListTitle(user), size: 36)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(userListTitle(user))
+                                    .font(.headline)
+                                Text("@\(user.username)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                             Spacer()
                             Button("Add") {
                                 Task { await vm.sendFriendRequest(userId: user.id) }
@@ -61,7 +78,21 @@ struct FriendsView: View {
                         UserPostsView(userId: friendship.friendId)
                             .navigationTitle("Posts")
                     } label: {
-                        Label("Friend", systemImage: "person.bubble.fill")
+                        HStack {
+                            ProfileAvatarView(
+                                url: friendship.friendAvatarUrl,
+                                name: friendListTitle(friendship),
+                                size: 36
+                            )
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(friendListTitle(friendship))
+                                if let u = friendship.friendUsername {
+                                    Text("@\(u)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
                     }
                 }
             }

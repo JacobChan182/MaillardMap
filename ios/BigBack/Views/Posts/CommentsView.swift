@@ -31,6 +31,11 @@ struct CommentsView: View {
         _vm = StateObject(wrappedValue: CommentsViewModel())
     }
 
+    private func commentAuthorLabel(_ c: Comment) -> String {
+        let n = c.displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return n.isEmpty ? c.username : n
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             if vm.isLoading {
@@ -46,9 +51,11 @@ struct CommentsView: View {
                             .padding()
                     }
                     ForEach(vm.comments) { comment in
+                        let author = commentAuthorLabel(comment)
                         VStack(alignment: .leading, spacing: 4) {
-                            HStack {
-                                Text(comment.username)
+                            HStack(alignment: .center, spacing: 8) {
+                                ProfileAvatarView(url: comment.avatarUrl, name: author, size: 28)
+                                Text(author)
                                     .font(.caption)
                                     .fontWeight(.semibold)
                                 Spacer()
