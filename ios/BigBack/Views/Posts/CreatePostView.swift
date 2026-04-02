@@ -7,7 +7,7 @@ struct CreatePostView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(alignment: .leading, spacing: 20) {
                 // Restaurant selector
                 Button {
                     showRestaurantPicker = true

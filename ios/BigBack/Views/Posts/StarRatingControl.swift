@@ -38,29 +38,30 @@ struct StarRatingPicker: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Your rating")
                 .font(.headline)
-            GeometryReader { geo in
-                let w = max(geo.size.width, 1)
-                ZStack(alignment: .leading) {
-                    HStack(spacing: 4) {
-                        ForEach(0..<starCount, id: \.self) { i in
-                            Image(systemName: starSymbol(index: i))
-                                .font(.title2)
-                                .foregroundStyle(.orange)
-                        }
-                    }
+            HStack(spacing: 4) {
+                ForEach(0..<starCount, id: \.self) { i in
+                    Image(systemName: starSymbol(index: i))
+                        .font(.title2)
+                        .foregroundStyle(.orange)
+                }
+            }
+            .fixedSize(horizontal: true, vertical: false)
+            .frame(height: 34)
+            .background(
+                GeometryReader { geo in
                     Color.clear
                         .contentShape(Rectangle())
                         .gesture(
                             DragGesture(minimumDistance: 0)
                                 .onChanged { g in
+                                    let w = max(geo.size.width, 1)
                                     let x = min(max(0, g.location.x), w)
                                     let halves = min(9, max(0, Int(floor((x / w) * 10))))
                                     rating = Double(halves + 1) * 0.5
                                 },
                         )
-                }
-            }
-            .frame(height: 34)
+                },
+            )
             if let r = rating {
                 Text(String(format: "%.1f stars", r))
                     .font(.caption)
