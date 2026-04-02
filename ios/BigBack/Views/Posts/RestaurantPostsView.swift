@@ -75,6 +75,29 @@ struct RestaurantPostsView: View {
         }
         .navigationTitle(restaurantName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    Task { await vm.toggleSave() }
+                } label: {
+                    Image(systemName: vm.isSaved ? "bookmark.fill" : "bookmark")
+                        .foregroundStyle(vm.isSaved ? Color.orange : Color.primary)
+                }
+                .accessibilityLabel(vm.isSaved ? "Remove from saved" : "Save restaurant")
+                .disabled(vm.isSaveBusy)
+            }
+        }
+        .alert(
+            "Couldn’t update saved places",
+            isPresented: Binding(
+                get: { vm.saveError != nil },
+                set: { if !$0 { vm.saveError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { vm.saveError = nil }
+        } message: {
+            Text(vm.saveError ?? "")
+        }
         .task { await vm.load() }
     }
 }

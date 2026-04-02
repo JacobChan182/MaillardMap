@@ -278,15 +278,17 @@ final class APIClient {
 
     func savePlace(restaurantId: String) async throws -> SavedPlace {
         struct Body: Encodable { let restaurant_id: String }
-        struct Resp: Decodable { let saved_place: SavedPlace }
+        /// Root key from API is `saved_place`; with `convertFromSnakeCase` it maps to `savedPlace`.
+        struct Resp: Decodable { let savedPlace: SavedPlace }
         let data = try await request("saved", method: "POST", body: Body(restaurant_id: restaurantId))
-        return try decode(Resp.self, from: data).saved_place
+        return try decode(Resp.self, from: data).savedPlace
     }
 
     func getSavedPlaces() async throws -> [SavedPlace] {
-        struct Resp: Decodable { var saved_places: [SavedPlace] }
+        /// Root key is `saved_places` → `savedPlaces` under `convertFromSnakeCase`.
+        struct Resp: Decodable { var savedPlaces: [SavedPlace] }
         let data = try await request("saved")
-        return try decode(Resp.self, from: data).saved_places
+        return try decode(Resp.self, from: data).savedPlaces
     }
 
     func deleteSavedPlace(restaurantId: String) async throws {
@@ -371,7 +373,7 @@ struct RestaurantPostsPayload: Decodable {
 }
 
 struct SavedPlacesResponse: Decodable {
-    let saved_places: [SavedPlace]
+    let savedPlaces: [SavedPlace]
 }
 
 // MARK: - JSON Encoder/Decoder defaults

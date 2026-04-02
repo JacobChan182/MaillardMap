@@ -7,6 +7,9 @@ final class RestaurantPostsViewModel: ObservableObject {
     @Published var ratingCount: Int = 0
     @Published var errorMessage: String?
     @Published var isLoading = false
+    @Published var isSaved = false
+    @Published var isSaveBusy = false
+    @Published var saveError: String?
 
     let restaurantId: String
     private let api: APIClient
@@ -32,6 +35,36 @@ final class RestaurantPostsViewModel: ObservableObject {
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
+        }
+
+        await refreshSavedState()
+    }
+
+    private func refreshSavedState() async {
+        do {
+            let saved = try await api.getSavedPlaces()
+            isSaved = saved.contains { $0.restaurantId == restaurantId }
+            saveError = nil
+        } catch {
+            isSaved = false
+        }
+    }
+
+    func toggleSave() async {
+        guard !isSaveBusy else { return }
+        isSaveBusy = true
+        defer { isSaveBusy = false }
+        do {
+            if isSaved {
+                try await api.deleteSavedPlace(restaurantId: restaurantId)
+                isSaved = false
+            } else {
+                _ = try await api.savePlace(restaurantId: restaurantId)
+                isSaved = true
+            }
+            saveError = nil
+        } catch {
+            saveError = error.localizedDescription
         }
     }
 
