@@ -10,11 +10,15 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import com.bigback.common.PreviewTheme
 import com.bigback.data.Repository
 import com.bigback.domain.Friendship
+import com.bigback.domain.User
 import com.bigback.ui.restaurant.RestaurantSearchDialog
+import kotlinx.coroutines.delay
 
 @Composable
 fun FriendsScreen(
@@ -30,6 +34,48 @@ fun FriendsScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var showAddFriend by remember { mutableStateOf(false) }
     var showRestaurantSearch by remember { mutableStateOf(false) }
+    var findFriendsQuery by remember { mutableStateOf("") }
+    var findFriendsRaw by remember { mutableStateOf<List<User>>(emptyList()) }
+    var findFriendsSearching by remember { mutableStateOf(false) }
+    var findFriendsSearchError by remember { mutableStateOf<String?>(null) }
+
+    val excludedFromFindFriends = remember(friends, pendingRequests, sentRequests, currentUserId) {
+        buildSet {
+            if (currentUserId.isNotBlank()) add(currentUserId)
+            friends.forEach { add(it.friendId) }
+            pendingRequests.forEach { add(it.friendId) }
+            sentRequests.forEach { add(it.friendId) }
+        }
+    }
+
+    val findFriendsResults = remember(findFriendsRaw, excludedFromFindFriends) {
+        findFriendsRaw.filter { it.id !in excludedFromFindFriends }
+    }
+
+    LaunchedEffect(findFriendsQuery) {
+        delay(400)
+        val q = normalizedFindFriendsQuery(findFriendsQuery)
+        if (q.isEmpty()) {
+            findFriendsRaw = emptyList()
+            findFriendsSearchError = null
+            findFriendsSearching = false
+            return@LaunchedEffect
+        }
+        findFriendsSearching = true
+        findFriendsSearchError = null
+        try {
+            val users = repository.searchUsers(q)
+            if (normalizedFindFriendsQuery(findFriendsQuery) != q) return@LaunchedEffect
+            findFriendsRaw = users
+        } catch (e: Exception) {
+            if (normalizedFindFriendsQuery(findFriendsQuery) == q) {
+                findFriendsSearchError = e.message ?: "Search failed"
+                findFriendsRaw = emptyList()
+            }
+        } finally {
+            findFriendsSearching = false
+        }
+    }
 
     suspend fun loadFriends() {
         try {
@@ -82,6 +128,90 @@ fun FriendsScreen(
                     }
                 } else {
                     LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        item {
+                            Text(
+                                text = "Find friends",
+                                style = MaterialTheme.typography.h6,
+                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
+                            )
+                            OutlinedTextField(
+                                value = findFriendsQuery,
+                                onValueChange = { findFriendsQuery = it },
+                                label = { Text("Search by username") },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)
+                            )
+                            val trimmed = normalizedFindFriendsQuery(findFriendsQuery)
+                            when {
+                                trimmed.isEmpty() -> Text(
+                                    "Type a username to search",
+                                    style = MaterialTheme.typography.body2,
+                                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                )
+                                findFriendsSearchError != null -> Text(
+                                    findFriendsSearchError!!,
+                                    color = MaterialTheme.colors.error,
+                                    style = MaterialTheme.typography.body2,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                )
+                                findFriendsSearching -> {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        CircularProgressIndicator()
+                                    }
+                                }
+                                findFriendsRaw.isNotEmpty() && findFriendsResults.isEmpty() -> Text(
+                                    "Everyone matching is already a friend or has a pending request",
+                                    style = MaterialTheme.typography.body2,
+                                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                )
+                                findFriendsResults.isEmpty() -> Text(
+                                    "No users match",
+                                    style = MaterialTheme.typography.body2,
+                                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                        items(findFriendsResults, key = { it.id }) { user ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(user.username, style = MaterialTheme.typography.body1)
+                                }
+                                OutlinedButton(
+                                    onClick = {
+                                        scope.launch {
+                                            try {
+                                                repository.sendFriendRequest(user.id)
+                                                loadFriends()
+                                            } catch (e: Exception) {
+                                                error = e.message ?: "Failed to send request"
+                                            }
+                                        }
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 12.dp)
+                                ) {
+                                    Text("Add")
+                                }
+                            }
+                        }
+                        item { Divider(modifier = Modifier.padding(top = 8.dp)) }
+
                         if (friends.isEmpty() && pendingRequests.isEmpty() && sentRequests.isEmpty()) {
                             item {
                                 Box(
@@ -206,6 +336,14 @@ fun FriendsScreen(
             )
         }
     }
+}
+
+private fun normalizedFindFriendsQuery(raw: String): String {
+    var t = raw.trim()
+    if (t.startsWith("@")) {
+        t = t.drop(1).trim()
+    }
+    return t
 }
 
 @Composable

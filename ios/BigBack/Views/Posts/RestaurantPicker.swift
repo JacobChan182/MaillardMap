@@ -7,19 +7,21 @@ struct RestaurantPickerSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack {
+            VStack(spacing: 0) {
                 TextField("Search restaurants by name", text: $searchVM.query)
                     .textFieldStyle(.roundedBorder)
                     .padding()
                     .onChange(of: searchVM.query) { _, _ in
-                        Task { await searchVM.search(near: mapVM.searchAnchor) }
+                        searchVM.scheduleDebouncedSearch(near: mapVM.searchAnchor)
                     }
 
-                if searchVM.isLoading {
-                    ProgressView()
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 10) {
+                ScrollView {
+                    LazyVStack(spacing: 10) {
+                        if searchVM.isLoading || searchVM.isAwaitingDebouncedSearch {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 32)
+                        } else {
                             ForEach(searchVM.results) { restaurant in
                                 Button {
                                     onSelect(restaurant)
@@ -35,10 +37,12 @@ struct RestaurantPickerSheet: View {
                                     .padding()
                             }
                         }
-                        .padding()
                     }
+                    .padding()
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .navigationTitle("Choose Restaurant")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

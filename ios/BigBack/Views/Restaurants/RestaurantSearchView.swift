@@ -8,19 +8,21 @@ struct RestaurantSearchView: View {
     var onSelect: ((Restaurant) -> Void)?
 
     var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             TextField("Search restaurants by name", text: $vm.query)
                 .textFieldStyle(.roundedBorder)
                 .padding()
                 .onChange(of: vm.query) { _, _ in
-                    Task { await vm.search(near: mapVM.searchAnchor) }
+                    vm.scheduleDebouncedSearch(near: mapVM.searchAnchor)
                 }
 
-            if vm.isLoading {
-                ProgressView()
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 10) {
+            ScrollView {
+                LazyVStack(spacing: 10) {
+                    if vm.isLoading || vm.isAwaitingDebouncedSearch {
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 32)
+                    } else {
                         ForEach(vm.results) { restaurant in
                             RestaurantSearchResultRow(restaurant: restaurant)
                                 .onTapGesture {
@@ -42,9 +44,10 @@ struct RestaurantSearchView: View {
                                 .padding()
                         }
                     }
-                    .padding()
                 }
+                .padding()
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .onAppear {
             Task {

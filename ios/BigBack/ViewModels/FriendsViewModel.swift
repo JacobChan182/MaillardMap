@@ -39,6 +39,7 @@ final class FriendsViewModel: ObservableObject {
     }
 
     private let api: APIClient
+    private var userSearchDebounceTask: Task<Void, Never>?
 
     init(api: APIClient = .live()) {
         self.api = api
@@ -95,7 +96,34 @@ final class FriendsViewModel: ObservableObject {
         }
     }
 
+    /// Waits for a typing pause before calling the backend.
+    func scheduleSearchUsers(delayNanoseconds: UInt64 = 400_000_000) {
+        userSearchDebounceTask?.cancel()
+        let q = trimmedSearchQuery
+        if q.isEmpty {
+            searchResults = []
+            lastRawSearchResults = []
+            findFriendsSearchError = nil
+            return
+        }
+        userSearchDebounceTask = Task { @MainActor in
+            do {
+                try await Task.sleep(nanoseconds: delayNanoseconds)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            await self.performSearchUsers()
+        }
+    }
+
+    /// Immediate search (e.g. after removing a friend so results refresh).
     func searchUsers() async {
+        userSearchDebounceTask?.cancel()
+        await performSearchUsers()
+    }
+
+    private func performSearchUsers() async {
         let q = trimmedSearchQuery
         guard !q.isEmpty else {
             searchResults = []

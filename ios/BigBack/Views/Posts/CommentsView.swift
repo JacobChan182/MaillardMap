@@ -142,6 +142,7 @@ private struct MentionPickerSheet: View {
     @State private var query = ""
     @State private var results: [User] = []
     @State private var isLoading = false
+    @State private var searchDebounceTask: Task<Void, Never>?
 
     var body: some View {
         NavigationStack {
@@ -179,21 +180,35 @@ private struct MentionPickerSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, prompt: "Search by username")
             .onChange(of: query) { _, newVal in
-                Task { await search(newVal) }
+                searchDebounceTask?.cancel()
+                let t = newVal.trimmingCharacters(in: .whitespacesAndNewlines)
+                if t.isEmpty {
+                    results = []
+                    isLoading = false
+                    return
+                }
+                searchDebounceTask = Task { @MainActor in
+                    do {
+                        try await Task.sleep(nanoseconds: 400_000_000)
+                    } catch {
+                        return
+                    }
+                    guard !Task.isCancelled else { return }
+                    await search(t)
+                }
             }
         }
     }
 
     private func search(_ q: String) async {
-        let t = q.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard t.count >= 1 else {
+        guard q.trimmingCharacters(in: .whitespacesAndNewlines).count >= 1 else {
             results = []
             return
         }
         isLoading = true
         defer { isLoading = false }
         do {
-            results = try await APIClient.live().searchUsers(query: t)
+            results = try await APIClient.live().searchUsers(query: q)
         } catch {
             results = []
         }

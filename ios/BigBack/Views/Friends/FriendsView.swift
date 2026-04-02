@@ -25,7 +25,7 @@ struct FriendsView: View {
             Section("Find Friends") {
                 TextField("Search by username", text: $vm.searchQuery)
                     .onChange(of: vm.searchQuery) { _, _ in
-                        Task { await vm.searchUsers() }
+                        vm.scheduleSearchUsers()
                     }
 
                 if vm.trimmedFindFriendsQuery.isEmpty {
