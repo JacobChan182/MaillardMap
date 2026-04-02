@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RestaurantSearchView: View {
     @EnvironmentObject private var mapVM: MapViewModel
+    @EnvironmentObject private var tabRouter: TabRouter
     @StateObject private var vm = RestaurantSearchViewModel()
     @Environment(\.dismiss) private var dismiss
     var onSelect: ((Restaurant) -> Void)?
@@ -26,6 +27,10 @@ struct RestaurantSearchView: View {
                                     vm.selectedRestaurant = restaurant
                                     if let onSelect = onSelect {
                                         onSelect(restaurant)
+                                        dismiss()
+                                    } else {
+                                        mapVM.focusRestaurantFromSearch(restaurant)
+                                        tabRouter.openMap()
                                         dismiss()
                                     }
                                 }

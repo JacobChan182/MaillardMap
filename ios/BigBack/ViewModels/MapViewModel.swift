@@ -93,10 +93,36 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         updateAnnotations()
     }
 
-    /// Feed / post list: jump map here with the white callout pin.
-    func focusRestaurantFromPost(_ post: Post) {
+    /// Center map and show the white venue callout (same behavior as a post’s restaurant link).
+    private func focusRestaurantOnMap(
+        restaurantId: String,
+        name: String,
+        address: String?,
+        lat: Double,
+        lng: Double,
+    ) {
         calloutDelayedDismissTask?.cancel()
         calloutDelayedDismissTask = nil
+        restaurantCallout = MapRestaurantCallout(
+            restaurantId: restaurantId,
+            name: name,
+            address: address,
+            lat: lat,
+            lng: lng
+        )
+        region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: lat, longitude: lng),
+            span: MKCoordinateSpan(latitudeDelta: 0.045, longitudeDelta: 0.045)
+        )
+        let zoomLevel = min(region.span.latitudeDelta, region.span.longitudeDelta)
+        showHeatmap = zoomLevel > zoomThreshold
+        calloutDismissRegionAnchor = region
+        calloutDismissSkipCameraEndsRemaining = 3
+        updateAnnotations()
+    }
+
+    /// Feed / post list: jump map here with the white callout pin.
+    func focusRestaurantFromPost(_ post: Post) {
         let trimmed = post.restaurantAddress?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         // #region agent log
         #if DEBUG
@@ -111,24 +137,30 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         )
         #endif
         // #endregion
-        restaurantCallout = MapRestaurantCallout(
+        focusRestaurantOnMap(
             restaurantId: post.restaurantId,
             name: post.restaurantName,
             address: trimmed.isEmpty ? nil : trimmed,
             lat: post.lat,
             lng: post.lng
         )
-        region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: post.lat, longitude: post.lng),
-            span: MKCoordinateSpan(latitudeDelta: 0.045, longitudeDelta: 0.045)
-        )
-        let zoomLevel = min(region.span.latitudeDelta, region.span.longitudeDelta)
-        showHeatmap = zoomLevel > zoomThreshold
-        calloutDismissRegionAnchor = region
-        calloutDismissSkipCameraEndsRemaining = 3
-        updateAnnotations()
         if trimmed.isEmpty {
             Task { await enrichCalloutAddress(restaurantId: post.restaurantId) }
+        }
+    }
+
+    /// Find Restaurants search row: same map + callout behavior as `focusRestaurantFromPost`.
+    func focusRestaurantFromSearch(_ restaurant: Restaurant) {
+        let trimmed = restaurant.address?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        focusRestaurantOnMap(
+            restaurantId: restaurant.id,
+            name: restaurant.name,
+            address: trimmed.isEmpty ? nil : trimmed,
+            lat: restaurant.lat,
+            lng: restaurant.lng
+        )
+        if trimmed.isEmpty {
+            Task { await enrichCalloutAddress(restaurantId: restaurant.id) }
         }
     }
 
