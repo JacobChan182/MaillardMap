@@ -13,6 +13,7 @@
 		2088A930C2261B3A9984F28C /* RestaurantSearchViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A5FA7346CF7017D5D9F4D09 /* RestaurantSearchViewModel.swift */; };
 		280C752CB52B8B1276D9BE7F /* Friendship.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB38369FB0A95590AC4EF462 /* Friendship.swift */; };
 		28728D36DC1BD33561601F70 /* PostCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AE5455B22B5810BE63A2EA3 /* PostCardView.swift */; };
+		F2E1D0C9B8A7765544332212 /* StarRatingControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2E1D0C9B8A7765544332211 /* StarRatingControl.swift */; };
 		3477C61B5E24372233439515 /* BlendViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF4F168D7A9221A469CC6FA1 /* BlendViewModel.swift */; };
 		4174D20F298F669997EDCA42 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28834C88D12ECD0A6EF224DD /* AuthViewModel.swift */; };
 		45A826D4D43351D777EA3024 /* UserPostsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 949DBAA58ACCFFCC62FB5BB6 /* UserPostsViewModel.swift */; };
@@ -62,6 +63,7 @@
 		5927FF9CA847F50EA7AE0821 /* FriendsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsViewModel.swift; sourceTree = "<group>"; };
 		598F0A870879585611625E33 /* FriendsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FriendsView.swift; sourceTree = "<group>"; };
 		5AE5455B22B5810BE63A2EA3 /* PostCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostCardView.swift; sourceTree = "<group>"; };
+		F2E1D0C9B8A7765544332211 /* StarRatingControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StarRatingControl.swift; sourceTree = "<group>"; };
 		717F7B9468D59947C4394B41 /* HealthDTO.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDTO.swift; sourceTree = "<group>"; };
 		7A5FA7346CF7017D5D9F4D09 /* RestaurantSearchViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantSearchViewModel.swift; sourceTree = "<group>"; };
 		7B073F72907984AFD4B87874 /* RestaurantSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantSearchView.swift; sourceTree = "<group>"; };
@@ -234,6 +236,7 @@
 				AB35BFE6B4063F0029E007D3 /* CreatePostView.swift */,
 				5AE5455B22B5810BE63A2EA3 /* PostCardView.swift */,
 				B822D33A4FC95E2B9D1C8A7F /* RestaurantPostsView.swift */,
+				F2E1D0C9B8A7765544332211 /* StarRatingControl.swift */,
 				4A7A677FC0F94DA00838BC90 /* RestaurantPicker.swift */,
 				38E12EDDC7172C41B2119DDB /* UserPostsView.swift */,
 			);
@@ -354,6 +357,7 @@
 				A168EE13974681D39D210BE0 /* MapViewModel.swift in Sources */,
 				573A205C42B48543DEF68F37 /* Post.swift in Sources */,
 				28728D36DC1BD33561601F70 /* PostCardView.swift in Sources */,
+				F2E1D0C9B8A7765544332212 /* StarRatingControl.swift in Sources */,
 				9AD79D1DC49173921A4189D6 /* Restaurant.swift in Sources */,
 				A911C2293FE84B1D8C2E6F0A /* RestaurantPostsView.swift in Sources */,
 				A922D33A4FE95F3C0E2D709B /* RestaurantPostsViewModel.swift in Sources */,

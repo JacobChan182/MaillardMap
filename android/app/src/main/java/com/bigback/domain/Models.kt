@@ -33,6 +33,7 @@ data class Post(
     val restaurantId: String,
     val restaurantName: String? = null,
     val comment: String? = null,
+    val rating: Double? = null,
     val photos: List<PostPhoto> = emptyList(),
     val lat: Double? = null,
     val lng: Double? = null,

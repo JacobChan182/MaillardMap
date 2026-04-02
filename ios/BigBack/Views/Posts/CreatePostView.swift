@@ -33,6 +33,8 @@ struct CreatePostView: View {
                     .cornerRadius(12)
                 }
 
+                StarRatingPicker(rating: $vm.visitRating)
+
                 // Photos (thumbnails in main body; PhotosPicker label stays Sendable-safe)
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -110,7 +112,7 @@ struct CreatePostView: View {
                         .background(Color.orange)
                         .cornerRadius(12)
                 }
-                .disabled(vm.isPosting)
+                .disabled(!vm.canSubmit || vm.isPosting)
                 .overlay {
                     if vm.isPosting {
                         ProgressView()

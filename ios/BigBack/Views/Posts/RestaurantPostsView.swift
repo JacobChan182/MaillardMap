@@ -25,33 +25,52 @@ struct RestaurantPostsView: View {
             if vm.isLoading && vm.posts.isEmpty {
                 ProgressView()
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        if let err = vm.errorMessage {
-                            Text(err)
-                                .font(.footnote)
-                                .foregroundStyle(.red)
+                VStack(spacing: 0) {
+                    if vm.ratingCount > 0, let avg = vm.averageRating {
+                        HStack(spacing: 8) {
+                            StarRatingDisplay(rating: avg, starSize: 18)
+                            Text(String(format: "%.1f", avg))
+                                .font(.subheadline.weight(.medium))
+                            Text("·")
+                                .foregroundStyle(.tertiary)
+                                .font(.caption)
+                            Text("\(vm.ratingCount) \(vm.ratingCount == 1 ? "rating" : "ratings")")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                        ForEach(vm.posts) { post in
-                            PostCardView(
-                                post: post,
-                                onLike: { postId in await vm.likePost(postId: postId) },
-                                onRestaurantTap: {
-                                    mapVM.focusRestaurantFromPost(post)
-                                    tabRouter.openMap()
-                                }
-                            )
-                        }
-                        if vm.posts.isEmpty && !vm.isLoading {
-                            ContentUnavailableView(
-                                "No posts from friends here yet",
-                                systemImage: "doc.text"
-                            )
-                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 16)
+                        Divider()
                     }
-                    .padding()
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            if let err = vm.errorMessage {
+                                Text(err)
+                                    .font(.footnote)
+                                    .foregroundStyle(.red)
+                            }
+                            ForEach(vm.posts) { post in
+                                PostCardView(
+                                    post: post,
+                                    onLike: { postId in await vm.likePost(postId: postId) },
+                                    onRestaurantTap: {
+                                        mapVM.focusRestaurantFromPost(post)
+                                        tabRouter.openMap()
+                                    }
+                                )
+                            }
+                            if vm.posts.isEmpty && !vm.isLoading {
+                                ContentUnavailableView(
+                                    "No posts from friends here yet",
+                                    systemImage: "doc.text"
+                                )
+                            }
+                        }
+                        .padding()
+                    }
+                    .refreshable { await vm.load() }
                 }
-                .refreshable { await vm.load() }
             }
         }
         .navigationTitle(restaurantName)

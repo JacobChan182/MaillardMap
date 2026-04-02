@@ -9,6 +9,7 @@ import {
   getFeed,
   getFeedPostsByRestaurant,
   getPostsByUser,
+  getRestaurantPostRatingSummary,
   toggleLike,
 } from './posts.service.js';
 import { getRestaurantByFoursquareId } from '../restaurants/restaurants.service.js';
@@ -55,8 +56,13 @@ postsRouter.get('/feed', requireAuth, async (req, res) => {
 
 postsRouter.get('/restaurant/:restaurantId', requireAuth, async (req, res) => {
   try {
-    const posts = await getFeedPostsByRestaurant((req as any).userId, req.params.restaurantId);
-    return res.json({ posts });
+    const userId = (req as any).userId as string;
+    const restaurantId = req.params.restaurantId;
+    const [posts, summary] = await Promise.all([
+      getFeedPostsByRestaurant(userId, restaurantId),
+      getRestaurantPostRatingSummary(userId, restaurantId),
+    ]);
+    return res.json({ posts, averageRating: summary.averageRating, ratingCount: summary.ratingCount });
   } catch {
     return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
   }

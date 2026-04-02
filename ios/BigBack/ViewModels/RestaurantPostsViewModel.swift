@@ -3,6 +3,8 @@ import Foundation
 @MainActor
 final class RestaurantPostsViewModel: ObservableObject {
     @Published var posts: [Post] = []
+    @Published var averageRating: Double?
+    @Published var ratingCount: Int = 0
     @Published var errorMessage: String?
     @Published var isLoading = false
 
@@ -21,10 +23,12 @@ final class RestaurantPostsViewModel: ObservableObject {
         let client = api
         do {
             // Detached so SwiftUI cancelling `.task` / `refreshable` does not cancel URLSession (server saw aborted connections).
-            let fetched = try await Task.detached(priority: .userInitiated) {
+            let payload = try await Task.detached(priority: .userInitiated) {
                 try await client.getPostsForRestaurant(restaurantId: id)
             }.value
-            posts = fetched
+            posts = payload.posts
+            averageRating = payload.averageRating
+            ratingCount = payload.ratingCount
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
@@ -42,6 +46,7 @@ final class RestaurantPostsViewModel: ObservableObject {
                     restaurantId: p.restaurantId, restaurantName: p.restaurantName,
                     restaurantAddress: p.restaurantAddress,
                     lat: p.lat, lng: p.lng, comment: p.comment,
+                    rating: p.rating,
                     photos: p.photos, liked: liked,
                     likeCount: liked ? p.likeCount + 1 : max(0, p.likeCount - 1),
                     commentCount: p.commentCount,

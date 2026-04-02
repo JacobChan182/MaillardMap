@@ -34,6 +34,7 @@ final class FeedViewModel: ObservableObject {
                     restaurantId: p.restaurantId, restaurantName: p.restaurantName,
                     restaurantAddress: p.restaurantAddress,
                     lat: p.lat, lng: p.lng, comment: p.comment,
+                    rating: p.rating,
                     photos: p.photos, liked: liked,
                     likeCount: liked ? p.likeCount + 1 : max(0, p.likeCount - 1),
                     commentCount: p.commentCount,

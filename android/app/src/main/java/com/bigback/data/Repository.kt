@@ -35,8 +35,13 @@ class Repository(
     suspend fun getFriends(): List<Friendship> = api.getFriendList().friends.map { it.toFriendship() }
 
     // --- Posts ---
-    suspend fun createPost(foursquareId: String, comment: String?, photoUrls: List<String>): Map<String, Any> {
-        return api.createPost(CreatePostPayload(foursquareId, comment, photoUrls))
+    suspend fun createPost(
+        foursquareId: String,
+        comment: String?,
+        photoUrls: List<String>,
+        rating: Double
+    ): Map<String, Any> {
+        return api.createPost(CreatePostPayload(foursquareId, comment, photoUrls, rating))
     }
 
     suspend fun getFeed(): List<Post> = api.getFeed().posts.map { it.toPost() }
@@ -79,8 +84,21 @@ class Repository(
 // -- DTO -> Domain mappers --
 private fun UserDTO.toUser() = User(id, username, createdAt)
 private fun FriendshipDTO.toFriendship() = Friendship(id, userId, friendId, friendUsername, status, createdAt)
-private fun PostDTO.toPost() = Post(id, userId, username, restaurantId, restaurantName, comment,
-    photos?.map { it.toPhoto() } ?: emptyList(), lat, lng, liked, likeCount, createdAt)
+private fun PostDTO.toPost() = Post(
+    id = id,
+    userId = userId,
+    username = username,
+    restaurantId = restaurantId,
+    restaurantName = restaurantName,
+    comment = comment,
+    rating = rating,
+    photos = photos?.map { it.toPhoto() } ?: emptyList(),
+    lat = lat,
+    lng = lng,
+    liked = liked,
+    likeCount = likeCount,
+    createdAt = createdAt
+)
 private fun PostPhotoDTO.toPhoto() = PostPhoto(id ?: "", url, orderIndex)
 private fun RestaurantDTO.toRestaurant() = Restaurant(id, foursquareId, name, lat, lng, cuisine)
 private fun SavedPlaceDTO.toSavedPlace() = SavedPlace(id, restaurantId, restaurantName, savedAt)

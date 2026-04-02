@@ -12,6 +12,8 @@ struct Post: Identifiable, Codable, Equatable {
     let lat: Double
     let lng: Double
     let comment: String?
+    /// Half-star visit rating 0.5…5; nil for legacy posts without a rating.
+    let rating: Double?
     let photos: [PostPhoto]
     let liked: Bool
     let likeCount: Int
@@ -44,4 +46,5 @@ struct CreatePostRequest: Codable {
     let foursquare_id: String
     let comment: String?
     let photo_urls: [String]?
+    let rating: Double
 }

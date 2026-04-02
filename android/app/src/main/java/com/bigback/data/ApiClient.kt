@@ -30,7 +30,8 @@ data class FriendRequestPayload(
 data class CreatePostPayload(
     @SerializedName("foursquare_id") val foursquareId: String,
     val comment: String? = null,
-    @SerializedName("photo_urls") val photoUrls: List<String> = emptyList()
+    @SerializedName("photo_urls") val photoUrls: List<String> = emptyList(),
+    val rating: Double
 )
 
 data class SavePlacePayload(
@@ -62,6 +63,7 @@ data class PostDTO(
     @SerializedName("restaurant_id") val restaurantId: String,
     @SerializedName("restaurant_name") val restaurantName: String? = null,
     val comment: String? = null,
+    val rating: Double? = null,
     val photos: List<PostPhotoDTO>? = emptyList(),
     val lat: Double? = null,
     val lng: Double? = null,

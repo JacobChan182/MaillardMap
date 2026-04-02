@@ -21,6 +21,7 @@ type PostData = {
   lat: number;
   lng: number;
   comment: string | null;
+  rating: number | null;
   photos: { id: string; postId: string; url: string; orderIndex: number }[];
   liked: boolean;
   likeCount: number;
@@ -37,6 +38,7 @@ export async function createPost(userId: string, input: {
   address?: string | null;
   comment?: string;
   photos?: { url: string }[];
+  rating: number;
 }): Promise<string> {
   const pool = getPool();
 
@@ -63,10 +65,10 @@ export async function createPost(userId: string, input: {
     await client.query('BEGIN');
 
     const postRes = await client.query(
-      `insert into posts (user_id, restaurant_id, comment)
-       values ($1, $2, $3)
+      `insert into posts (user_id, restaurant_id, comment, rating)
+       values ($1, $2, $3, $4)
        returning id`,
-      [userId, restaurantId, input.comment ?? null],
+      [userId, restaurantId, input.comment ?? null, input.rating],
     );
     const postId = postRes.rows[0].id;
 
@@ -126,6 +128,7 @@ export async function queryPosts(
        r.lat as restaurant_lat,
        r.lng as restaurant_lng,
        p.comment,
+       p.rating,
        p.comment_count,
        p.created_at
      from posts p
@@ -193,6 +196,7 @@ export async function queryPosts(
       lat: row.restaurant_lat,
       lng: row.restaurant_lng,
       comment: row.comment,
+      rating: row.rating != null ? Number(row.rating) : null,
       photos: photosByPost.get(row.post_id) || [],
       liked: likedSet.has(row.post_id),
       likeCount: likeCounts.get(row.post_id) || 0,
@@ -223,6 +227,33 @@ export async function getFeedPostsByRestaurant(userId: string, restaurantId: str
   const friendIds = await getFriendIds(pool, userId);
   const allIds = friendIds.length > 0 ? [...friendIds, userId] : [userId];
   return queryPosts(pool, allIds, userId, { restaurantId });
+}
+
+/** Average rating among visible posts at this restaurant (friends + self), same scope as `getFeedPostsByRestaurant`. */
+export async function getRestaurantPostRatingSummary(
+  userId: string,
+  restaurantId: string,
+): Promise<{ averageRating: number | null; ratingCount: number }> {
+  if (!isUuid(restaurantId)) {
+    return { averageRating: null, ratingCount: 0 };
+  }
+  const pool = getPool();
+  const friendIds = await getFriendIds(pool, userId);
+  const allIds = friendIds.length > 0 ? [...friendIds, userId] : [userId];
+  const res = await pool.query<{ avg: string | null; cnt: string }>(
+    `select
+       round(avg(p.rating)::numeric, 1)::text as avg,
+       count(*) filter (where p.rating is not null)::text as cnt
+     from posts p
+     where p.restaurant_id = $1 and p.user_id = any($2::uuid[])`,
+    [restaurantId, allIds],
+  );
+  const row = res.rows[0];
+  if (!row) return { averageRating: null, ratingCount: 0 };
+  const cnt = parseInt(row.cnt || '0', 10);
+  if (cnt === 0) return { averageRating: null, ratingCount: 0 };
+  const avg = row.avg != null ? parseFloat(row.avg) : null;
+  return { averageRating: Number.isFinite(avg) ? avg : null, ratingCount: cnt };
 }
 
 /**

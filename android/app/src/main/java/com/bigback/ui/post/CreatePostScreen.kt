@@ -15,6 +15,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 import coil.compose.rememberAsyncImagePainter
 import com.bigback.common.PreviewTheme
 import com.bigback.data.Repository
@@ -59,6 +61,8 @@ private fun CreatePostContent(
     var photoUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var rating by remember { mutableStateOf(4.0) }
+    val scope = rememberCoroutineScope()
 
     val pickMedia = rememberLauncherForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(3)
@@ -97,6 +101,27 @@ private fun CreatePostContent(
                     Text("Search for a restaurant")
                 }
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Divider()
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Your rating", style = MaterialTheme.typography.subtitle1)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = String.format("%.1f stars", rating),
+                style = MaterialTheme.typography.body2,
+                color = MaterialTheme.colors.onSurface.copy(alpha = 0.7f)
+            )
+            Slider(
+                value = rating.toFloat(),
+                onValueChange = { v ->
+                    val snapped = ((v * 2f).roundToInt() / 2.0).coerceIn(0.5, 5.0)
+                    rating = snapped
+                },
+                valueRange = 0.5f..5f,
+                steps = 8
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
             Divider()
@@ -165,15 +190,19 @@ private fun CreatePostContent(
                         error = "Select a restaurant first"
                         return@Button
                     }
+                    if (comment.isBlank()) {
+                        error = "Add a comment"
+                        return@Button
+                    }
                     isLoading = true
-                    val scope = rememberCoroutineScope()
                     scope.launch {
                         try {
                             // Note: in production, upload photo URLs to S3 first
                             repository.createPost(
                                 foursquareId = restaurant.foursquareId,
                                 comment = comment,
-                                photoUrls = emptyList()
+                                photoUrls = emptyList(),
+                                rating = rating
                             )
                             onPostCreated()
                         } catch (e: Exception) {

@@ -229,11 +229,10 @@ final class APIClient {
         return try decode(Resp.self, from: data).posts
     }
 
-    /// Posts at this restaurant from you + friends (same scope as the feed).
-    func getPostsForRestaurant(restaurantId: String) async throws -> [Post] {
-        struct Resp: Decodable { var posts: [Post] }
+    /// Posts at this restaurant from you + friends (same scope as the feed), plus aggregate rating stats.
+    func getPostsForRestaurant(restaurantId: String) async throws -> RestaurantPostsPayload {
         let data = try await request("posts/restaurant/\(restaurantId)")
-        return try decode(Resp.self, from: data).posts
+        return try decode(RestaurantPostsPayload.self, from: data)
     }
 
     func likePost(postId: String) async throws -> Bool {
@@ -363,6 +362,12 @@ struct BlendRequest: Encodable {
 
 struct PostFeedResponse: Decodable {
     let posts: [Post]
+}
+
+struct RestaurantPostsPayload: Decodable {
+    let posts: [Post]
+    let averageRating: Double?
+    let ratingCount: Int
 }
 
 struct SavedPlacesResponse: Decodable {

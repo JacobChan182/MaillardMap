@@ -19,7 +19,14 @@ export const createPostSchema = z.preprocess(
     if (photos == null && Array.isArray(o.photo_urls)) {
       photos = (o.photo_urls as string[]).map((url) => ({ url }));
     }
-    return { foursquareId, comment: o.comment, photos };
+    const rawRating = o.rating;
+    const rating =
+      typeof rawRating === 'string'
+        ? Number(rawRating)
+        : typeof rawRating === 'number'
+          ? rawRating
+          : undefined;
+    return { foursquareId, comment: o.comment, photos, rating };
   },
   z.object({
     foursquareId: z.string(),
@@ -32,6 +39,13 @@ export const createPostSchema = z.preprocess(
       )
       .max(3)
       .optional(),
+    rating: z
+      .number()
+      .min(0.5, 'Rating must be at least 0.5 stars')
+      .max(5, 'Rating must be at most 5 stars')
+      .refine((n) => Math.abs(n * 2 - Math.round(n * 2)) < 1e-6, {
+        message: 'Rating must be in half-star steps (0.5, 1, …, 5)',
+      }),
   }),
 );
 
@@ -54,6 +68,7 @@ export const postSchema = z.object({
   likeCount: z.number(),
   commentCount: z.number(),
   createdAt: z.string(),
+  rating: z.number().nullable().optional(),
 });
 
 export type Post = z.infer<typeof postSchema>;

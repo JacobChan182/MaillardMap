@@ -12,6 +12,8 @@ final class CreatePostViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isPosting = false
     @Published var didPost = false
+    /// Half-star rating 0.5…5; required before posting.
+    @Published var visitRating: Double?
 
     private let api: APIClient
 
@@ -24,6 +26,10 @@ final class CreatePostViewModel: ObservableObject {
 
     var commentValid: Bool {
         !comment.isEmpty && comment.count <= maxCommentLength
+    }
+
+    var canSubmit: Bool {
+        commentValid && selectedRestaurant != nil && visitRating != nil
     }
 
     var progressString: String {
@@ -60,6 +66,10 @@ final class CreatePostViewModel: ObservableObject {
         }
         guard selectedPhotos.count <= maxPhotos else {
             errorMessage = "Too many photos (max \(maxPhotos))"
+            return
+        }
+        guard let rating = visitRating else {
+            errorMessage = "Add a star rating"
             return
         }
 
@@ -102,7 +112,8 @@ final class CreatePostViewModel: ObservableObject {
             let req = CreatePostRequest(
                 foursquare_id: restaurant.foursquareId,
                 comment: comment,
-                photo_urls: photoUrls
+                photo_urls: photoUrls,
+                rating: rating
             )
             _ = try await api.createPost(req)
             didPost = true
@@ -116,6 +127,7 @@ final class CreatePostViewModel: ObservableObject {
         comment = ""
         selectedPhotos = []
         selectedPhotoItems = []
+        visitRating = nil
         errorMessage = nil
         didPost = false
     }

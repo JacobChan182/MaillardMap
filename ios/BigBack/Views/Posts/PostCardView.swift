@@ -130,7 +130,7 @@ struct PostCardView: View {
                         Text("@\(post.username)")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
-                            .padding(.top, 1)
+                            .padding(.top, 0)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -146,6 +146,14 @@ struct PostCardView: View {
                     Text(post.restaurantName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+            }
+
+            if let r = post.rating {
+                HStack {
+                    Spacer(minLength: 0)
+                    StarRatingDisplay(rating: r, starSize: 15)
+                    Spacer(minLength: 0)
                 }
             }
 
