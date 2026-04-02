@@ -26,6 +26,7 @@
 		B1C2D3E4F5061728394A5B6C7 /* TabRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2D3E4F5061728394A5B6C7D8 /* TabRouter.swift */; };
 		958E0630F88B223A39F01399 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F5B7334131D69AD9018D536 /* APIClient.swift */; };
 		C1A0B9E8D7F6453029181721 /* AvatarImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0B9E8D7F6453029181720 /* AvatarImageLoader.swift */; };
+		C1A0B9E8D7F6453029181723 /* SocialImageCompression.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A0B9E8D7F6453029181722 /* SocialImageCompression.swift */; };
 		9A5E16F37D865770E10C06EC /* SavedPlace.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4DDCDF16C0DBA6DEEB1CC95 /* SavedPlace.swift */; };
 		9AD79D1DC49173921A4189D6 /* Restaurant.swift in Sources */ = {isa = PBXBuildFile; fileRef = D54682EC0DDC62F32C146CC7 /* Restaurant.swift */; };
 		9EFCEF126F4568853F97236E /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C391A1B6186EBFD07661889 /* MainTabView.swift */; };
@@ -68,6 +69,7 @@
 		8AEA0271F1C2F1CCF528237B /* Blend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Blend.swift; sourceTree = "<group>"; };
 		8F5B7334131D69AD9018D536 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		C1A0B9E8D7F6453029181720 /* AvatarImageLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AvatarImageLoader.swift; sourceTree = "<group>"; };
+		C1A0B9E8D7F6453029181722 /* SocialImageCompression.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocialImageCompression.swift; sourceTree = "<group>"; };
 		949DBAA58ACCFFCC62FB5BB6 /* UserPostsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPostsViewModel.swift; sourceTree = "<group>"; };
 		A1E4129F9014643606F249F8 /* BigBackApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BigBackApp.swift; sourceTree = "<group>"; };
 		C2D3E4F5061728394A5B6C7D8 /* TabRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabRouter.swift; sourceTree = "<group>"; };
@@ -150,6 +152,7 @@
 			children = (
 				C1A0B9E8D7F6453029181720 /* AvatarImageLoader.swift */,
 				8F5B7334131D69AD9018D536 /* APIClient.swift */,
+				C1A0B9E8D7F6453029181722 /* SocialImageCompression.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -327,6 +330,7 @@
 			files = (
 				C1A0B9E8D7F6453029181721 /* AvatarImageLoader.swift in Sources */,
 				958E0630F88B223A39F01399 /* APIClient.swift in Sources */,
+				C1A0B9E8D7F6453029181723 /* SocialImageCompression.swift in Sources */,
 				D23E7052736E3B5D6F9F292A /* AuthView.swift in Sources */,
 				4174D20F298F669997EDCA42 /* AuthViewModel.swift in Sources */,
 				91FEFE987E93FD8E43B765E2 /* BigBackApp.swift in Sources */,

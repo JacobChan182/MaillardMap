@@ -89,15 +89,16 @@ struct EditProfileView: View {
         errorMessage = nil
         defer { isBusy = false }
         do {
-            guard let data = try await item.loadTransferable(type: Data.self) else { return }
-            let contentType: String
+            guard let raw = try await item.loadTransferable(type: Data.self) else { return }
+            let contentType = "image/jpeg"
             let uploadData: Data
-            if let img = UIImage(data: data), let jpeg = img.jpegData(compressionQuality: 0.88) {
-                contentType = "image/jpeg"
-                uploadData = jpeg
+            if let img = UIImage(data: raw) {
+                let jpeg = await Task.detached(priority: .userInitiated) {
+                    SocialImageCompression.jpegDataForProfileAvatar(img)
+                }.value
+                uploadData = jpeg ?? raw
             } else {
-                contentType = "image/jpeg"
-                uploadData = data
+                uploadData = raw
             }
             let slot = try await api.presignAvatarUpload(contentType: contentType)
             guard let putURL = URL(string: slot.uploadUrl) else { return }

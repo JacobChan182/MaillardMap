@@ -81,7 +81,11 @@ final class CreatePostViewModel: ObservableObject {
                 var urls: [String] = []
                 urls.reserveCapacity(slots.count)
                 for (i, slot) in slots.enumerated() {
-                    guard let data = selectedPhotos[i].jpegData(compressionQuality: 0.85) else {
+                    let photo = selectedPhotos[i]
+                    let compressed = await Task.detached(priority: .userInitiated) {
+                        SocialImageCompression.jpegDataForPostPhoto(photo)
+                    }.value
+                    guard let data = compressed else {
                         errorMessage = "Could not prepare photo \(i + 1)"
                         return
                     }
