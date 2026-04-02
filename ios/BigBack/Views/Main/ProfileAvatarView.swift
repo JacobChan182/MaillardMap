@@ -1,10 +1,14 @@
 import SwiftUI
+import UIKit
 
 /// Circular avatar: remote image when `url` is set, otherwise a monogram from `name`.
 struct ProfileAvatarView: View {
     var url: String?
     var name: String
     var size: CGFloat = 40
+
+    @State private var resolvedImage: UIImage?
+    @State private var loadFinished = false
 
     private var monogram: String {
         let t = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -15,22 +19,36 @@ struct ProfileAvatarView: View {
     var body: some View {
         Group {
             if let url, let u = URL(string: url), !url.isEmpty {
-                AsyncImage(url: u) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                    case .failure:
-                        monogramView
-                    case .empty:
+                if let img = resolvedImage ?? AvatarImageLoader.cachedImage(for: u) {
+                    Image(uiImage: img)
+                        .resizable()
+                        .scaledToFill()
+                } else if loadFinished {
+                    monogramView
+                } else {
+                    ZStack {
+                        monogramView.opacity(0.35)
                         ProgressView()
-                    @unknown default:
-                        monogramView
+                            .scaleEffect(0.65)
+                    }
+                    .task(id: url) {
+                        loadFinished = false
+                        resolvedImage = nil
+                        if let cached = AvatarImageLoader.cachedImage(for: u) {
+                            resolvedImage = cached
+                            loadFinished = true
+                            return
+                        }
+                        let image = await AvatarImageLoader.load(url: u)
+                        resolvedImage = image
+                        loadFinished = true
                     }
                 }
             } else {
                 monogramView
             }
         }
+        .id(url ?? "")
         .frame(width: size, height: size)
         .clipShape(Circle())
     }
