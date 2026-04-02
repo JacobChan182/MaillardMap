@@ -152,7 +152,11 @@ struct PostCardView: View {
         }
         .padding()
         .background(Color(uiColor: .systemBackground))
-        .cornerRadius(12)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Color.gray.opacity(0.35), lineWidth: 1)
+        }
         .shadow(radius: 2)
         .sheet(isPresented: $showComments) {
             NavigationStack {
