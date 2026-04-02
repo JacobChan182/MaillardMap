@@ -62,6 +62,30 @@ struct ProfileAvatarView: View {
     }
 }
 
+/// Opens that user's profile (`UserPostsView`). Use inside a `NavigationStack`.
+struct ProfileAvatarLink: View {
+    let userId: String
+    var url: String?
+    var name: String
+    var size: CGFloat = 40
+
+    var body: some View {
+        Group {
+            if userId.isEmpty {
+                ProfileAvatarView(url: url, name: name, size: size)
+            } else {
+                NavigationLink {
+                    UserPostsView(userId: userId)
+                } label: {
+                    ProfileAvatarView(url: url, name: name, size: size)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .accessibilityLabel("View \(name) profile")
+    }
+}
+
 #Preview {
     HStack {
         ProfileAvatarView(url: nil, name: "sam")

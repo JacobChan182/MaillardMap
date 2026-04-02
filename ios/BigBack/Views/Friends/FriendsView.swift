@@ -42,22 +42,12 @@ struct FriendsView: View {
                 }
             }
 
-            Section("Find Friends") {
-                TextField("Search by username", text: $vm.searchQuery)
-                    .onChange(of: vm.searchQuery) { _, _ in
-                        Task { await vm.searchUsers() }
-                    }
-
-                if !vm.sentRequests.isEmpty {
-                    Text("Requests sent")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 4, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+            if !vm.sentRequests.isEmpty {
+                Section("Requests sent") {
                     ForEach(vm.sentRequests) { req in
                         HStack {
-                            ProfileAvatarView(
+                            ProfileAvatarLink(
+                                userId: req.friendId,
                                 url: req.friendAvatarUrl,
                                 name: friendListTitle(req),
                                 size: 36
@@ -83,21 +73,41 @@ struct FriendsView: View {
                         }
                     }
                 }
+            }
 
-                if !vm.searchResults.isEmpty {
-                    ForEach(vm.searchResults) { user in
-                        HStack {
-                            ProfileAvatarView(url: user.avatarUrl, name: userListTitle(user), size: 36)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(userListTitle(user))
-                                    .font(.headline)
-                                Text("@\(user.username)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            searchActionView(for: user)
+            Section("Find Friends") {
+                TextField("Search by username", text: $vm.searchQuery)
+                    .onChange(of: vm.searchQuery) { _, _ in
+                        Task { await vm.searchUsers() }
+                    }
+
+                if vm.searchQuery.isEmpty {
+                    Text("Type a username to search")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else if vm.searchResults.isEmpty && !vm.isLoading {
+                    Text("No users match")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(vm.searchResults) { user in
+                    HStack {
+                        ProfileAvatarLink(
+                            userId: user.id,
+                            url: user.avatarUrl,
+                            name: userListTitle(user),
+                            size: 36
+                        )
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(userListTitle(user))
+                                .font(.headline)
+                            Text("@\(user.username)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
+                        Spacer()
+                        searchActionView(for: user)
                     }
                 }
             }
@@ -169,7 +179,7 @@ struct FriendsView: View {
                 Label("Request sent", systemImage: "checkmark.circle.fill")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Button("Remove") {
+                Button("Revoke") {
                     Task { await vm.removeFriend(friendId: user.id) }
                 }
                 .buttonStyle(.bordered)

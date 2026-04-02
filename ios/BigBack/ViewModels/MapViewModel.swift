@@ -206,6 +206,18 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         }
     }
 
+    /// Shared-restaurant notification: load venue, then same gray/orange pin + card as search.
+    func focusRestaurantFromShare(restaurantId: String) async -> Bool {
+        do {
+            let r = try await api.getRestaurant(id: restaurantId)
+            focusRestaurantFromSearch(r)
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            return false
+        }
+    }
+
     /// Map pin tap: show the white card above the venue; tap the card to open restaurant posts.
     func showCalloutForMapPin(restaurantId: String, name: String, coordinate: CLLocationCoordinate2D) {
         calloutInterruptedDismissTasks()

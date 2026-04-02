@@ -1,9 +1,12 @@
 import SwiftUI
 
 struct UserPostsView: View {
+    @EnvironmentObject private var auth: AuthViewModel
     @EnvironmentObject private var mapVM: MapViewModel
     @EnvironmentObject private var tabRouter: TabRouter
     @StateObject private var vm: UserPostsViewModel
+    @State private var showShareRestaurantPicker = false
+    @State private var shareRestaurantError: String?
 
     init(userId: String) {
         _vm = StateObject(wrappedValue: UserPostsViewModel(userId: userId))
@@ -77,6 +80,55 @@ struct UserPostsView: View {
         }
         .navigationTitle(navigationTagTitle)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let me = auth.currentUser?.id, me != vm.userId {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button("Send Restaurant") {
+                            showShareRestaurantPicker = true
+                        }
+                    } label: {
+                        Image(systemName: "line.3.horizontal")
+                    }
+                    .accessibilityLabel("Profile menu")
+                }
+            }
+        }
+        .sheet(isPresented: $showShareRestaurantPicker) {
+            NavigationStack {
+                RestaurantPickerSheet { restaurant in
+                    showShareRestaurantPicker = false
+                    Task {
+                        await sendSharedRestaurant(restaurantId: restaurant.id)
+                    }
+                }
+                .environmentObject(mapVM)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            showShareRestaurantPicker = false
+                        }
+                    }
+                }
+            }
+        }
+        .alert("Could not send", isPresented: Binding(
+            get: { shareRestaurantError != nil },
+            set: { if !$0 { shareRestaurantError = nil } }
+        )) {
+            Button("OK") { shareRestaurantError = nil }
+        } message: {
+            Text(shareRestaurantError ?? "")
+        }
         .task { await vm.loadPosts() }
+    }
+
+    private func sendSharedRestaurant(restaurantId: String) async {
+        shareRestaurantError = nil
+        do {
+            try await auth.api.shareRestaurant(recipientId: vm.userId, restaurantId: restaurantId)
+        } catch {
+            shareRestaurantError = error.localizedDescription
+        }
     }
 }

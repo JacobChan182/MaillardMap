@@ -1,5 +1,9 @@
 import { getPool } from '../../db/pool.js';
+import { areMutualFriends } from '../friends/friends.service.js';
 import { searchNearby } from '../../external/foursquare.js';
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 type RestaurantRow = {
   id: string;
@@ -146,4 +150,47 @@ function rowToRestaurant(row: RestaurantRow) {
     cuisine: row.cuisine,
     address: row.address,
   };
+}
+
+export async function createRestaurantShare(
+  fromUserId: string,
+  recipientId: string,
+  restaurantId: string,
+): Promise<{ ok: true } | { ok: false; status: number; code: string; message: string }> {
+  if (!UUID_RE.test(recipientId) || !UUID_RE.test(restaurantId)) {
+    return {
+      ok: false,
+      status: 400,
+      code: 'VALIDATION_ERROR',
+      message: 'recipientId and restaurantId must be UUIDs',
+    };
+  }
+  if (fromUserId === recipientId) {
+    return {
+      ok: false,
+      status: 400,
+      code: 'VALIDATION_ERROR',
+      message: 'Cannot share with yourself',
+    };
+  }
+  const restaurant = await getRestaurantById(restaurantId);
+  if (!restaurant) {
+    return { ok: false, status: 404, code: 'NOT_FOUND', message: 'Restaurant not found' };
+  }
+  const friends = await areMutualFriends(fromUserId, recipientId);
+  if (!friends) {
+    return {
+      ok: false,
+      status: 403,
+      code: 'FORBIDDEN',
+      message: 'You can only share restaurants with accepted friends',
+    };
+  }
+  const pool = getPool();
+  await pool.query(
+    `insert into restaurant_shares (from_user_id, to_user_id, restaurant_id)
+     values ($1, $2, $3)`,
+    [fromUserId, recipientId, restaurantId],
+  );
+  return { ok: true };
 }

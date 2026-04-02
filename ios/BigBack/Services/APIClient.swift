@@ -331,6 +331,14 @@ final class APIClient {
         return try decode(Restaurant.self, from: data)
     }
 
+    func shareRestaurant(recipientId: String, restaurantId: String) async throws {
+        struct Body: Encodable {
+            let recipientId: String
+            let restaurantId: String
+        }
+        _ = try await request("restaurants/share", method: "POST", body: Body(recipientId: recipientId, restaurantId: restaurantId))
+    }
+
     // MARK: - Taste Blend
 
     func blendTastes(userIds: [String]) async throws -> BlendResult {

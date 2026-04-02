@@ -99,7 +99,12 @@ private struct CommentThreadBlock: View {
     private var commentRow: some View {
         let author = commentAuthorLabel(comment)
         return HStack(alignment: .top, spacing: 8) {
-            ProfileAvatarView(url: comment.avatarUrl, name: author, size: 28)
+            ProfileAvatarLink(
+                userId: comment.userId,
+                url: comment.avatarUrl,
+                name: author,
+                size: 28
+            )
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(author)
@@ -145,20 +150,28 @@ private struct MentionPickerSheet: View {
                     ProgressView()
                 }
                 ForEach(results) { user in
-                    Button {
-                        targetText += "@\(user.username) "
-                        dismiss()
-                    } label: {
-                        HStack {
-                            ProfileAvatarView(url: user.avatarUrl, name: userListTitle(user), size: 36)
+                    HStack(alignment: .center, spacing: 12) {
+                        ProfileAvatarLink(
+                            userId: user.id,
+                            url: user.avatarUrl,
+                            name: userListTitle(user),
+                            size: 36
+                        )
+                        Button {
+                            targetText += "@\(user.username) "
+                            dismiss()
+                        } label: {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(userListTitle(user))
                                     .font(.headline)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                                 Text("@\(user.username)")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
+                        .buttonStyle(.plain)
                     }
                 }
             }

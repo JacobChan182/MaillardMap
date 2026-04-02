@@ -31,33 +31,40 @@ struct BlendView: View {
                     ForEach(vm.availableFriends) { friendship in
                         let friendId = friendship.friendId
                         let title = blendFriendTitle(friendship)
-                        Button {
-                            if vm.selectedFriendIds.contains(friendId) {
-                                vm.selectedFriendIds.remove(friendId)
-                            } else {
-                                vm.selectedFriendIds.insert(friendId)
-                            }
-                        } label: {
-                            HStack {
-                                Image(systemName: vm.selectedFriendIds.contains(friendId)
-                                      ? "checkmark.circle.fill"
-                                      : "circle")
-                                .foregroundStyle(vm.selectedFriendIds.contains(friendId) ? .orange : .secondary)
-
-                                ProfileAvatarView(url: friendship.friendAvatarUrl, name: title, size: 32)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(title)
-                                        .foregroundStyle(.primary)
-                                    if let u = friendship.friendUsername {
-                                        Text("@\(u)")
-                                            .font(.caption2)
-                                            .foregroundStyle(.secondary)
-                                    }
+                        HStack(alignment: .center, spacing: 10) {
+                            ProfileAvatarLink(
+                                userId: friendId,
+                                url: friendship.friendAvatarUrl,
+                                name: title,
+                                size: 32
+                            )
+                            Button {
+                                if vm.selectedFriendIds.contains(friendId) {
+                                    vm.selectedFriendIds.remove(friendId)
+                                } else {
+                                    vm.selectedFriendIds.insert(friendId)
                                 }
-                                Spacer()
+                            } label: {
+                                HStack {
+                                    Image(systemName: vm.selectedFriendIds.contains(friendId)
+                                          ? "checkmark.circle.fill"
+                                          : "circle")
+                                    .foregroundStyle(vm.selectedFriendIds.contains(friendId) ? .orange : .secondary)
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(title)
+                                            .foregroundStyle(.primary)
+                                        if let u = friendship.friendUsername {
+                                            Text("@\(u)")
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                    }
+                                    Spacer()
+                                }
                             }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 } header: {
                     Text("Select Friends")

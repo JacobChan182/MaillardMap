@@ -206,3 +206,21 @@ export async function getFriendsList(userId: string) {
     incomingPending: r.incoming_pending,
   }));
 }
+
+/** True when there is an accepted friendship in either direction between the two users. */
+export async function areMutualFriends(userIdA: string, userIdB: string): Promise<boolean> {
+  if (userIdA === userIdB) return false;
+  const pool = getPool();
+  const res = await pool.query<{ one: number }>(
+    `select 1 as one
+     from friendships f
+     where f.status = 'accepted'
+       and (
+         (f.user_id = $1 and f.friend_id = $2)
+         or (f.user_id = $2 and f.friend_id = $1)
+       )
+     limit 1`,
+    [userIdA, userIdB],
+  );
+  return res.rows.length > 0;
+}

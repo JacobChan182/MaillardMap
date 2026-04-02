@@ -120,7 +120,12 @@ struct PostCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .center, spacing: 10) {
-                ProfileAvatarView(url: post.avatarUrl, name: authorDisplayName, size: 40)
+                ProfileAvatarLink(
+                    userId: post.userId,
+                    url: post.avatarUrl,
+                    name: authorDisplayName,
+                    size: 40
+                )
                 VStack(alignment: .leading, spacing: 0) {
                     Text(authorDisplayName)
                         .font(.headline)

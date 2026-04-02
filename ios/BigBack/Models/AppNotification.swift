@@ -11,6 +11,7 @@ struct AppNotification: Identifiable, Codable, Equatable {
     let postId: String?
     let commentId: String?
     let previewText: String?
+    let restaurantId: String?
 
     enum Kind: String, Codable {
         case friendRequest = "friend_request"
@@ -19,5 +20,6 @@ struct AppNotification: Identifiable, Codable, Equatable {
         case comment
         case reply
         case mention
+        case restaurantShare = "restaurant_share"
     }
 }

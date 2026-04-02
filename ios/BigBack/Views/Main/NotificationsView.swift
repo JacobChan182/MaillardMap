@@ -27,36 +27,49 @@ private func typeLabel(_ kind: AppNotification.Kind) -> String {
     case .comment: return "Comment"
     case .reply: return "Reply"
     case .mention: return "Mention"
+    case .restaurantShare: return "Restaurant shared"
     }
 }
 
+/// Text block shared by all notification rows; keep tappable chrome in the caller so the avatar stays outside links/buttons.
+private func notificationBody(_ item: AppNotification) -> some View {
+    VStack(alignment: .leading, spacing: 4) {
+        Text(typeLabel(item.type))
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        Text(actorTitle(item))
+            .font(.subheadline.weight(.semibold))
+        if let preview = item.previewText, !preview.isEmpty {
+            Text(preview)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(3)
+        }
+        Text(notificationTimeLabel(iso: item.createdAt))
+            .font(.caption2)
+            .foregroundStyle(.tertiary)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .multilineTextAlignment(.leading)
+}
+
+private func notificationAvatar(_ item: AppNotification) -> some View {
+    ProfileAvatarLink(
+        userId: item.actorId,
+        url: item.actorAvatarUrl,
+        name: actorTitle(item),
+        size: 44
+    )
+}
+
+/// Non-interactive row (avatar + body).
 private struct NotificationRow: View {
     let item: AppNotification
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            ProfileAvatarView(
-                url: item.actorAvatarUrl,
-                name: actorTitle(item),
-                size: 44
-            )
-            VStack(alignment: .leading, spacing: 4) {
-                Text(typeLabel(item.type))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(actorTitle(item))
-                    .font(.subheadline.weight(.semibold))
-                if let preview = item.previewText, !preview.isEmpty {
-                    Text(preview)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(3)
-                }
-                Text(notificationTimeLabel(iso: item.createdAt))
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
-            Spacer(minLength: 0)
+            notificationAvatar(item)
+            notificationBody(item)
         }
         .padding(.vertical, 4)
     }
@@ -131,6 +144,8 @@ struct NotificationPostView: View {
 }
 
 struct NotificationsView: View {
+    @EnvironmentObject private var mapVM: MapViewModel
+    @EnvironmentObject private var tabRouter: TabRouter
     @StateObject private var vm = NotificationsViewModel()
 
     var body: some View {
@@ -140,7 +155,7 @@ struct NotificationsView: View {
             } else if let err = vm.errorMessage, !err.isEmpty, vm.items.isEmpty {
                 ContentUnavailableView("Could not load", systemImage: "bell.slash", description: Text(err))
             } else if vm.items.isEmpty {
-                ContentUnavailableView("No notifications yet", systemImage: "bell", description: Text("Likes, comments, mentions, friend requests, and accepted requests show up here."))
+                ContentUnavailableView("No notifications yet", systemImage: "bell", description: Text("Likes, comments, mentions, friend activity, shared restaurants, and friend requests show up here."))
             } else {
                 List {
                     ForEach(vm.items) { item in
@@ -173,18 +188,49 @@ struct NotificationsView: View {
             }
             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
         case .friendAccept:
-            NavigationLink {
-                UserPostsView(userId: item.actorId)
-            } label: {
+            HStack(alignment: .top, spacing: 12) {
+                notificationAvatar(item)
+                NavigationLink {
+                    UserPostsView(userId: item.actorId)
+                } label: {
+                    notificationBody(item)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.vertical, 4)
+        case .restaurantShare:
+            if let rid = item.restaurantId, !rid.isEmpty {
+                HStack(alignment: .top, spacing: 12) {
+                    notificationAvatar(item)
+                    Button {
+                        Task {
+                            let ok = await mapVM.focusRestaurantFromShare(restaurantId: rid)
+                            if ok { tabRouter.openMap() }
+                        }
+                    } label: {
+                        notificationBody(item)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.vertical, 4)
+            } else {
                 NotificationRow(item: item)
             }
         default:
             if let pid = item.postId {
-                NavigationLink {
-                    NotificationPostView(postId: pid)
-                } label: {
-                    NotificationRow(item: item)
+                HStack(alignment: .top, spacing: 12) {
+                    notificationAvatar(item)
+                    NavigationLink {
+                        NotificationPostView(postId: pid)
+                    } label: {
+                        notificationBody(item)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
+                .padding(.vertical, 4)
             } else {
                 NotificationRow(item: item)
             }

@@ -7,7 +7,8 @@ export type NotificationType =
   | 'like'
   | 'comment'
   | 'reply'
-  | 'mention';
+  | 'mention'
+  | 'restaurant_share';
 
 export type AppNotification = {
   id: string;
@@ -20,6 +21,7 @@ export type AppNotification = {
   postId: string | null;
   commentId: string | null;
   previewText: string | null;
+  restaurantId: string | null;
 };
 
 const LIMIT = 100;
@@ -81,6 +83,7 @@ export async function getNotifications(userId: string): Promise<AppNotification[
       postId: null,
       commentId: null,
       previewText: null,
+      restaurantId: null,
     });
   }
 
@@ -112,6 +115,43 @@ export async function getNotifications(userId: string): Promise<AppNotification[
       postId: null,
       commentId: null,
       previewText: 'Accepted your request',
+      restaurantId: null,
+    });
+  }
+
+  const shareRes = await pool.query<{
+    id: string;
+    created_at: Date;
+    from_user_id: string;
+    restaurant_id: string;
+    username: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    restaurant_name: string;
+  }>(
+    `select rs.id, rs.created_at, rs.from_user_id, rs.restaurant_id,
+            u.username, u.display_name, u.avatar_url, r.name as restaurant_name
+     from restaurant_shares rs
+     join users u on u.id = rs.from_user_id
+     join restaurants r on r.id = rs.restaurant_id
+     where rs.to_user_id = $1
+     order by rs.created_at desc
+     limit $2`,
+    [userId, PER_SOURCE],
+  );
+  for (const r of shareRes.rows) {
+    items.push({
+      id: `rs:${r.id}`,
+      type: 'restaurant_share',
+      createdAt: iso(r.created_at),
+      actorId: String(r.from_user_id),
+      actorUsername: r.username,
+      actorDisplayName: r.display_name,
+      actorAvatarUrl: rewritePublicMediaUrl(r.avatar_url),
+      postId: null,
+      commentId: null,
+      previewText: r.restaurant_name,
+      restaurantId: String(r.restaurant_id),
     });
   }
 
@@ -148,6 +188,7 @@ export async function getNotifications(userId: string): Promise<AppNotification[
       postId: String(r.post_id),
       commentId: null,
       previewText: r.restaurant_name,
+      restaurantId: null,
     });
   }
 
@@ -191,6 +232,7 @@ export async function getNotifications(userId: string): Promise<AppNotification[
       postId: String(r.post_id),
       commentId: cid,
       previewText: trunc(r.text, 140),
+      restaurantId: null,
     });
   }
 
@@ -231,6 +273,7 @@ export async function getNotifications(userId: string): Promise<AppNotification[
       postId: String(r.post_id),
       commentId: cid,
       previewText: trunc(r.text, 140),
+      restaurantId: null,
     });
   }
 
@@ -273,6 +316,7 @@ export async function getNotifications(userId: string): Promise<AppNotification[
         postId: String(r.post_id),
         commentId: cid,
         previewText: trunc(r.text, 140),
+        restaurantId: null,
       });
     }
   }

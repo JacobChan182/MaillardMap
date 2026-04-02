@@ -78,6 +78,7 @@ struct FeedTab: View {
             }
             .refreshable { await feedVM.loadFeed() }
             .navigationTitle("Feed")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
