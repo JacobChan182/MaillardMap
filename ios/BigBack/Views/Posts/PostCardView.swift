@@ -132,10 +132,14 @@ struct PostCardView: View {
                     .font(.caption)
                     .onTapGesture { Task { await onLike(post.id) } }
 
-                    Text(commentCountLabel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .onTapGesture { showComments = true }
+                    HStack(spacing: 6) {
+                        Image(systemName: "text.bubble")
+                            .foregroundStyle(.secondary)
+                        Text(commentCountLabel)
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.caption)
+                    .onTapGesture { showComments = true }
                 }
                 Spacer(minLength: 8)
                 if let created = postCreatedDate(from: post.createdAt) {
