@@ -4,6 +4,7 @@ import Foundation
 final class FriendsViewModel: ObservableObject {
     @Published var friends: [Friendship] = []
     @Published var pendingRequests: [Friendship] = []
+    @Published var sentRequests: [Friendship] = []
     @Published var searchResults: [User] = []
     @Published var searchQuery = ""
     @Published var errorMessage: String?
@@ -21,7 +22,8 @@ final class FriendsViewModel: ObservableObject {
         do {
             let list = try await api.getFriendsList()
             friends = list.filter { $0.status == "accepted" }
-            pendingRequests = list.filter { $0.status == "pending" }
+            pendingRequests = list.filter { $0.status == "pending" && $0.incomingPending != false }
+            sentRequests = list.filter { $0.status == "pending" && $0.incomingPending == false }
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
@@ -46,6 +48,7 @@ final class FriendsViewModel: ObservableObject {
     func sendFriendRequest(userId: String) async {
         do {
             try await api.sendFriendRequest(friendId: userId)
+            await loadFriends()
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription
@@ -56,6 +59,17 @@ final class FriendsViewModel: ObservableObject {
         do {
             try await api.acceptFriendRequest(friendId: friendId)
             await loadFriends()
+            errorMessage = nil
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func removeFriend(friendId: String) async {
+        do {
+            try await api.removeFriend(friendId: friendId)
+            await loadFriends()
+            await searchUsers()
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription

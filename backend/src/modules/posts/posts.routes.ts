@@ -8,6 +8,7 @@ import {
   getCommentsByPost,
   getFeed,
   getFeedPostsByRestaurant,
+  getPostByIdForViewer,
   getPostsByUser,
   getRestaurantPostRatingSummary,
   toggleLike,
@@ -73,6 +74,18 @@ postsRouter.get('/user/:id', optionalAuth, async (req, res) => {
     const likerId = (req as any).userId as string | undefined;
     const posts = await getPostsByUser(req.params.id, likerId ?? '');
     return res.json({ posts });
+  } catch {
+    return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
+  }
+});
+
+postsRouter.get('/:id', requireAuth, async (req, res) => {
+  try {
+    const post = await getPostByIdForViewer(req.userId, req.params.id);
+    if (!post) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Post not found' } });
+    }
+    return res.json({ post });
   } catch {
     return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
   }

@@ -31,6 +31,9 @@
 		9A5E16F37D865770E10C06EC /* SavedPlace.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4DDCDF16C0DBA6DEEB1CC95 /* SavedPlace.swift */; };
 		9AD79D1DC49173921A4189D6 /* Restaurant.swift in Sources */ = {isa = PBXBuildFile; fileRef = D54682EC0DDC62F32C146CC7 /* Restaurant.swift */; };
 		9EFCEF126F4568853F97236E /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C391A1B6186EBFD07661889 /* MainTabView.swift */; };
+		87F6E5D4C3B2A10807060505 /* AppNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87F6E5D4C3B2A10807060504 /* AppNotification.swift */; };
+		87F6E5D4C3B2A10807060507 /* NotificationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87F6E5D4C3B2A10807060506 /* NotificationsViewModel.swift */; };
+		87F6E5D4C3B2A10807060509 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87F6E5D4C3B2A10807060508 /* NotificationsView.swift */; };
 		A168EE13974681D39D210BE0 /* MapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 078ABA905B7BC1757E4C68A8 /* MapViewModel.swift */; };
 		AE43C52C1D53EE2BAD4DB6E9 /* FriendsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 598F0A870879585611625E33 /* FriendsView.swift */; };
 		B28CCEF0837ECA41C13BFA49 /* HealthDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717F7B9468D59947C4394B41 /* HealthDTO.swift */; };
@@ -79,6 +82,9 @@
 		A8422E1D1ED8313359A00CED /* SavedPlacesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPlacesViewModel.swift; sourceTree = "<group>"; };
 		AB35BFE6B4063F0029E007D3 /* CreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePostView.swift; sourceTree = "<group>"; };
 		ADFB2B999924C69213674FA9 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
+		87F6E5D4C3B2A10807060504 /* AppNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotification.swift; sourceTree = "<group>"; };
+		87F6E5D4C3B2A10807060506 /* NotificationsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsViewModel.swift; sourceTree = "<group>"; };
+		87F6E5D4C3B2A10807060508 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
 		D54682EC0DDC62F32C146CC7 /* Restaurant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Restaurant.swift; sourceTree = "<group>"; };
 		D93172FAB1B47B933A95B9C4 /* MapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
 		E0187E503CF427B57FEE9EF1 /* Post.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Post.swift; sourceTree = "<group>"; };
@@ -123,6 +129,7 @@
 		1A4A6154A6F73A5E50090267 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				87F6E5D4C3B2A10807060504 /* AppNotification.swift */,
 				8AEA0271F1C2F1CCF528237B /* Blend.swift */,
 				EB38369FB0A95590AC4EF462 /* Friendship.swift */,
 				717F7B9468D59947C4394B41 /* HealthDTO.swift */,
@@ -164,6 +171,7 @@
 			children = (
 				B8C9D0E1F2A3B4C5D6E7F808 /* EditProfileView.swift */,
 				3C391A1B6186EBFD07661889 /* MainTabView.swift */,
+				87F6E5D4C3B2A10807060508 /* NotificationsView.swift */,
 				D93172FAB1B47B933A95B9C4 /* MapView.swift */,
 				C9D0E1F2A3B4C5D6E7F80909 /* ProfileAvatarView.swift */,
 			);
@@ -174,6 +182,7 @@
 			isa = PBXGroup;
 			children = (
 				28834C88D12ECD0A6EF224DD /* AuthViewModel.swift */,
+				87F6E5D4C3B2A10807060506 /* NotificationsViewModel.swift */,
 				FF4F168D7A9221A469CC6FA1 /* BlendViewModel.swift */,
 				A1F2E3D4C5B6A798877665502 /* CommentsViewModel.swift */,
 				41310478D1B7C47522772A89 /* CreatePostViewModel.swift */,
@@ -352,6 +361,9 @@
 				280C752CB52B8B1276D9BE7F /* Friendship.swift in Sources */,
 				B28CCEF0837ECA41C13BFA49 /* HealthDTO.swift in Sources */,
 				9EFCEF126F4568853F97236E /* MainTabView.swift in Sources */,
+				87F6E5D4C3B2A10807060509 /* NotificationsView.swift in Sources */,
+				87F6E5D4C3B2A10807060507 /* NotificationsViewModel.swift in Sources */,
+				87F6E5D4C3B2A10807060505 /* AppNotification.swift in Sources */,
 				F1D43428B3770225F9C94B35 /* MapView.swift in Sources */,
 				C9D0E1F2A3B4C5D6E7F8090A /* ProfileAvatarView.swift in Sources */,
 				A168EE13974681D39D210BE0 /* MapViewModel.swift in Sources */,

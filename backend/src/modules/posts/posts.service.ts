@@ -112,9 +112,25 @@ export async function queryPosts(
   pool: Pool,
   userIds: string[],
   likerId: string,
-  options?: { restaurantId?: string },
+  options?: { restaurantId?: string; postId?: string },
 ): Promise<PostData[]> {
   const restaurantId = options?.restaurantId;
+  const postId = options?.postId;
+  const extra: string[] = [];
+  const params: unknown[] = [userIds];
+  let pi = 2;
+  if (restaurantId) {
+    extra.push(`p.restaurant_id = $${pi}`);
+    params.push(restaurantId);
+    pi++;
+  }
+  if (postId) {
+    extra.push(`p.id = $${pi}`);
+    params.push(postId);
+    pi++;
+  }
+  const extraWhere = extra.length > 0 ? ` and ${extra.join(' and ')}` : '';
+
   const postsRes = await pool.query(
     `select
        p.id as post_id,
@@ -135,9 +151,9 @@ export async function queryPosts(
      join users u on u.id = p.user_id
      join restaurants r on r.id = p.restaurant_id
      where p.user_id = any($1)
-     ${restaurantId ? 'and p.restaurant_id = $2' : ''}
+     ${extraWhere}
      order by p.created_at desc`,
-    restaurantId ? [userIds, restaurantId] : [userIds],
+    params,
   );
 
   if (postsRes.rows.length === 0) return [];
@@ -227,6 +243,16 @@ export async function getFeedPostsByRestaurant(userId: string, restaurantId: str
   const friendIds = await getFriendIds(pool, userId);
   const allIds = friendIds.length > 0 ? [...friendIds, userId] : [userId];
   return queryPosts(pool, allIds, userId, { restaurantId });
+}
+
+/** One post if it belongs to you or a friend (same visibility as feed). */
+export async function getPostByIdForViewer(viewerId: string, postId: string): Promise<PostData | null> {
+  if (!isUuid(postId)) return null;
+  const pool = getPool();
+  const friendIds = await getFriendIds(pool, viewerId);
+  const allIds = friendIds.length > 0 ? [...friendIds, viewerId] : [viewerId];
+  const rows = await queryPosts(pool, allIds, viewerId, { postId });
+  return rows[0] ?? null;
 }
 
 /** Average rating among visible posts at this restaurant (friends + self), same scope as `getFeedPostsByRestaurant`. */

@@ -8,4 +8,6 @@ struct Friendship: Identifiable, Codable, Equatable {
     let friendAvatarUrl: String?
     let status: String
     let createdAt: String
+    /// `true` = they requested you; `false` = you requested them; `nil` for accepted friendships or older API responses.
+    let incomingPending: Bool?
 }

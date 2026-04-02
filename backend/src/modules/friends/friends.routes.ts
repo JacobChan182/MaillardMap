@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { ZodError } from 'zod';
 import { requireAuth } from '../../middleware/auth.js';
-import { friendRequestSchema } from './friends.schemas.js';
-import { acceptFriendRequest, getFriendsList, sendFriendRequest } from './friends.service.js';
+import { friendIdBodySchema, friendRequestSchema } from './friends.schemas.js';
+import { acceptFriendRequest, getFriendsList, removeFriendship, sendFriendRequest } from './friends.service.js';
 
 export const friendsRouter = Router();
 
@@ -24,8 +24,15 @@ friendsRouter.post('/request', requireAuth, async (req, res) => {
 
 friendsRouter.post('/accept', requireAuth, async (req, res) => {
   try {
-    const { friendId } = req.body as { friendId?: string };
-    if (!friendId) return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'friendId is required' } });
+    let friendId: string;
+    try {
+      friendId = friendIdBodySchema.parse(req.body).friendId;
+    } catch (e) {
+      if (e instanceof ZodError) {
+        return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid request' } });
+      }
+      throw e;
+    }
     const userId = req.userId!;
     const result = await acceptFriendRequest(userId, friendId);
     if (!result.ok) return res.status(result.status).json({ error: { code: result.code, message: 'Could not accept request' } });
@@ -41,6 +48,21 @@ friendsRouter.get('/list', requireAuth, async (req, res) => {
     const userId = req.userId!;
     const friends = await getFriendsList(userId);
     return res.json({ friends });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
+  }
+});
+
+friendsRouter.delete('/:friendId', requireAuth, async (req, res) => {
+  try {
+    const result = await removeFriendship(req.userId!, req.params.friendId);
+    if (!result.ok) {
+      return res.status(result.status).json({
+        error: { code: result.code, message: 'Could not remove friendship' },
+      });
+    }
+    return res.json({ ok: true });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });

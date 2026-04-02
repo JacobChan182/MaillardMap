@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import { authRouter } from '../modules/auth/auth.routes.js';
 import { friendsRouter } from '../modules/friends/friends.routes.js';
 import { healthRouter } from '../modules/health/health.routes.js';
+import { notificationsRouter } from '../modules/notifications/notifications.routes.js';
 import { postsRouter } from '../modules/posts/posts.routes.js';
 import { recommendationsRouter } from '../modules/recommendations/recommendations.routes.js';
 import { restaurantsRouter } from '../modules/restaurants/restaurants.routes.js';
@@ -46,6 +47,7 @@ export function createApp() {
   app.use('/auth', authRouter);
   app.use('/friends', friendsRouter);
   app.use('/health', healthRouter);
+  app.use('/notifications', notificationsRouter);
   app.use('/posts', postsRouter);
   app.use('/recommendations', recommendationsRouter);
   app.use('/restaurants', restaurantsRouter);

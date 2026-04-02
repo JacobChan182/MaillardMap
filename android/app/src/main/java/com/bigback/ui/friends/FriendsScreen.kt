@@ -25,6 +25,7 @@ fun FriendsScreen(
 ) {
     var friends by remember { mutableStateOf<List<Friendship>>(emptyList()) }
     var pendingRequests by remember { mutableStateOf<List<Friendship>>(emptyList()) }
+    var sentRequests by remember { mutableStateOf<List<Friendship>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
     var showAddFriend by remember { mutableStateOf(false) }
@@ -34,7 +35,8 @@ fun FriendsScreen(
         try {
             val allFriends = repository.getFriends()
             friends = allFriends.filter { it.status == "accepted" }
-            pendingRequests = allFriends.filter { it.status == "pending" }
+            pendingRequests = allFriends.filter { it.status == "pending" && it.incomingPending != false }
+            sentRequests = allFriends.filter { it.status == "pending" && it.incomingPending == false }
             error = null
         } catch (e: Exception) {
             error = "Failed to load friends"
@@ -44,6 +46,8 @@ fun FriendsScreen(
     }
 
     LaunchedEffect(Unit) { loadFriends() }
+
+    val scope = rememberCoroutineScope()
 
     PreviewTheme {
         Scaffold(
@@ -78,7 +82,7 @@ fun FriendsScreen(
                     }
                 } else {
                     LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                        if (friends.isEmpty() && pendingRequests.isEmpty()) {
+                        if (friends.isEmpty() && pendingRequests.isEmpty() && sentRequests.isEmpty()) {
                             item {
                                 Box(
                                     modifier = Modifier.fillMaxWidth().padding(top = 48.dp),
@@ -101,8 +105,17 @@ fun FriendsScreen(
                             items(pendingRequests, key = { it.id }) { friendship ->
                                 PendingFriendItem(
                                     username = friendship.friendUsername ?: "?",
+                                    onDecline = {
+                                        scope.launch {
+                                            try {
+                                                repository.removeFriend(friendship.friendId)
+                                                loadFriends()
+                                            } catch (e: Exception) {
+                                                error = e.message ?: "Failed to decline"
+                                            }
+                                        }
+                                    },
                                     onAccept = {
-                                        val scope = rememberCoroutineScope()
                                         scope.launch {
                                             try {
                                                 repository.acceptFriendRequest(friendship.friendId)
@@ -116,10 +129,48 @@ fun FriendsScreen(
                             }
                         }
 
+                        if (sentRequests.isNotEmpty()) {
+                            item {
+                                Text(
+                                    text = "Request sent",
+                                    style = MaterialTheme.typography.h6,
+                                    modifier = Modifier.padding(16.dp)
+                                )
+                                Divider()
+                            }
+                            items(sentRequests, key = { it.id }) { friendship ->
+                                SentRequestItem(
+                                    username = friendship.friendUsername ?: friendship.friendId,
+                                    onRevoke = {
+                                        scope.launch {
+                                            try {
+                                                repository.removeFriend(friendship.friendId)
+                                                loadFriends()
+                                            } catch (e: Exception) {
+                                                error = e.message ?: "Failed to revoke"
+                                            }
+                                        }
+                                    }
+                                )
+                            }
+                        }
+
                         if (friends.isNotEmpty()) {
                             item { Divider() }
                             items(friends, key = { it.id }) { friendship ->
-                                FriendItem(username = friendship.friendUsername ?: friendship.friendId)
+                                FriendItem(
+                                    username = friendship.friendUsername ?: friendship.friendId,
+                                    onRemove = {
+                                        scope.launch {
+                                            try {
+                                                repository.removeFriend(friendship.friendId)
+                                                loadFriends()
+                                            } catch (e: Exception) {
+                                                error = e.message ?: "Failed to remove friend"
+                                            }
+                                        }
+                                    }
+                                )
                             }
                         }
                     }
@@ -158,17 +209,21 @@ fun FriendsScreen(
 }
 
 @Composable
-private fun PendingFriendItem(username: String, onAccept: () -> Unit) {
+private fun PendingFriendItem(username: String, onDecline: () -> Unit, onAccept: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .height(56.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(username, style = MaterialTheme.typography.body1)
-        Row {
+        Text(
+            username,
+            style = MaterialTheme.typography.body1,
+            modifier = Modifier.weight(1f, fill = false)
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(onClick = onDecline) { Text("Decline") }
             OutlinedButton(
                 onClick = onAccept,
                 contentPadding = PaddingValues(horizontal = 8.dp)
@@ -182,21 +237,57 @@ private fun PendingFriendItem(username: String, onAccept: () -> Unit) {
 }
 
 @Composable
-private fun FriendItem(username: String) {
+private fun SentRequestItem(username: String, onRevoke: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .height(48.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Icon(
-            imageVector = Icons.Default.Person,
-            contentDescription = null,
-            tint = MaterialTheme.colors.primary,
-            modifier = Modifier.padding(end = 16.dp)
-        )
-        Text(username, style = MaterialTheme.typography.body1)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(username, style = MaterialTheme.typography.body1)
+            Text(
+                "Waiting for response",
+                style = MaterialTheme.typography.caption,
+                color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f)
+            )
+        }
+        OutlinedButton(onClick = onRevoke, contentPadding = PaddingValues(horizontal = 12.dp)) {
+            Text("Revoke")
+        }
+    }
+}
+
+@Composable
+private fun FriendItem(username: String, subtitle: String? = null, onRemove: (() -> Unit)? = null) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = null,
+                tint = MaterialTheme.colors.primary,
+                modifier = Modifier.padding(end = 16.dp)
+            )
+            Column {
+                Text(username, style = MaterialTheme.typography.body1)
+                if (subtitle != null) {
+                    Text(subtitle, style = MaterialTheme.typography.caption, color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f))
+                }
+            }
+        }
+        if (onRemove != null) {
+            TextButton(onClick = onRemove) { Text("Remove", color = MaterialTheme.colors.error) }
+        }
     }
 }
 

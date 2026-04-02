@@ -18,7 +18,7 @@ final class BlendViewModel: ObservableObject {
 
     func loadFriends() async {
         do {
-            availableFriends = try await api.getFriendsList()
+            availableFriends = try await api.getFriendsList().filter { $0.status == "accepted" }
             errorMessage = nil
         } catch {
             errorMessage = error.localizedDescription

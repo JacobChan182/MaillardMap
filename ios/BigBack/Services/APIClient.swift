@@ -184,6 +184,18 @@ final class APIClient {
         return try decode(Resp.self, from: data).friends
     }
 
+    func removeFriend(friendId: String) async throws {
+        _ = try await request("friends/\(friendId)", method: "DELETE")
+    }
+
+    // MARK: - Notifications
+
+    func getNotifications() async throws -> [AppNotification] {
+        struct Resp: Decodable { let notifications: [AppNotification] }
+        let data = try await request("notifications")
+        return try decode(Resp.self, from: data).notifications
+    }
+
     // MARK: - Posts
 
     /// Ask the API for presigned PUT URLs (R2/S3). Body uses snake_case keys (`content_type`) via default encoder.
@@ -221,6 +233,12 @@ final class APIClient {
         struct Resp: Decodable { var posts: [Post] }
         let data = try await request("posts/feed")
         return try decode(Resp.self, from: data).posts
+    }
+
+    func getPost(id: String) async throws -> Post {
+        struct Resp: Decodable { let post: Post }
+        let data = try await request("posts/\(id)")
+        return try decode(Resp.self, from: data).post
     }
 
     func getUserPosts(userId: String) async throws -> [Post] {

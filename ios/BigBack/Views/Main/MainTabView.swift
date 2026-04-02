@@ -78,6 +78,15 @@ struct FeedTab: View {
             }
             .refreshable { await feedVM.loadFeed() }
             .navigationTitle("Feed")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        NotificationsView()
+                    } label: {
+                        Image(systemName: "bell")
+                    }
+                }
+            }
         }
         .task { await feedVM.loadFeed() }
         .onReceive(NotificationCenter.default.publisher(for: .bigBackDidCreatePost)) { _ in

@@ -32,6 +32,7 @@ class Repository(
     // --- Friends ---
     suspend fun sendFriendRequest(friendId: String) = api.sendFriendRequest(FriendRequestPayload(friendId))
     suspend fun acceptFriendRequest(friendId: String) = api.acceptFriendRequest(mapOf("friend_id" to friendId))
+    suspend fun removeFriend(friendId: String) = api.removeFriend(friendId)
     suspend fun getFriends(): List<Friendship> = api.getFriendList().friends.map { it.toFriendship() }
 
     // --- Posts ---
@@ -83,7 +84,7 @@ class Repository(
 
 // -- DTO -> Domain mappers --
 private fun UserDTO.toUser() = User(id, username, createdAt)
-private fun FriendshipDTO.toFriendship() = Friendship(id, userId, friendId, friendUsername, status, createdAt)
+private fun FriendshipDTO.toFriendship() = Friendship(id, userId, friendId, friendUsername, status, createdAt, incomingPending)
 private fun PostDTO.toPost() = Post(
     id = id,
     userId = userId,

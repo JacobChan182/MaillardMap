@@ -14,7 +14,8 @@ data class Friendship(
     val friendId: String,
     val friendUsername: String? = null,
     val status: String,
-    val createdAt: String
+    val createdAt: String,
+    val incomingPending: Boolean? = null
 )
 
 data class Restaurant(

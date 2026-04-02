@@ -96,11 +96,12 @@ data class SavedPlaceDTO(
 
 data class FriendshipDTO(
     val id: String,
-    @SerializedName("user_id") val userId: String,
+    @SerializedName("user_id") val userId: String = "",
     @SerializedName("friend_id") val friendId: String,
     @SerializedName("friend_username") val friendUsername: String? = null,
     val status: String,
-    @SerializedName("created_at") val createdAt: String
+    @SerializedName("created_at") val createdAt: String,
+    val incomingPending: Boolean? = null
 )
 
 data class CuisineCountDTO(
@@ -178,6 +179,9 @@ interface BigBackApi {
 
     @GET("friends/list")
     suspend fun getFriendList(): FriendsListResponse
+
+    @DELETE("friends/{id}")
+    suspend fun removeFriend(@Path("id") friendId: String): Map<String, Boolean>
 
     // Posts
     @POST("posts")
