@@ -1,4 +1,123 @@
 import SwiftUI
+import UIKit
+
+/// Shows one remote image aspect-fitted to the scroll view width (no cropping at 1×) with pinch zoom and pan.
+private final class AspectFitZoomScrollView: UIScrollView, UIScrollViewDelegate {
+    private let imageView = UIImageView()
+    private var loadedURLString: String?
+    private var dataTask: URLSessionDataTask?
+    /// Tracks width used for layout so a change (e.g. rotation) resets zoom.
+    private var laidOutWidth: CGFloat = 0
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        delegate = self
+        minimumZoomScale = 1
+        maximumZoomScale = 4
+        bouncesZoom = true
+        showsHorizontalScrollIndicator = true
+        showsVerticalScrollIndicator = true
+        backgroundColor = .clear
+        imageView.contentMode = .scaleAspectFit
+        addSubview(imageView)
+    }
+
+    required init?(coder: NSCoder) { fatalError() }
+
+    func loadPhoto(urlString: String) {
+        guard loadedURLString != urlString else { return }
+        loadedURLString = urlString
+        dataTask?.cancel()
+        imageView.image = nil
+        zoomScale = 1
+        contentInset = .zero
+        laidOutWidth = 0
+        invalidateIntrinsicContentSize()
+
+        guard let url = URL(string: urlString) else { return }
+        dataTask = URLSession.shared.dataTask(with: url) { [weak self] data, _, _ in
+            guard let data, let img = UIImage(data: data) else { return }
+            DispatchQueue.main.async {
+                guard self?.loadedURLString == urlString else { return }
+                self?.imageView.image = img
+                self?.setNeedsLayout()
+                self?.layoutIfNeeded()
+            }
+        }
+        dataTask?.resume()
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        guard bounds.width > 0, imageView.image != nil else { return }
+        if abs(bounds.width - laidOutWidth) > 0.5 {
+            resetToAspectFitLayout()
+        }
+    }
+
+    private func resetToAspectFitLayout() {
+        guard let img = imageView.image, bounds.width > 0 else { return }
+        laidOutWidth = bounds.width
+        zoomScale = 1
+        contentInset = .zero
+        let w = bounds.width
+        let h = w * img.size.height / img.size.width
+        imageView.frame = CGRect(x: 0, y: 0, width: w, height: h)
+        contentSize = CGSize(width: w, height: h)
+        recenterImage()
+        invalidateIntrinsicContentSize()
+    }
+
+    func viewForZooming(in scrollView: UIScrollView) -> UIView? {
+        imageView
+    }
+
+    func scrollViewDidZoom(_ scrollView: UIScrollView) {
+        recenterImage()
+    }
+
+    /// Keeps the image centered when smaller than the viewport; 1× height matches aspect-fit image height.
+    private func recenterImage() {
+        let iv = imageView
+        let W = bounds.width
+        let H = bounds.height
+        let w = iv.frame.width
+        let h = iv.frame.height
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        if w < W { x = floor((W - w) * 0.5) }
+        if h < H { y = floor((H - h) * 0.5) }
+        iv.frame.origin = CGPoint(x: x, y: y)
+    }
+
+    override var intrinsicContentSize: CGSize {
+        guard let img = imageView.image else {
+            return CGSize(width: UIView.noIntrinsicMetric, height: 160)
+        }
+        let parentW: CGFloat
+        if bounds.width > 0 {
+            parentW = bounds.width
+        } else if let sw = superview?.bounds.width, sw > 0 {
+            parentW = sw
+        } else {
+            return CGSize(width: UIView.noIntrinsicMetric, height: 160)
+        }
+        let fittedH = parentW * img.size.height / img.size.width
+        return CGSize(width: UIView.noIntrinsicMetric, height: fittedH)
+    }
+}
+
+private struct PostDetailZoomablePhoto: UIViewRepresentable {
+    let urlString: String
+
+    func makeUIView(context: Context) -> AspectFitZoomScrollView {
+        AspectFitZoomScrollView()
+    }
+
+    func updateUIView(_ uiView: AspectFitZoomScrollView, context: Context) {
+        uiView.loadPhoto(urlString: urlString)
+    }
+}
 
 /// Parses post `createdAt` ISO8601 strings from the API (with or without fractional seconds).
 private func postCreatedDate(from iso: String) -> Date? {
@@ -35,28 +154,38 @@ private func relativePostAge(from postDate: Date, now: Date = Date()) -> String 
     return "\(years) \(years == 1 ? "year" : "years") ago"
 }
 
-/// First photo centered; if there is a second, it sits behind and peeks out on the right.
+/// Feed: stacked peek cards with cropped thumbnails. Detail: full-width aspect-fit images with pinch zoom.
 private struct PostCardStackedPhotos: View {
     let photos: [PostPhoto]
+    var variant: PostCardVariant = .feed
 
     private var sorted: [PostPhoto] {
         photos.sorted { $0.orderIndex < $1.orderIndex }
     }
 
     var body: some View {
+        switch variant {
+        case .feed:
+            feedStack
+        case .detail:
+            detailList
+        }
+    }
+
+    private var feedStack: some View {
         GeometryReader { geo in
             let width = min(geo.size.width * 0.82, 330)
             let height: CGFloat = 190
             let peek: CGFloat = 22
             ZStack {
                 if sorted.count > 1 {
-                    photoView(urlString: sorted[1].url, width: width, height: height)
+                    feedPhotoView(urlString: sorted[1].url, width: width, height: height)
                         .scaleEffect(0.93)
                         .rotationEffect(.degrees(3))
                         .offset(x: peek + 6)
                         .zIndex(0)
                 }
-                photoView(urlString: sorted[0].url, width: width, height: height)
+                feedPhotoView(urlString: sorted[0].url, width: width, height: height)
                     .shadow(color: .black.opacity(0.14), radius: 4, x: 3, y: 0)
                     .zIndex(1)
             }
@@ -66,8 +195,19 @@ private struct PostCardStackedPhotos: View {
         .frame(maxWidth: .infinity)
     }
 
+    private var detailList: some View {
+        VStack(spacing: 16) {
+            ForEach(sorted) { photo in
+                PostDetailZoomablePhoto(urlString: photo.url)
+                    .frame(maxWidth: .infinity)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+    }
+
     @ViewBuilder
-    private func photoView(urlString: String, width: CGFloat, height: CGFloat) -> some View {
+    private func feedPhotoView(urlString: String, width: CGFloat, height: CGFloat) -> some View {
         AsyncImage(url: URL(string: urlString)) { phase in
             switch phase {
             case .success(let image):
@@ -203,7 +343,7 @@ struct PostCardView: View {
             }
 
             if !post.photos.isEmpty {
-                PostCardStackedPhotos(photos: post.photos)
+                PostCardStackedPhotos(photos: post.photos, variant: variant)
                     .padding(.vertical, 6)
             }
 
