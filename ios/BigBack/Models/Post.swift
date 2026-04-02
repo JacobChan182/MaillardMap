@@ -34,6 +34,10 @@ struct Comment: Identifiable, Codable, Equatable {
     let avatarUrl: String?
     let text: String
     let createdAt: String
+    /// Nil for top-level comments; set for replies (threaded like Instagram).
+    let parentId: String?
+    /// Username of the comment this one replies to (for display).
+    let parentAuthorUsername: String?
 }
 
 struct CreatePostRequest: Codable {

@@ -25,17 +25,22 @@ final class CommentsViewModel: ObservableObject {
         }
     }
 
-    func submitComment(postId: String) async {
-        guard !newCommentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+    /// - Returns: `true` if the comment was posted and list refreshed.
+    @discardableResult
+    func submitComment(postId: String, parentCommentId: String?) async -> Bool {
+        let trimmed = newCommentText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
         isSubmitting = true
         defer { isSubmitting = false }
         do {
-            let comment = try await api.addComment(postId: postId, text: newCommentText.trimmingCharacters(in: .whitespacesAndNewlines))
-            comments.append(comment)
+            _ = try await api.addComment(postId: postId, text: trimmed, parentCommentId: parentCommentId)
+            await loadComments(postId: postId)
             newCommentText = ""
             errorMessage = nil
+            return true
         } catch {
             errorMessage = error.localizedDescription
+            return false
         }
     }
 }

@@ -92,13 +92,21 @@ postsRouter.get('/:id/comments', requireAuth, async (req, res) => {
 
 postsRouter.post('/:id/comments', requireAuth, async (req, res) => {
   try {
-    const { text } = req.body as { text?: string };
-    if (!text || !text.trim()) {
+    const raw = req.body as { text?: string; parentCommentId?: string; parent_comment_id?: string };
+    const text = raw.text?.trim();
+    if (!text) {
       return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'text is required' } });
     }
-    const comment = await addComment((req as any).userId, req.params.id, text.trim());
+    const parentCommentId = raw.parentCommentId ?? raw.parent_comment_id ?? null;
+    const comment = await addComment((req as any).userId, req.params.id, text, parentCommentId);
     return res.status(201).json({ comment });
   } catch (err) {
+    const anyErr = err as { statusCode?: number; message?: string; code?: string };
+    if (anyErr.statusCode === 400) {
+      return res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: anyErr.message ?? 'Invalid reply target' },
+      });
+    }
     const zErr = err as { code?: string; message?: string };
     if (zErr.code === '23503') {
       return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Post not found' } });

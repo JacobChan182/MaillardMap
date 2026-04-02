@@ -265,10 +265,12 @@ type CommentRow = {
   avatar_url: string | null;
   text: string;
   created_at: string;
+  parent_id: string | null;
+  parent_author_username: string | null;
 };
 
 /**
- * Get all comments for a post, ordered oldest first.
+ * Get all comments for a post, ordered oldest first (flat list with parentId for threading).
  */
 export async function getCommentsByPost(postId: string): Promise<
   {
@@ -279,13 +281,26 @@ export async function getCommentsByPost(postId: string): Promise<
     avatarUrl: string | null;
     text: string;
     createdAt: string;
+    parentId: string | null;
+    parentAuthorUsername: string | null;
   }[]
 > {
   const pool = getPool();
   const res = await pool.query<CommentRow>(
-    `select c.id, c.user_id, c.text, c.created_at, u.username, u.display_name, u.avatar_url
+    `select
+       c.id,
+       c.user_id,
+       c.text,
+       c.created_at,
+       c.parent_id,
+       u.username,
+       u.display_name,
+       u.avatar_url,
+       pu.username as parent_author_username
      from comments c
      join users u on u.id = c.user_id
+     left join comments pc on pc.id = c.parent_id
+     left join users pu on pu.id = pc.user_id
      where c.post_id = $1
      order by c.created_at asc`,
     [postId],
@@ -298,24 +313,47 @@ export async function getCommentsByPost(postId: string): Promise<
     avatarUrl: r.avatar_url,
     text: r.text,
     createdAt: r.created_at,
+    parentId: r.parent_id,
+    parentAuthorUsername: r.parent_author_username,
   }));
 }
 
 /**
- * Add a comment to a post. Returns the new comment.
+ * Add a comment or reply. `parentCommentId` must belong to the same post.
  */
-export async function addComment(userId: string, postId: string, text: string) {
+export async function addComment(
+  userId: string,
+  postId: string,
+  text: string,
+  parentCommentId?: string | null,
+) {
   const pool = getPool();
-  const commentRes = await pool.query(
-    `insert into comments (user_id, post_id, text) values ($1, $2, $3) returning id`,
-    [userId, postId, text],
-  );
-  const commentId = commentRes.rows[0].id;
 
-  // Increment post's comment_count so feed cards show live count
+  if (parentCommentId) {
+    const parentRes = await pool.query<{ post_id: string }>(
+      `select post_id from comments where id = $1`,
+      [parentCommentId],
+    );
+    const parent = parentRes.rows[0];
+    if (!parent || parent.post_id !== postId) {
+      const e = new Error('Parent comment not found on this post') as Error & { statusCode?: number };
+      e.statusCode = 400;
+      throw e;
+    }
+  }
+
+  const commentRes = await pool.query<{ id: string }>(
+    `insert into comments (user_id, post_id, text, parent_id)
+     values ($1, $2, $3, $4)
+     returning id`,
+    [userId, postId, text, parentCommentId ?? null],
+  );
+  const inserted = commentRes.rows[0];
+  if (!inserted) throw new Error('Comment insert failed');
+  const commentId = inserted.id;
+
   await pool.query(`update posts set comment_count = comment_count + 1 where id = $1`, [postId]);
 
-  // Re-fetch to return username
   const comments = await getCommentsByPost(postId);
   return comments.find((c) => c.id === commentId)!;
 }

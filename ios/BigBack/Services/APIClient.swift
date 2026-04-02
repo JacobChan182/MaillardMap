@@ -228,10 +228,30 @@ final class APIClient {
         return try decode(Resp.self, from: data).comments
     }
 
-    func addComment(postId: String, text: String) async throws -> Comment {
-        struct Body: Encodable { let text: String }
+    func addComment(postId: String, text: String, parentCommentId: String? = nil) async throws -> Comment {
+        struct Body: Encodable {
+            let text: String
+            let parentCommentId: String?
+
+            func encode(to encoder: Encoder) throws {
+                var c = encoder.container(keyedBy: CodingKeys.self)
+                try c.encode(text, forKey: .text)
+                if let parentCommentId {
+                    try c.encode(parentCommentId, forKey: .parentCommentId)
+                }
+            }
+
+            enum CodingKeys: String, CodingKey {
+                case text
+                case parentCommentId
+            }
+        }
         struct Resp: Decodable { let comment: Comment }
-        let data = try await request("posts/\(postId)/comments", method: "POST", body: Body(text: text))
+        let data = try await request(
+            "posts/\(postId)/comments",
+            method: "POST",
+            body: Body(text: text, parentCommentId: parentCommentId)
+        )
         return try decode(Resp.self, from: data).comment
     }
 
