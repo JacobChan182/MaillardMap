@@ -1,5 +1,6 @@
 import type { DatabaseError } from 'pg';
 import { getPool } from '../../db/pool.js';
+import { rewritePublicMediaUrl } from '../../services/s3.js';
 import type { FriendRequestInput } from './friends.schemas.js';
 
 type FriendshipRow = {
@@ -99,7 +100,7 @@ export async function getFriendsList(userId: string) {
     friendId: r.friend_id,
     friendUsername: r.friend_username,
     friendDisplayName: r.friend_display_name,
-    friendAvatarUrl: r.friend_avatar_url,
+    friendAvatarUrl: rewritePublicMediaUrl(r.friend_avatar_url),
     status: 'accepted' as const,
     createdAt: r.created_at,
   }));

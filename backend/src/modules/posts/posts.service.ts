@@ -1,5 +1,6 @@
 import type { Pool } from 'pg';
 import { getPool } from '../../db/pool.js';
+import { rewritePublicMediaUrl } from '../../services/s3.js';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -148,7 +149,12 @@ export async function queryPosts(
   const photosByPost = new Map<string, { id: string; postId: string; url: string; orderIndex: number }[]>();
   for (const p of photosRes.rows) {
     const arr = photosByPost.get(p.post_id) || [];
-    arr.push({ id: p.id, postId: p.post_id, url: p.url, orderIndex: p.order_index });
+    arr.push({
+      id: p.id,
+      postId: p.post_id,
+      url: rewritePublicMediaUrl(p.url) ?? p.url,
+      orderIndex: p.order_index,
+    });
     photosByPost.set(p.post_id, arr);
   }
 
@@ -180,7 +186,7 @@ export async function queryPosts(
       userId: row.user_id,
       username: row.username,
       displayName: row.display_name,
-      avatarUrl: row.avatar_url,
+      avatarUrl: rewritePublicMediaUrl(row.avatar_url),
       restaurantId: row.restaurant_id,
       restaurantName: row.restaurant_name,
       restaurantAddress: row.restaurant_address,
@@ -310,7 +316,7 @@ export async function getCommentsByPost(postId: string): Promise<
     userId: r.user_id,
     username: r.username,
     displayName: r.display_name,
-    avatarUrl: r.avatar_url,
+    avatarUrl: rewritePublicMediaUrl(r.avatar_url),
     text: r.text,
     createdAt: r.created_at,
     parentId: r.parent_id,

@@ -1,0 +1,10 @@
+// Shared backend URL settings.
+// For a physical iPhone, set BACKEND_MAC_BASE to your Mac’s LAN URL, e.g. http:/$()/192.168.1.23:3000 (same $() trick as below).
+// Simulator: http:/$()/localhost:3000 is fine.
+//
+// BACKEND_TEST: 0 = use BACKEND_MAC_BASE, 1 = use BACKEND_PRODUCTION_BASE.
+// Release builds set BACKEND_TEST = 1 via Release-backend.xcconfig.
+
+BACKEND_TEST = 0
+BACKEND_MAC_BASE = http:/$()/10.3.14.126:3000
+BACKEND_PRODUCTION_BASE = https:/$()/api.example.com

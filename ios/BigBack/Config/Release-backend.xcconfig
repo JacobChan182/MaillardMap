@@ -1,0 +1,3 @@
+#include "Backend.xcconfig"
+
+BACKEND_TEST = 1

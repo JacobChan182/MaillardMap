@@ -1,4 +1,5 @@
 import { getPool } from '../../db/pool.js';
+import { rewritePublicMediaUrl } from '../../services/s3.js';
 
 type UserRow = {
   id: string;
@@ -23,7 +24,7 @@ function rowToPublic(r: UserRow, includeContact: boolean): PublicUser {
     id: r.id,
     username: r.username,
     displayName: r.display_name,
-    avatarUrl: r.avatar_url,
+    avatarUrl: rewritePublicMediaUrl(r.avatar_url),
     createdAt: r.created_at,
   };
   if (includeContact) {
@@ -34,8 +35,10 @@ function rowToPublic(r: UserRow, includeContact: boolean): PublicUser {
 
 export function isAvatarUrlFromOurStorage(url: string): boolean {
   const base = process.env.S3_PUBLIC_URL?.replace(/\/$/, '');
-  if (!base) return false;
-  return url === base || url.startsWith(`${base}/`);
+  const legacy = process.env.S3_PUBLIC_URL_LEGACY?.replace(/\/$/, '');
+  if (base && (url === base || url.startsWith(`${base}/`))) return true;
+  if (legacy && (url === legacy || url.startsWith(`${legacy}/`))) return true;
+  return false;
 }
 
 export async function getUserById(id: string): Promise<PublicUser | null> {

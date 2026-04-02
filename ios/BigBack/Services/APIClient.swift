@@ -50,7 +50,27 @@ final class APIClient {
     }
 
     static func live() -> APIClient {
-        APIClient(baseURL: URL(string: "http://localhost:3000")!)
+        let bundle = Bundle.main
+        let flag = Self.infoString(forKey: "BACKEND_TEST") ?? "0"
+        let useDeployed = (flag == "1")
+        let urlKey = useDeployed ? "API_BASE_URL_DEPLOYED" : "API_BASE_URL_MAC"
+        guard
+            let urlString = Self.infoString(forKey: urlKey),
+            let url = URL(string: urlString)
+        else {
+            preconditionFailure("Set \(urlKey) and BACKEND_TEST in Info.plist (via Backend.xcconfig).")
+        }
+        return APIClient(baseURL: url)
+    }
+
+    private static func infoString(forKey key: String) -> String? {
+        guard let v = Bundle.main.object(forInfoDictionaryKey: key) else { return nil }
+        if let s = v as? String {
+            let t = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            return t.isEmpty ? nil : t
+        }
+        if let n = v as? NSNumber { return n.stringValue }
+        return nil
     }
 
     private func request(_ path: String, method: String = "GET", body: Encodable? = nil) async throws -> Data {

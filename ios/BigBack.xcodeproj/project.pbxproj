@@ -85,6 +85,8 @@
 		A1F2E3D4C5B6A798877665502 /* CommentsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsViewModel.swift; sourceTree = "<group>"; };
 		B8C9D0E1F2A3B4C5D6E7F808 /* EditProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
 		C9D0E1F2A3B4C5D6E7F80909 /* ProfileAvatarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileAvatarView.swift; sourceTree = "<group>"; };
+		B1A0C9E8D7F6453029181716 /* Backend.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Backend.xcconfig; sourceTree = "<group>"; };
+		B1A0C9E8D7F6453029181717 /* Release-backend.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release-backend.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -240,9 +242,19 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		B1A0C9E8D7F6453029181718 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				B1A0C9E8D7F6453029181716 /* Backend.xcconfig */,
+				B1A0C9E8D7F6453029181717 /* Release-backend.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
 		F595E0E14F1D766C26C85144 /* BigBack */ = {
 			isa = PBXGroup;
 			children = (
+				B1A0C9E8D7F6453029181718 /* Config */,
 				A427927E9F380503985B713E /* App */,
 				1A4A6154A6F73A5E50090267 /* Models */,
 				40514ED03FE00B681C3C5304 /* Services */,
@@ -355,6 +367,7 @@
 /* Begin XCBuildConfiguration section */
 		0198F320C55B0846CD401DAD /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B1A0C9E8D7F6453029181716 /* Backend.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
@@ -497,6 +510,7 @@
 		};
 		D208C7CF3387B1620B738EFD /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = B1A0C9E8D7F6453029181717 /* Release-backend.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";

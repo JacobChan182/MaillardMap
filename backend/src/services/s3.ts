@@ -47,6 +47,19 @@ function getPublicUrl(): string {
   return url.replace(/\/$/, '');
 }
 
+/** Rewrite URLs saved with an old S3_PUBLIC_URL (e.g. https://placeholder) to the current S3_PUBLIC_URL so phones can load them on LAN. */
+export function rewritePublicMediaUrl(url: string | null): string | null {
+  if (url == null || url.length === 0) return url;
+  const legacy = process.env.S3_PUBLIC_URL_LEGACY?.trim().replace(/\/$/, '');
+  if (!legacy) return url;
+  const current = process.env.S3_PUBLIC_URL?.trim().replace(/\/$/, '');
+  if (!current || legacy === current) return url;
+  if (url === legacy || url.startsWith(`${legacy}/`)) {
+    return current + url.slice(legacy.length);
+  }
+  return url;
+}
+
 export async function generatePresignedUpload(contentType: string) {
   const ext = MIME_TO_EXT[contentType];
   if (!ext) throw new Error(`Unsupported content type: ${contentType}`);

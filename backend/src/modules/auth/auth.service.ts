@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import type { DatabaseError } from 'pg';
 import type { LoginInput, SignupInput } from './auth.schemas.js';
 import { getPool } from '../../db/pool.js';
+import { rewritePublicMediaUrl } from '../../services/s3.js';
 
 type UserRow = {
   id: string;
@@ -53,7 +54,7 @@ export async function signup(input: SignupInput) {
         username: user.username,
         phoneOrEmail: user.phone_or_email,
         displayName: user.display_name,
-        avatarUrl: user.avatar_url,
+        avatarUrl: rewritePublicMediaUrl(user.avatar_url),
         createdAt: user.created_at,
       },
     };
@@ -102,7 +103,7 @@ export async function login(input: LoginInput) {
       username: user.username,
       phoneOrEmail: user.phone_or_email,
       displayName: user.display_name,
-      avatarUrl: user.avatar_url,
+      avatarUrl: rewritePublicMediaUrl(user.avatar_url),
       createdAt: user.created_at,
     },
   };
