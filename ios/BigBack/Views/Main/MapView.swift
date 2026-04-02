@@ -37,14 +37,19 @@ struct BigBackMapView: View {
                                     .frame(width: 14, height: 14)
                                     .shadow(radius: 1)
                             } else {
-                                Image(systemName: "mappin.circle.fill")
-                                    .font(.title)
-                                    .foregroundStyle(.orange)
-                                    .shadow(radius: 1)
+                                MapMappinPinStyle(color: .orange)
                             }
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Show place card for \(pin.restaurantName)")
+                    }
+                case .temporaryGrayPin(_, let coordinate):
+                    Annotation("", coordinate: coordinate) {
+                        Circle()
+                            .fill(Color.gray.opacity(0.8))
+                            .frame(width: 14, height: 14)
+                            .shadow(radius: 1)
+                            .accessibilityHidden(true)
                     }
                 case .callout(let c):
                     // Card only: the feed pin at this coordinate stays the marker; anchor the card’s bottom to the venue with a small gap so it sits just above the existing pin.
@@ -81,6 +86,18 @@ struct BigBackMapView: View {
         .onMapCameraChange(frequency: .onEnd) { context in
             vm.onMapCameraChangeEnded(region: context.region)
         }
+    }
+}
+
+/// Same layout as feed zoomed-in pins (`mappin.circle.fill`), parameterized color (orange vs gray discovery pin).
+private struct MapMappinPinStyle: View {
+    let color: Color
+
+    var body: some View {
+        Image(systemName: "mappin.circle.fill")
+            .font(.title)
+            .foregroundStyle(color)
+            .shadow(radius: 1)
     }
 }
 

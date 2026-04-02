@@ -19,6 +19,8 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     private var calloutDismissSkipCameraEndsRemaining = 0
     /// When the user moves the map off the callout anchor, dismiss the card after 0.1s (debounced per gesture end).
     private var calloutDelayedDismissTask: Task<Void, Never>?
+    /// After programmatic camera moves (post/search deep link), align dismiss tracking with `showCalloutForMapPin` once the map settles.
+    private var calloutDismissAlignTask: Task<Void, Never>?
     @Published var showHeatmap = true
     @Published var isLoading = false
     @Published var errorMessage: String?
@@ -59,12 +61,13 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         guard let location = locations.first else { return }
         Task { @MainActor in
             let coordinate = location.coordinate
-            // Center on first known user location
+            // Center on first known user location only once; later fixes must not override manual / restaurant focus.
             if !hasCenteredOnUserLocation {
                 region = MKCoordinateRegion(
                     center: coordinate,
                     span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
                 )
+                hasCenteredOnUserLocation = true
             }
             userLocation = coordinate
             updateAnnotations()
@@ -93,6 +96,18 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         updateAnnotations()
     }
 
+    /// After programmatic fly-ins, MapKit emits extra camera-end callbacks. When those settle, use the same dismiss baseline as `showCalloutForMapPin` so pan/zoom clears the card and marker like reviewed venues.
+    private func scheduleCalloutDismissAlignLikeMapPin(restaurantId: String) {
+        calloutDismissAlignTask?.cancel()
+        calloutDismissAlignTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 600_000_000)
+            guard !Task.isCancelled else { return }
+            guard self.restaurantCallout?.restaurantId == restaurantId else { return }
+            self.calloutDismissRegionAnchor = self.region
+            self.calloutDismissSkipCameraEndsRemaining = 0
+        }
+    }
+
     /// Center map and show the white venue callout (same behavior as a post’s restaurant link).
     private func focusRestaurantOnMap(
         restaurantId: String,
@@ -100,15 +115,16 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         address: String?,
         lat: Double,
         lng: Double,
+        useTemporaryGrayPin: Bool = false,
     ) {
-        calloutDelayedDismissTask?.cancel()
-        calloutDelayedDismissTask = nil
+        calloutInterruptedDismissTasks()
         restaurantCallout = MapRestaurantCallout(
             restaurantId: restaurantId,
             name: name,
             address: address,
             lat: lat,
-            lng: lng
+            lng: lng,
+            useTemporaryGrayPin: useTemporaryGrayPin
         )
         region = MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: lat, longitude: lng),
@@ -118,7 +134,9 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         showHeatmap = zoomLevel > zoomThreshold
         calloutDismissRegionAnchor = region
         calloutDismissSkipCameraEndsRemaining = 3
+        hasCenteredOnUserLocation = true
         updateAnnotations()
+        scheduleCalloutDismissAlignLikeMapPin(restaurantId: restaurantId)
     }
 
     /// Feed / post list: jump map here with the white callout pin.
@@ -149,25 +167,48 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         }
     }
 
-    /// Find Restaurants search row: same map + callout behavior as `focusRestaurantFromPost`.
+    /// Find Restaurants search row: same map + callout as a post link; gray pin until we know friends/you have posts here.
     func focusRestaurantFromSearch(_ restaurant: Restaurant) {
         let trimmed = restaurant.address?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let rid = restaurant.id
         focusRestaurantOnMap(
-            restaurantId: restaurant.id,
+            restaurantId: rid,
             name: restaurant.name,
             address: trimmed.isEmpty ? nil : trimmed,
             lat: restaurant.lat,
-            lng: restaurant.lng
+            lng: restaurant.lng,
+            useTemporaryGrayPin: true
         )
         if trimmed.isEmpty {
-            Task { await enrichCalloutAddress(restaurantId: restaurant.id) }
+            Task { await enrichCalloutAddress(restaurantId: rid) }
+        }
+
+        Task {
+            let hasPostsInFeedScope: Bool
+            do {
+                let payload = try await api.getPostsForRestaurant(restaurantId: rid)
+                hasPostsInFeedScope = !payload.posts.isEmpty
+            } catch {
+                hasPostsInFeedScope = false
+            }
+            await MainActor.run {
+                guard let c = restaurantCallout, c.restaurantId == rid else { return }
+                restaurantCallout = MapRestaurantCallout(
+                    restaurantId: c.restaurantId,
+                    name: c.name,
+                    address: c.address,
+                    lat: c.lat,
+                    lng: c.lng,
+                    useTemporaryGrayPin: !hasPostsInFeedScope
+                )
+                scheduleCalloutDismissAlignLikeMapPin(restaurantId: rid)
+            }
         }
     }
 
     /// Map pin tap: show the white card above the venue; tap the card to open restaurant posts.
     func showCalloutForMapPin(restaurantId: String, name: String, coordinate: CLLocationCoordinate2D) {
-        calloutDelayedDismissTask?.cancel()
-        calloutDelayedDismissTask = nil
+        calloutInterruptedDismissTasks()
         restaurantCallout = MapRestaurantCallout(
             restaurantId: restaurantId,
             name: name,
@@ -177,6 +218,7 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
         )
         calloutDismissRegionAnchor = region
         calloutDismissSkipCameraEndsRemaining = 0
+        hasCenteredOnUserLocation = true
         updateAnnotations()
         Task { await enrichCalloutAddress(restaurantId: restaurantId) }
     }
@@ -205,7 +247,8 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
                 name: c.name,
                 address: addr,
                 lat: c.lat,
-                lng: c.lng
+                lng: c.lng,
+                useTemporaryGrayPin: c.useTemporaryGrayPin
             )
             // #region agent log
             #if DEBUG
@@ -277,16 +320,30 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     }
 
     func clearRestaurantCallout() {
-        calloutDelayedDismissTask?.cancel()
-        calloutDelayedDismissTask = nil
+        calloutInterruptedDismissTasks()
         restaurantCallout = nil
         calloutDismissRegionAnchor = nil
         calloutDismissSkipCameraEndsRemaining = 0
     }
 
+    private func calloutInterruptedDismissTasks() {
+        calloutDelayedDismissTask?.cancel()
+        calloutDelayedDismissTask = nil
+        calloutDismissAlignTask?.cancel()
+        calloutDismissAlignTask = nil
+    }
+
     var mapAnnotations: [MapAnnotationItem] {
         var items = pins.map { MapAnnotationItem.feed($0) }
         if let c = restaurantCallout {
+            if c.useTemporaryGrayPin {
+                items.append(
+                    .temporaryGrayPin(
+                        restaurantId: c.restaurantId,
+                        coordinate: CLLocationCoordinate2D(latitude: c.lat, longitude: c.lng)
+                    )
+                )
+            }
             items.append(.callout(c))
         }
         return items
@@ -330,15 +387,35 @@ struct MapRestaurantCallout: Equatable {
     let address: String?
     let lat: Double
     let lng: Double
+    /// Gray mappin from Find Restaurants when there are no posts (friends + you) at this venue yet.
+    let useTemporaryGrayPin: Bool
+
+    init(
+        restaurantId: String,
+        name: String,
+        address: String?,
+        lat: Double,
+        lng: Double,
+        useTemporaryGrayPin: Bool = false,
+    ) {
+        self.restaurantId = restaurantId
+        self.name = name
+        self.address = address
+        self.lat = lat
+        self.lng = lng
+        self.useTemporaryGrayPin = useTemporaryGrayPin
+    }
 }
 
 enum MapAnnotationItem: Identifiable {
     case feed(MapPin)
+    case temporaryGrayPin(restaurantId: String, coordinate: CLLocationCoordinate2D)
     case callout(MapRestaurantCallout)
 
     var id: String {
         switch self {
         case .feed(let pin): return pin.id
+        case .temporaryGrayPin(let rid, _): return "__gray_\(rid)"
         case .callout: return "__bigback_callout__"
         }
     }
@@ -346,6 +423,7 @@ enum MapAnnotationItem: Identifiable {
     var coordinate: CLLocationCoordinate2D {
         switch self {
         case .feed(let pin): return pin.coordinate
+        case .temporaryGrayPin(_, let coordinate): return coordinate
         case .callout(let c): return CLLocationCoordinate2D(latitude: c.lat, longitude: c.lng)
         }
     }
