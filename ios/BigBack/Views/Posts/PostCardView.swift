@@ -35,6 +35,58 @@ private func relativePostAge(from postDate: Date, now: Date = Date()) -> String 
     return "\(years) \(years == 1 ? "year" : "years") ago"
 }
 
+/// First photo centered; if there is a second, it sits behind and peeks out on the right.
+private struct PostCardStackedPhotos: View {
+    let photos: [PostPhoto]
+
+    private var sorted: [PostPhoto] {
+        photos.sorted { $0.orderIndex < $1.orderIndex }
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = min(geo.size.width * 0.82, 330)
+            let height: CGFloat = 190
+            let peek: CGFloat = 22
+            ZStack {
+                if sorted.count > 1 {
+                    photoView(urlString: sorted[1].url, width: width, height: height)
+                        .scaleEffect(0.93)
+                        .rotationEffect(.degrees(3))
+                        .offset(x: peek + 6)
+                        .zIndex(0)
+                }
+                photoView(urlString: sorted[0].url, width: width, height: height)
+                    .shadow(color: .black.opacity(0.14), radius: 4, x: 3, y: 0)
+                    .zIndex(1)
+            }
+            .frame(width: geo.size.width, height: height, alignment: .center)
+        }
+        .frame(height: 190)
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private func photoView(urlString: String, width: CGFloat, height: CGFloat) -> some View {
+        AsyncImage(url: URL(string: urlString)) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .scaledToFill()
+            case .failure:
+                Color.gray.opacity(0.3)
+            case .empty:
+                Color.gray.opacity(0.2)
+            @unknown default:
+                Color.gray.opacity(0.3)
+            }
+        }
+        .frame(width: width, height: height)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
 struct PostCardView: View {
     let post: Post
     let onLike: (String) async -> Void
@@ -69,7 +121,7 @@ struct PostCardView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .center, spacing: 10) {
                 ProfileAvatarView(url: post.avatarUrl, name: authorDisplayName, size: 40)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 0) {
                     Text(authorDisplayName)
                         .font(.headline)
                     if post.displayName != nil,
@@ -78,6 +130,7 @@ struct PostCardView: View {
                         Text("@\(post.username)")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
+                            .padding(.top, 1)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -97,22 +150,8 @@ struct PostCardView: View {
             }
 
             if !post.photos.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 4) {
-                        ForEach(post.photos.sorted(by: { $0.orderIndex < $1.orderIndex })) { photo in
-                            AsyncImage(url: URL(string: photo.url)) { image in
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                            } placeholder: {
-                                Color.gray.opacity(0.3)
-                            }
-                            .frame(height: 160)
-                            .frame(width: UIScreen.main.bounds.width * 0.7)
-                            .cornerRadius(8)
-                        }
-                    }
-                }
+                PostCardStackedPhotos(photos: post.photos)
+                    .padding(.vertical, 6)
             }
 
             if let comment = post.comment, !comment.isEmpty {
@@ -149,6 +188,7 @@ struct PostCardView: View {
                         .multilineTextAlignment(.trailing)
                 }
             }
+            .padding(.top, 2)
         }
         .padding()
         .background(Color(uiColor: .systemBackground))
