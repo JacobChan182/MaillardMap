@@ -55,12 +55,12 @@ struct BigBackMapView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(c.name)
                                     .font(.headline)
-                                    .foregroundStyle(.primary)
+                                    .foregroundStyle(.black)
                                     .fixedSize(horizontal: false, vertical: true)
                                 if let addr = c.address, !addr.isEmpty {
                                     Text(addr)
                                         .font(.caption)
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(Color(white: 0.38))
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                             }
