@@ -1,8 +1,10 @@
 import SwiftUI
 
 struct FriendsView: View {
+    @EnvironmentObject private var auth: AuthViewModel
     @StateObject private var vm: FriendsViewModel
-    @State private var isSearching = false
+    /// Pushes `UserPostsView` without a `NavigationLink` in the row (avoids List disclosure chevrons next to the avatar).
+    @State private var profileUserId: String?
 
     init() {
         _vm = StateObject(wrappedValue: FriendsViewModel())
@@ -20,7 +22,57 @@ struct FriendsView: View {
 
     var body: some View {
         List {
-            // Pending requests
+            Section("Find Friends") {
+                TextField("Search by username", text: $vm.searchQuery)
+                    .onChange(of: vm.searchQuery) { _, _ in
+                        Task { await vm.searchUsers() }
+                    }
+
+                if vm.searchQuery.isEmpty {
+                    Text("Type a username to search")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else if vm.searchResults.isEmpty && !vm.isLoading {
+                    Text(vm.findFriendsAllExcluded
+                         ? "Everyone matching is already a friend or has a pending request"
+                         : "No users match")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(vm.searchResults) { user in
+                    HStack(alignment: .center, spacing: 12) {
+                        Button {
+                            profileUserId = user.id
+                        } label: {
+                            HStack(alignment: .center, spacing: 12) {
+                                ProfileAvatarView(
+                                    url: user.avatarUrl,
+                                    name: userListTitle(user),
+                                    size: 36
+                                )
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(userListTitle(user))
+                                        .font(.headline)
+                                        .foregroundStyle(.primary)
+                                    Text("@\(user.username)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .multilineTextAlignment(.leading)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        Spacer(minLength: 8)
+                        Button("Add") {
+                            Task { await vm.sendFriendRequest(userId: user.id) }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                    }
+                }
+            }
+
             if !vm.pendingRequests.isEmpty {
                 Section("Friend Requests") {
                     ForEach(vm.pendingRequests) { req in
@@ -45,26 +97,34 @@ struct FriendsView: View {
             if !vm.sentRequests.isEmpty {
                 Section("Requests sent") {
                     ForEach(vm.sentRequests) { req in
-                        HStack {
-                            ProfileAvatarLink(
-                                userId: req.friendId,
-                                url: req.friendAvatarUrl,
-                                name: friendListTitle(req),
-                                size: 36
-                            )
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(friendListTitle(req))
-                                    .font(.headline)
-                                if let u = req.friendUsername {
-                                    Text("@\(u)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                        HStack(alignment: .center, spacing: 12) {
+                            Button {
+                                profileUserId = req.friendId
+                            } label: {
+                                HStack(alignment: .center, spacing: 12) {
+                                    ProfileAvatarView(
+                                        url: req.friendAvatarUrl,
+                                        name: friendListTitle(req),
+                                        size: 36
+                                    )
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(friendListTitle(req))
+                                            .font(.headline)
+                                            .foregroundStyle(.primary)
+                                        if let u = req.friendUsername {
+                                            Text("@\(u)")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Text("Waiting for response")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .multilineTextAlignment(.leading)
                                 }
-                                Text("Waiting for response")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
                             }
-                            Spacer()
+                            .buttonStyle(.plain)
+                            Spacer(minLength: 8)
                             Button("Revoke") {
                                 Task { await vm.removeFriend(friendId: req.friendId) }
                             }
@@ -75,50 +135,22 @@ struct FriendsView: View {
                 }
             }
 
-            Section("Find Friends") {
-                TextField("Search by username", text: $vm.searchQuery)
-                    .onChange(of: vm.searchQuery) { _, _ in
-                        Task { await vm.searchUsers() }
-                    }
-
-                if vm.searchQuery.isEmpty {
-                    Text("Type a username to search")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                } else if vm.searchResults.isEmpty && !vm.isLoading {
-                    Text("No users match")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                ForEach(vm.searchResults) { user in
-                    HStack {
-                        ProfileAvatarLink(
-                            userId: user.id,
-                            url: user.avatarUrl,
-                            name: userListTitle(user),
-                            size: 36
-                        )
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(userListTitle(user))
-                                .font(.headline)
-                            Text("@\(user.username)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        searchActionView(for: user)
-                    }
-                }
-            }
-
             // Friends
-            Section("Friends (\(vm.friends.count))") {
+            Section {
+                if !vm.friends.isEmpty {
+                    TextField("Search friends", text: $vm.friendsListSearch)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                }
                 if vm.friends.isEmpty {
                     Text("No friends yet")
                         .foregroundStyle(.secondary)
+                } else if vm.filteredFriends.isEmpty {
+                    Text("No friends match your search")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
-                ForEach(vm.friends) { friendship in
+                ForEach(vm.filteredFriends) { friendship in
                     NavigationLink {
                         UserPostsView(userId: friendship.friendId)
                     } label: {
@@ -144,53 +176,26 @@ struct FriendsView: View {
                         }
                     }
                 }
+            } header: {
+                Text("Friends (\(vm.friends.count))")
             }
         }
         .listStyle(.insetGrouped)
-        .task { await vm.loadFriends() }
+        .navigationDestination(item: $profileUserId) { userId in
+            UserPostsView(userId: userId)
+        }
+        .task {
+            vm.currentUserId = auth.currentUser?.id
+            await vm.loadFriends()
+        }
+        .onChange(of: auth.currentUser?.id) { _, id in
+            vm.currentUserId = id
+            vm.reapplyFindFriendsSearchFilter()
+        }
         .overlay {
             if vm.isLoading && !vm.searchQuery.isEmpty {
                 ProgressView()
             }
-        }
-    }
-
-    @ViewBuilder
-    private func searchActionView(for user: User) -> some View {
-        if vm.friends.contains(where: { $0.friendId == user.id }) {
-            HStack(spacing: 8) {
-                Text("Friends")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Button("Remove") {
-                    Task { await vm.removeFriend(friendId: user.id) }
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .tint(.red)
-            }
-        } else if vm.pendingRequests.contains(where: { $0.friendId == user.id }) {
-            Text("Sent you a request")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.trailing)
-        } else if vm.sentRequests.contains(where: { $0.friendId == user.id }) {
-            HStack(spacing: 8) {
-                Label("Request sent", systemImage: "checkmark.circle.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Button("Revoke") {
-                    Task { await vm.removeFriend(friendId: user.id) }
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            }
-        } else {
-            Button("Add") {
-                Task { await vm.sendFriendRequest(userId: user.id) }
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
         }
     }
 }
