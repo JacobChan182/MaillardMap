@@ -1,5 +1,10 @@
 import SwiftUI
 
+extension Notification.Name {
+    /// Posted after a new visit post is created successfully so tabs can reload server-backed lists.
+    static let bigBackDidCreatePost = Notification.Name("bigBackDidCreatePost")
+}
+
 struct MainTabView: View {
     @ObservedObject var auth: AuthViewModel
     @StateObject private var mapVM = MapViewModel()
@@ -75,6 +80,9 @@ struct FeedTab: View {
             .navigationTitle("Feed")
         }
         .task { await feedVM.loadFeed() }
+        .onReceive(NotificationCenter.default.publisher(for: .bigBackDidCreatePost)) { _ in
+            Task { await feedVM.loadFeed() }
+        }
     }
 }
 
@@ -95,6 +103,9 @@ struct MapTabView: View {
             }
         }
         .task { await mapVM.loadPosts() }
+        .onReceive(NotificationCenter.default.publisher(for: .bigBackDidCreatePost)) { _ in
+            Task { await mapVM.loadPosts() }
+        }
     }
 }
 

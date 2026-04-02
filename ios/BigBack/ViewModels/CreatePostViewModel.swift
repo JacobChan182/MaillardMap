@@ -117,6 +117,7 @@ final class CreatePostViewModel: ObservableObject {
             )
             _ = try await api.createPost(req)
             didPost = true
+            NotificationCenter.default.post(name: .bigBackDidCreatePost, object: nil)
         } catch {
             errorMessage = error.localizedDescription
         }

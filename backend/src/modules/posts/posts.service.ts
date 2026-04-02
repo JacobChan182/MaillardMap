@@ -301,30 +301,39 @@ type CommentRow = {
   display_name: string | null;
   avatar_url: string | null;
   text: string;
-  created_at: string;
+  created_at: Date | string;
   parent_id: string | null;
   parent_author_username: string | null;
 };
 
-/**
- * Get all comments for a post, ordered oldest first (flat list with parentId for threading).
- */
-export async function getCommentsByPost(postId: string): Promise<
-  {
-    id: string;
-    userId: string;
-    username: string;
-    displayName: string | null;
-    avatarUrl: string | null;
-    text: string;
-    createdAt: string;
-    parentId: string | null;
-    parentAuthorUsername: string | null;
-  }[]
-> {
-  const pool = getPool();
-  const res = await pool.query<CommentRow>(
-    `select
+type CommentDTO = {
+  id: string;
+  userId: string;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  text: string;
+  createdAt: string;
+  parentId: string | null;
+  parentAuthorUsername: string | null;
+};
+
+function mapCommentRow(r: CommentRow): CommentDTO {
+  return {
+    id: String(r.id),
+    userId: String(r.user_id),
+    username: r.username,
+    displayName: r.display_name,
+    avatarUrl: rewritePublicMediaUrl(r.avatar_url),
+    text: r.text,
+    createdAt:
+      r.created_at instanceof Date ? r.created_at.toISOString() : String(r.created_at),
+    parentId: r.parent_id == null ? null : String(r.parent_id),
+    parentAuthorUsername: r.parent_author_username,
+  };
+}
+
+const commentSelectFrom = `select
        c.id,
        c.user_id,
        c.text,
@@ -337,22 +346,31 @@ export async function getCommentsByPost(postId: string): Promise<
      from comments c
      join users u on u.id = c.user_id
      left join comments pc on pc.id = c.parent_id
-     left join users pu on pu.id = pc.user_id
+     left join users pu on pu.id = pc.user_id`;
+
+/**
+ * Get all comments for a post, ordered oldest first (flat list with parentId for threading).
+ */
+export async function getCommentsByPost(postId: string): Promise<CommentDTO[]> {
+  const pool = getPool();
+  const res = await pool.query<CommentRow>(
+    `${commentSelectFrom}
      where c.post_id = $1
      order by c.created_at asc`,
     [postId],
   );
-  return res.rows.map((r) => ({
-    id: r.id,
-    userId: r.user_id,
-    username: r.username,
-    displayName: r.display_name,
-    avatarUrl: rewritePublicMediaUrl(r.avatar_url),
-    text: r.text,
-    createdAt: r.created_at,
-    parentId: r.parent_id,
-    parentAuthorUsername: r.parent_author_username,
-  }));
+  return res.rows.map(mapCommentRow);
+}
+
+async function getCommentForPostById(postId: string, commentId: string): Promise<CommentDTO | null> {
+  const pool = getPool();
+  const res = await pool.query<CommentRow>(
+    `${commentSelectFrom}
+     where c.post_id = $1 and c.id = $2`,
+    [postId, commentId],
+  );
+  const r = res.rows[0];
+  return r ? mapCommentRow(r) : null;
 }
 
 /**
@@ -372,7 +390,7 @@ export async function addComment(
       [parentCommentId],
     );
     const parent = parentRes.rows[0];
-    if (!parent || parent.post_id !== postId) {
+    if (!parent || String(parent.post_id) !== String(postId)) {
       const e = new Error('Parent comment not found on this post') as Error & { statusCode?: number };
       e.statusCode = 400;
       throw e;
@@ -387,10 +405,15 @@ export async function addComment(
   );
   const inserted = commentRes.rows[0];
   if (!inserted) throw new Error('Comment insert failed');
-  const commentId = inserted.id;
+  const commentId = String(inserted.id);
 
   await pool.query(`update posts set comment_count = comment_count + 1 where id = $1`, [postId]);
 
-  const comments = await getCommentsByPost(postId);
-  return comments.find((c) => c.id === commentId)!;
+  const comment = await getCommentForPostById(String(postId), commentId);
+  if (!comment) {
+    const e = new Error('Comment not found after insert') as Error & { statusCode?: number };
+    e.statusCode = 500;
+    throw e;
+  }
+  return comment;
 }
