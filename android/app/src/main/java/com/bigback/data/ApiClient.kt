@@ -1,6 +1,5 @@
 package com.maillardmap.data
 
-import com.maillardmap.domain.*
 import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 import okhttp3.Interceptor
@@ -71,12 +70,16 @@ data class BlendPayload(
 
 // -- Response DTOs --
 
+/** Matches `PublicUser` JSON from the API (camelCase). */
 data class UserDTO(
     val id: String,
     val username: String,
-    @SerializedName("created_at") val createdAt: String? = null,
+    val createdAt: String? = null,
+    val displayName: String? = null,
+    val avatarUrl: String? = null,
     val bio: String? = null,
-    val profilePrivate: Boolean? = null
+    val profilePrivate: Boolean? = null,
+    val phoneOrEmail: String? = null,
 )
 
 data class AuthResponse(
@@ -85,35 +88,42 @@ data class AuthResponse(
     val user: UserDTO
 )
 
+/** Matches `PostData` JSON from posts endpoints (camelCase). */
 data class PostDTO(
     val id: String,
-    @SerializedName("user_id") val userId: String,
+    val userId: String,
     val username: String? = null,
-    @SerializedName("restaurant_id") val restaurantId: String,
-    @SerializedName("restaurant_name") val restaurantName: String? = null,
+    val displayName: String? = null,
+    val avatarUrl: String? = null,
+    val restaurantId: String,
+    val restaurantName: String? = null,
+    val restaurantAddress: String? = null,
     val comment: String? = null,
     val rating: Double? = null,
     val photos: List<PostPhotoDTO>? = emptyList(),
     val lat: Double? = null,
     val lng: Double? = null,
     val liked: Boolean = false,
-    @SerializedName("like_count") val likeCount: Int = 0,
-    @SerializedName("created_at") val createdAt: String
+    val likeCount: Int = 0,
+    val commentCount: Int = 0,
+    val createdAt: String,
 )
 
 data class PostPhotoDTO(
     val id: String? = null,
+    val postId: String? = null,
     val url: String,
-    @SerializedName("order_index") val orderIndex: Int
+    val orderIndex: Int,
 )
 
 data class RestaurantDTO(
     val id: String,
-    @SerializedName("foursquare_id") val foursquareId: String,
+    val foursquareId: String,
     val name: String,
     val lat: Double,
     val lng: Double,
-    val cuisine: String? = null
+    val cuisine: String? = null,
+    val address: String? = null,
 )
 
 data class SavedPlaceDTO(
@@ -123,14 +133,16 @@ data class SavedPlaceDTO(
     @SerializedName("saved_at") val savedAt: String
 )
 
+/** Matches friends list items from `GET /friends/list` (camelCase). */
 data class FriendshipDTO(
     val id: String,
-    @SerializedName("user_id") val userId: String = "",
-    @SerializedName("friend_id") val friendId: String,
-    @SerializedName("friend_username") val friendUsername: String? = null,
+    val friendId: String,
+    val friendUsername: String? = null,
+    val friendDisplayName: String? = null,
+    val friendAvatarUrl: String? = null,
     val status: String,
-    @SerializedName("created_at") val createdAt: String,
-    val incomingPending: Boolean? = null
+    val createdAt: String,
+    val incomingPending: Boolean? = null,
 )
 
 data class CuisineCountDTO(
@@ -172,6 +184,11 @@ data class PostsListResponse(
 
 data class SavedPlacesResponse(
     @SerializedName("saved_places") val savedPlaces: List<SavedPlaceDTO> = emptyList()
+)
+
+data class SavePlaceResponse(
+    val ok: Boolean = true,
+    @SerializedName("saved_place") val savedPlace: SavedPlaceDTO,
 )
 
 data class FriendsListResponse(
@@ -231,7 +248,7 @@ interface BigBackApi {
 
     // Saved
     @POST("saved")
-    suspend fun savePlace(@Body body: SavePlacePayload): SavedPlaceDTO
+    suspend fun savePlace(@Body body: SavePlacePayload): SavePlaceResponse
 
     @GET("saved")
     suspend fun getSavedPlaces(): SavedPlacesResponse

@@ -61,7 +61,7 @@ class Repository(
 
     // --- Saved ---
     suspend fun savePlace(restaurantId: String): SavedPlace {
-        return api.savePlace(SavePlacePayload(restaurantId)).toSavedPlace()
+        return api.savePlace(SavePlacePayload(restaurantId)).savedPlace.toSavedPlace()
     }
     suspend fun getSavedPlaces(): List<SavedPlace> = api.getSavedPlaces().savedPlaces.map { it.toSavedPlace() }
     suspend fun deleteSavedPlace(restaurantId: String) = api.deleteSavedPlace(restaurantId)
@@ -94,7 +94,8 @@ class Repository(
 
 // -- DTO -> Domain mappers --
 private fun UserDTO.toUser() = User(id, username, createdAt, bio)
-private fun FriendshipDTO.toFriendship() = Friendship(id, userId, friendId, friendUsername, status, createdAt, incomingPending)
+private fun FriendshipDTO.toFriendship() =
+    Friendship(id, userId = "", friendId, friendUsername, status, createdAt, incomingPending)
 private fun PostDTO.toPost() = Post(
     id = id,
     userId = userId,

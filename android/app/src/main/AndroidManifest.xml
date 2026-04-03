@@ -14,6 +14,9 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="true">
+        <meta-data
+            android:name="com.mapbox.AccessToken"
+            android:value="${MAPBOX_ACCESS_TOKEN}" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

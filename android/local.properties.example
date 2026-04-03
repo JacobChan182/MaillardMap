@@ -2,5 +2,9 @@
 # Android Studio: Settings → Languages & Frameworks → Android SDK → "Android SDK location"
 sdk.dir=/Users/YOUR_USER/Library/Android/sdk
 
-# Optional: point the app at a local backend (overrides MAILLARDMAP_API_BASE_URL in gradle.properties).
+# Optional: overrides MAILLARDMAP_API_BASE_URL in gradle.properties. Include a scheme (Retrofit requires it).
+# MAILLARDMAP_API_BASE_URL=https://your-api.example.com
 # MAILLARDMAP_API_BASE_URL=http://10.0.2.2:3000
+
+# Required for the map: public Mapbox access token (Account → Access tokens; not the "downloads" secret).
+# MAILLARDMAP_MAPBOX_ACCESS_TOKEN=pk.ey...

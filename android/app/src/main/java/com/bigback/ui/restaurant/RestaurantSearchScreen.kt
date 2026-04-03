@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
@@ -17,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.material.ExperimentalMaterialApi
 import kotlinx.coroutines.launch
 import com.maillardmap.common.PreviewTheme
+import com.maillardmap.common.lastKnownLatLng
 import com.maillardmap.data.Repository
 import com.maillardmap.domain.Restaurant
 
@@ -33,6 +35,11 @@ fun RestaurantSearchScreen(
     var error by remember { mutableStateOf<String?>(null) }
 
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var searchGeo by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    LaunchedEffect(Unit) {
+        searchGeo = context.lastKnownLatLng()
+    }
 
     val doSearch: () -> Unit = {
         if (query.isNotBlank()) {
@@ -40,7 +47,13 @@ fun RestaurantSearchScreen(
             error = null
             scope.launch {
                 try {
-                    results = repository.searchRestaurants(query)
+                    searchGeo = context.lastKnownLatLng()
+                    results =
+                        repository.searchRestaurants(
+                            query,
+                            searchGeo?.first,
+                            searchGeo?.second,
+                        )
                 } catch (e: Exception) {
                     error = e.message ?: "Search failed"
                 } finally {
@@ -140,13 +153,24 @@ fun RestaurantSearchDialog(
     var isSearching by remember { mutableStateOf(false) }
 
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var searchGeo by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    LaunchedEffect(Unit) {
+        searchGeo = context.lastKnownLatLng()
+    }
 
     val doSearch: () -> Unit = {
         if (query.isNotBlank()) {
             isSearching = true
             scope.launch {
                 try {
-                    results = repository.searchRestaurants(query)
+                    searchGeo = context.lastKnownLatLng()
+                    results =
+                        repository.searchRestaurants(
+                            query,
+                            searchGeo?.first,
+                            searchGeo?.second,
+                        )
                 } catch (_: Exception) {
                 } finally {
                     isSearching = false

@@ -1,7 +1,6 @@
 package com.maillardmap.ui.map
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -11,17 +10,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.maillardmap.common.PreviewTheme
 import com.maillardmap.data.Repository
-import com.maillardmap.domain.Post
 import com.mapbox.geojson.Point
-import com.mapbox.maps.CameraOptions
-import com.mapbox.maps.MapInitOptions
-import com.mapbox.maps.MapView
 import com.mapbox.maps.Style
+import com.mapbox.maps.extension.compose.ComposeMapInitOptions
+import com.mapbox.maps.extension.compose.MapEffect
+import com.mapbox.maps.extension.compose.MapboxMap
+import com.mapbox.maps.extension.compose.animation.viewport.rememberMapViewportState
+import com.mapbox.maps.extension.compose.style.MapStyle
 
 @Composable
 fun MapScreen(
@@ -36,7 +36,6 @@ fun MapScreen(
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
-    var posts by remember { mutableStateOf<List<Post>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var currentZoom by remember { mutableStateOf(11.0) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -55,7 +54,7 @@ fun MapScreen(
 
     LaunchedEffect(Unit) {
         try {
-            posts = repository.getFeed()
+            repository.getFeed()
         } catch (e: Exception) {
             error = e.message ?: "Failed to load map data"
         } finally {
@@ -88,52 +87,33 @@ fun MapScreen(
                 }
             } else {
                 Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-                    BigBackMapView(
-                        context = context,
-                        posts = posts,
-                        isHeatmap = currentZoom < 10.0,
-                        onCameraChange = { zoom ->
-                            currentZoom = zoom
+                    val viewport = rememberMapViewportState {
+                        setCameraOptions {
+                            center(Point.fromLngLat(-122.4194, 37.7749))
+                            zoom(11.0)
                         }
-                    )
+                    }
+                    val composeMapInitOptions = with(LocalDensity.current) {
+                        remember(density) {
+                            ComposeMapInitOptions(pixelRatio = density, textureView = true)
+                        }
+                    }
+                    MapboxMap(
+                        modifier = Modifier.fillMaxSize(),
+                        composeMapInitOptions = composeMapInitOptions,
+                        mapViewportState = viewport,
+                        style = {
+                            MapStyle(style = Style.MAPBOX_STREETS)
+                        },
+                    ) {
+                        MapEffect(Unit) { mapView ->
+                            mapView.mapboxMap.addOnCameraChangeListener {
+                                currentZoom = mapView.mapboxMap.cameraState.zoom
+                            }
+                        }
+                    }
                 }
             }
         }
     }
-}
-
-@Composable
-private fun BigBackMapView(
-    context: Context,
-    posts: List<Post>,
-    isHeatmap: Boolean,
-    onCameraChange: (Double) -> Unit
-) {
-    AndroidView(
-        modifier = Modifier.fillMaxSize(),
-        factory = { ctx ->
-            val mapView = MapView(ctx, MapInitOptions(ctx))
-            val mapboxMap = mapView.getMapboxMap()
-
-            mapboxMap.loadStyleUri(
-                if (isHeatmap) Style.TRAFFIC_DAY else Style.MAPBOX_STREETS
-            )
-
-            mapboxMap.setCamera(
-                CameraOptions.Builder()
-                    .center(Point.fromLngLat(-122.4194, 37.7749))
-                    .zoom(11.0)
-                    .build()
-            )
-
-            mapboxMap.addOnCameraChangeListener {
-                onCameraChange(mapboxMap.cameraState.zoom)
-            }
-
-            mapView
-        },
-        update = { mapView ->
-            // Refresh annotations when posts change
-        }
-    )
 }

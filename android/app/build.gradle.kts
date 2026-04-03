@@ -7,7 +7,10 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-/** `local.properties` overrides `gradle.properties` / default. Retrofit expects a trailing `/`. */
+/**
+ * `local.properties` overrides `gradle.properties` / default. Retrofit requires an absolute URL with a scheme.
+ * Host-only values (e.g. `api.example.com`) get `https://`; emulator loopback gets `http://`.
+ */
 fun resolvedApiBaseUrl(project: Project): String {
     val localFile = project.rootProject.file("local.properties")
     val props = Properties()
@@ -16,8 +19,30 @@ fun resolvedApiBaseUrl(project: Project): String {
     }
     val fromLocal = props.getProperty("MAILLARDMAP_API_BASE_URL")?.trim()
     val fromGradle = (project.findProperty("MAILLARDMAP_API_BASE_URL") as String?)?.trim()
-    val chosen = fromLocal ?: fromGradle ?: "http://10.0.2.2:3000"
+    var chosen = (fromLocal ?: fromGradle).orEmpty()
+    if (chosen.isEmpty()) chosen = "http://10.0.2.2:3000"
+
+    if (!chosen.contains("://")) {
+        val lower = chosen.lowercase()
+        val useHttp =
+            lower.startsWith("10.0.2.2") ||
+                lower.startsWith("127.0.0.1") ||
+                lower.startsWith("localhost")
+        chosen = "${if (useHttp) "http" else "https"}://$chosen"
+    }
     return chosen.trimEnd('/') + "/"
+}
+
+/** Public Mapbox token for map tiles/styles (`com.mapbox.AccessToken`). Not the Maven downloads token. */
+fun resolvedMapboxAccessToken(project: Project): String {
+    val localFile = project.rootProject.file("local.properties")
+    val props = Properties()
+    if (localFile.exists()) {
+        localFile.inputStream().use { props.load(it) }
+    }
+    val fromLocal = props.getProperty("MAILLARDMAP_MAPBOX_ACCESS_TOKEN")?.trim()
+    val fromGradle = (project.findProperty("MAILLARDMAP_MAPBOX_ACCESS_TOKEN") as String?)?.trim()
+    return fromLocal ?: fromGradle ?: ""
 }
 
 android {
@@ -33,6 +58,9 @@ android {
 
         val apiBaseUrl = resolvedApiBaseUrl(project)
         buildConfigField("String", "API_BASE_URL", "\"${apiBaseUrl.replace("\\", "\\\\")}\"")
+        val mapboxToken = resolvedMapboxAccessToken(project)
+        manifestPlaceholders["MAPBOX_ACCESS_TOKEN"] = mapboxToken
+        resValue("string", "mapbox_access_token", mapboxToken)
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -102,6 +130,8 @@ dependencies {
     // Coil for images
     implementation("io.coil-kt:coil-compose:2.5.0")
 
-    // v10 NDK27 variant: ELF segments aligned for 16 KB page devices (Android 15+). Do not add `android` without -ndk27.
-    implementation("com.mapbox.maps:android-ndk27:10.19.1")
+    // Maps SDK + official Compose extension (same minor version). Compose AAR does not expose the full compile API alone.
+    val mapboxVer = "11.21.0"
+    implementation("com.mapbox.maps:android-ndk27:$mapboxVer")
+    implementation("com.mapbox.extension:maps-compose-ndk27:$mapboxVer")
 }
