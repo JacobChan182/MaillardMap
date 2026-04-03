@@ -22,6 +22,11 @@ class Repository(
         return AuthResponse(User(resp.user.id, resp.user.username, resp.user.createdAt), resp.token)
     }
 
+    suspend fun resendConfirmation(usernameOrEmail: String): String {
+        val r = api.resendConfirmation(ResendConfirmationRequest(usernameOrEmail.trim()))
+        return r.message ?: "Check your email."
+    }
+
     fun logout() = sessionManager.clearSession()
     fun isLoggedIn(): Boolean = sessionManager.isLoggedIn()
     fun currentUserId(): String? = sessionManager.getUserId()

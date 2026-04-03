@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { signupSchema, loginSchema } from '../src/modules/auth/auth.schemas.js';
+import { signupSchema, loginSchema, resendConfirmationSchema } from '../src/modules/auth/auth.schemas.js';
 
 // ---------------------------------------------------------------------------
 // signupSchema
@@ -124,5 +124,16 @@ describe('loginSchema', () => {
       password: 'password123',
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe('resendConfirmationSchema', () => {
+  it('accepts username or email', () => {
+    expect(resendConfirmationSchema.safeParse({ username: 'alice' }).success).toBe(true);
+    expect(resendConfirmationSchema.safeParse({ username: 'a@b.co' }).success).toBe(true);
+  });
+
+  it('rejects short username', () => {
+    expect(resendConfirmationSchema.safeParse({ username: 'ab' }).success).toBe(false);
   });
 });

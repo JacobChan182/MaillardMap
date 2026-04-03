@@ -14,12 +14,26 @@ import { savedRouter } from '../modules/saved/saved.routes.js';
 import { uploadsRouter } from '../modules/uploads/uploads.routes.js';
 import { usersRouter } from '../modules/users/users.routes.js';
 
+function trustProxySetting(): number | boolean {
+  const tp = process.env.TRUST_PROXY;
+  if (tp === '0' || tp === 'false') return false;
+  if (tp != null && tp !== '') {
+    const n = Number(tp);
+    if (Number.isFinite(n) && n >= 0) return n === 0 ? false : n;
+    return 1;
+  }
+  // Docker/production images set NODE_ENV=production; hosts behind nginx, Railway, etc. send X-Forwarded-For.
+  if (process.env.NODE_ENV === 'production') return 1;
+  return false;
+}
+
 export function createApp() {
   const app = express();
 
   app.disable('x-powered-by');
   // Avoid 304 + empty body on JSON APIs (Express etag breaks clients that expect a body every time).
   app.set('etag', false);
+  app.set('trust proxy', trustProxySetting());
 
   app.use(
     helmet({

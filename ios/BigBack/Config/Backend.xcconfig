@@ -5,6 +5,6 @@
 // BACKEND_TEST: 0 = use BACKEND_MAC_BASE, 1 = use BACKEND_PRODUCTION_BASE.
 // Release builds set BACKEND_TEST = 1 via Release-backend.xcconfig.
 
-BACKEND_TEST = 0
+BACKEND_TEST = 1
 BACKEND_MAC_BASE = http:/$()/10.3.14.126:3000
 BACKEND_PRODUCTION_BASE = https:/$()/bigback-production.up.railway.app

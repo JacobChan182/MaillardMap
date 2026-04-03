@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.maillardmap.common.BigBackTheme
@@ -43,10 +44,13 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
         AuthenticationForm(
             onLogin = { user, pass -> vm.login(user, pass) },
             onSignup = { user, pass, em -> vm.signup(user, pass, em) },
-            onToggleMode = { vm.clearFormMessages() },
+            onResend = { u -> vm.resendConfirmation(u) },
+            onToggleMode = { vm.resetVerificationUi() },
             isLoading = state.isLoading,
             errorMessage = state.error,
-            verificationMessage = state.verificationMessage
+            verificationMessage = state.verificationMessage,
+            showResendConfirmation = state.verificationMessage != null || state.needsEmailVerificationFromLogin,
+            resendCooldownSeconds = state.resendCooldownSeconds
         )
     }
 }
@@ -55,10 +59,13 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
 private fun AuthenticationForm(
     onLogin: (String, String) -> Unit,
     onSignup: (String, String, String) -> Unit,
+    onResend: (String) -> Unit,
     onToggleMode: () -> Unit,
     isLoading: Boolean,
     errorMessage: String?,
-    verificationMessage: String?
+    verificationMessage: String?,
+    showResendConfirmation: Boolean,
+    resendCooldownSeconds: Int
 ) {
     var isLogin by remember { mutableStateOf(true) }
     var username by remember { mutableStateOf("") }
@@ -145,14 +152,48 @@ private fun AuthenticationForm(
             }
 
             if (errorMessage != null) {
-                Text(text = errorMessage, color = MaterialTheme.colors.error, style = MaterialTheme.typography.body2)
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colors.error,
+                    style = MaterialTheme.typography.body2,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
             if (verificationMessage != null) {
                 Text(
                     text = verificationMessage,
                     color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
-                    style = MaterialTheme.typography.body2
+                    style = MaterialTheme.typography.body2,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
+            }
+
+            if (showResendConfirmation) {
+                val resendLabel =
+                    if (resendCooldownSeconds > 0) {
+                        "Resend confirmation email (${resendCooldownSeconds}s)"
+                    } else {
+                        "Resend confirmation email"
+                    }
+                TextButton(
+                    onClick = { onResend(username) },
+                    enabled = resendCooldownSeconds == 0 && !isLoading,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = resendLabel,
+                        color = if (resendCooldownSeconds > 0) {
+                            MaterialTheme.colors.onSurface.copy(alpha = 0.38f)
+                        } else {
+                            MaterialTheme.colors.primary
+                        },
+                        style = MaterialTheme.typography.body2,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             TextButton(

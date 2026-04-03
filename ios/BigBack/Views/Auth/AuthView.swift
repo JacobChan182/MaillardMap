@@ -63,12 +63,35 @@ struct AuthView: View {
                         Text(error)
                             .font(.caption)
                             .foregroundStyle(.red)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .center)
                     }
                     if let info = auth.infoMessage {
                         Text(info)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
+
+                    if auth.showResendConfirmation {
+                        Button {
+                            Task { await auth.resendConfirmationEmail() }
+                        } label: {
+                            Text(
+                                auth.resendCooldownSeconds > 0
+                                    ? "Resend confirmation email (\(auth.resendCooldownSeconds)s)"
+                                    : "Resend confirmation email"
+                            )
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(auth.resendCooldownSeconds > 0 ? Color.secondary : Color.blue)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                        }
+                        .disabled(auth.resendCooldownSeconds > 0 || auth.isLoading)
+                        .padding(.top, 4)
                     }
                 }
                 .textFieldStyle(.roundedBorder)
@@ -78,8 +101,7 @@ struct AuthView: View {
                 VStack(spacing: 12) {
                     Button {
                         auth.isSignupMode.toggle()
-                        auth.errorMessage = nil
-                        auth.infoMessage = nil
+                        auth.resetVerificationUI()
                     } label: {
                         Text(auth.isSignupMode
                              ? "Already have an account? Log in"
@@ -91,6 +113,7 @@ struct AuthView: View {
                     if !auth.isSignupMode {
                         Button {
                             auth.isSignupMode.toggle()
+                            auth.resetVerificationUI()
                         } label: {
                             Text("Need to reset your password?")
                                 .font(.caption2)

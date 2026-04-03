@@ -31,6 +31,25 @@ data class LoginRequest(
     val password: String
 )
 
+data class ResendConfirmationRequest(
+    val username: String
+)
+
+data class ResendConfirmationResponse(
+    val ok: Boolean = true,
+    val message: String? = null
+)
+
+/** `{ "error": { "code": "...", "message": "..." } }` */
+data class ApiErrorEnvelope(
+    val error: ApiErrorField
+)
+
+data class ApiErrorField(
+    val code: String? = null,
+    val message: String = ""
+)
+
 data class FriendRequestPayload(
     val friend_id: String
 )
@@ -169,6 +188,9 @@ interface BigBackApi {
 
     @POST("auth/login")
     suspend fun login(@Body body: LoginRequest): AuthResponse
+
+    @POST("auth/resend-confirmation")
+    suspend fun resendConfirmation(@Body body: ResendConfirmationRequest): ResendConfirmationResponse
 
     // Users
     @GET("users/{id}")

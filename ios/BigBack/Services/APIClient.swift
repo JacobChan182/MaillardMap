@@ -34,6 +34,16 @@ private struct ServerErrorDetail: Decodable {
     let message: String
 }
 
+extension APIError {
+    /// Backend `error.code` when the body includes it (e.g. `EMAIL_NOT_VERIFIED`).
+    var serverErrorCode: String? {
+        guard case .badResponse(_, let data) = self,
+              let data,
+              let body = try? JSONDecoder().decode(ServerError.self, from: data) else { return nil }
+        return body.error.code
+    }
+}
+
 // MARK: - API Client
 
 final class APIClient {
@@ -119,6 +129,15 @@ final class APIClient {
         let resp = try decode(AuthResponse.self, from: data)
         authToken = resp.token
         return (resp.user, resp.token)
+    }
+
+    /// Resends signup confirmation email for an unverified account (`username` may be email).
+    func resendConfirmation(usernameOrEmail: String) async throws -> String {
+        struct Body: Encodable { let username: String }
+        let data = try await request("auth/resend-confirmation", method: "POST", body: Body(username: usernameOrEmail))
+        struct Resp: Decodable { let ok: Bool; let message: String? }
+        let r = try decode(Resp.self, from: data)
+        return r.message ?? "Check your email."
     }
 
     // MARK: - Users

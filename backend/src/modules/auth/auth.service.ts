@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import type { DatabaseError } from 'pg';
-import type { LoginInput, SignupInput } from './auth.schemas.js';
+import type { LoginInput, ResendConfirmationInput, SignupInput } from './auth.schemas.js';
 import { getPool } from '../../db/pool.js';
 import { rewritePublicMediaUrl } from '../../services/s3.js';
 import { sendSignupConfirmationEmail } from '../../services/email.js';
@@ -181,4 +181,60 @@ export async function verifyEmail(plainToken: string): Promise<VerifyEmailResult
 
   const token = jwt.sign({ sub: user.id, username: user.username }, getJwtSecret(), { expiresIn: '7d' });
   return { ok: true, token, user: publicUserFromRow(user) };
+}
+
+const resendGenericMessage =
+  'If an account exists and still needs email confirmation, we sent a new message.';
+
+export type ResendConfirmationResult =
+  | { ok: true; message: string }
+  | { ok: false; status: number; code: string; message: string };
+
+export async function resendConfirmationEmail(input: ResendConfirmationInput): Promise<ResendConfirmationResult> {
+  const raw = input.username.trim();
+  const phoneOrEmailLookup = raw.includes('@') ? raw.toLowerCase() : raw;
+
+  const pool = getPool();
+  const res = await pool.query<Pick<UserRow, 'id' | 'phone_or_email' | 'email_verified_at'>>(
+    `select id, phone_or_email, email_verified_at from users where username = $1 or phone_or_email = $2`,
+    [raw, phoneOrEmailLookup],
+  );
+
+  const user = res.rows[0];
+  if (!user) {
+    return { ok: true, message: resendGenericMessage };
+  }
+
+  if (user.email_verified_at) {
+    return {
+      ok: false,
+      status: 400,
+      code: 'ALREADY_VERIFIED',
+      message: 'This account is already confirmed. Try logging in.',
+    };
+  }
+
+  const email = user.phone_or_email;
+  if (!email) {
+    return { ok: true, message: resendGenericMessage };
+  }
+
+  const plainToken = randomBytes(32).toString('hex');
+  const tokenHash = createHash('sha256').update(plainToken).digest('hex');
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  const upd = await pool.query(
+    `update users
+       set email_confirm_token_hash = $1,
+           email_confirm_expires_at = $2
+     where id = $3 and email_verified_at is null`,
+    [tokenHash, expiresAt.toISOString(), user.id],
+  );
+
+  if (upd.rowCount === 0) {
+    return { ok: true, message: resendGenericMessage };
+  }
+
+  await sendSignupConfirmationEmail(email, plainToken);
+  return { ok: true, message: 'Check your email for a new confirmation link.' };
 }
