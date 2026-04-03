@@ -37,13 +37,25 @@ android/app/src/main/java/com/maillardmap/
 
 ## Setup
 
-1. Set `MAPBOX_DOWNLOADS_TOKEN` environment variable for Mapbox SDK
-2. Open in Android Studio or run:
-   ```
+1. **Install an Android SDK** (if you do not have one yet): install [Android Studio](https://developer.android.com/studio) and use **Settings → Languages & Frameworks → Android SDK** to install SDK **34** (matches `compileSdk`). Note the **Android SDK location** path shown at the top of that screen.
+2. **Point Gradle at the SDK** (command-line builds):
+   - **Option A:** Copy `local.properties.example` to `local.properties` in this folder and set `sdk.dir` to that path (use forward slashes, no quotes), **or**
+   - **Option B:** `export ANDROID_HOME="/path/to/Android/sdk"` (same folder Studio shows), then run `./gradlew`.
+3. Set `MAPBOX_DOWNLOADS_TOKEN` for Mapbox Maven (see `settings.gradle.kts`).
+4. From this folder:
+   ```bash
    ./gradlew assembleDebug
    ```
-3. Backend must be running at `http://10.0.2.2:3000` (localhost from emulator)
+   Debug APK: `app/build/outputs/apk/debug/app-debug.apk`
+5. Backend for the emulator: `http://10.0.2.2:3000` (see **API Base URL** below).
 
-## API Base URL
+Opening the `android/` folder in Android Studio and using **Build → Make Project** / **Run** still works; Studio writes `local.properties` for you.
 
-The default base URL is `http://10.0.2.2:3000/` (Android emulator localhost). Update `RootViewModel.baseUrl` for physical devices.
+## API base URL
+
+Resolved at build time into **`BuildConfig.API_BASE_URL`** (used by `RootViewModel` and `AuthScreen`).
+
+1. **`gradle.properties`** — `MAILLARDMAP_API_BASE_URL` (committed default is the live Railway host; change as needed).
+2. **`local.properties`** — same key **overrides** for local dev, e.g. `MAILLARDMAP_API_BASE_URL=http://10.0.2.2:3000` (emulator → host) or `http://192.168.x.x:3000` (physical device → your machine).
+
+Rebuild after changing the URL.

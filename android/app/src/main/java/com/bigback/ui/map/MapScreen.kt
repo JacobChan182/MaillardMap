@@ -126,8 +126,8 @@ private fun BigBackMapView(
                     .build()
             )
 
-            mapView.gesturesPlugin.addOnCameraChangeListener { cameraChangedEventData ->
-                onCameraChange(cameraChangedEventData.cameraState.zoom)
+            mapboxMap.addOnCameraChangeListener {
+                onCameraChange(mapboxMap.cameraState.zoom)
             }
 
             mapView

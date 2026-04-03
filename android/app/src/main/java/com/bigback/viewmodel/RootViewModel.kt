@@ -2,6 +2,7 @@ package com.maillardmap.viewmodel
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
+import com.maillardmap.BuildConfig
 import kotlinx.coroutines.flow.*
 import com.maillardmap.data.Repository
 import com.maillardmap.data.SessionManager
@@ -24,7 +25,7 @@ sealed class NavRoute {
 
 class RootViewModel(context: Context) : ViewModel() {
 
-    private val baseUrl = "http://10.0.2.2:3000/"
+    private val baseUrl = BuildConfig.API_BASE_URL
     val sessionManager = SessionManager(context)
     private val okHttp: OkHttpClient = RetrofitClient.okHttpClient(sessionManager)
     private val api: BigBackApi = RetrofitClient.create(okHttp, baseUrl)
@@ -61,4 +62,6 @@ class RootViewModel(context: Context) : ViewModel() {
     fun goBack() {
         _navState.value = NavRoute.Feed
     }
+
+    fun currentUserId(): String? = repository.currentUserId()
 }

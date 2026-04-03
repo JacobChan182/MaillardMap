@@ -16,10 +16,13 @@ class Repository(
         return Pair(User(dto.id, dto.username, dto.createdAt), msg)
     }
 
-    suspend fun login(username: String, password: String): AuthResponse {
+    suspend fun login(username: String, password: String): com.maillardmap.domain.AuthResponse {
         val resp = api.login(LoginRequest(username, password))
         sessionManager.saveSession(resp.token, User(resp.user.id, resp.user.username, resp.user.createdAt))
-        return AuthResponse(User(resp.user.id, resp.user.username, resp.user.createdAt), resp.token)
+        return com.maillardmap.domain.AuthResponse(
+            User(resp.user.id, resp.user.username, resp.user.createdAt),
+            resp.token,
+        )
     }
 
     suspend fun resendConfirmation(usernameOrEmail: String): String {

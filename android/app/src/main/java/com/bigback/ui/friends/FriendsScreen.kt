@@ -19,6 +19,7 @@ import com.maillardmap.domain.Friendship
 import com.maillardmap.domain.User
 import com.maillardmap.ui.restaurant.RestaurantSearchDialog
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun FriendsScreen(
@@ -322,7 +323,7 @@ fun FriendsScreen(
                 onDismiss = { showAddFriend = false },
                 onSent = {
                     showAddFriend = false
-                    loadFriends()
+                    scope.launch { loadFriends() }
                 },
                 onError = { msg -> error = msg }
             )
@@ -438,6 +439,7 @@ private fun AddFriendDialog(
 ) {
     var query by remember { mutableStateOf("") }
     var isSending by remember { mutableStateOf(false) }
+    val dialogScope = rememberCoroutineScope()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -455,8 +457,7 @@ private fun AddFriendDialog(
             Button(
                 onClick = {
                     isSending = true
-                    val scope = rememberCoroutineScope()
-                    scope.launch {
+                    dialogScope.launch {
                         try {
                             val users = repository.searchUsers(query.trim())
                             val match = users.firstOrNull { it.username.equals(query.trim(), ignoreCase = true) }

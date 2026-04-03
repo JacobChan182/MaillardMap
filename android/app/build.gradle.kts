@@ -1,7 +1,23 @@
+import java.util.Properties
+import org.gradle.api.Project
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.serialization")
+}
+
+/** `local.properties` overrides `gradle.properties` / default. Retrofit expects a trailing `/`. */
+fun resolvedApiBaseUrl(project: Project): String {
+    val localFile = project.rootProject.file("local.properties")
+    val props = Properties()
+    if (localFile.exists()) {
+        localFile.inputStream().use { props.load(it) }
+    }
+    val fromLocal = props.getProperty("MAILLARDMAP_API_BASE_URL")?.trim()
+    val fromGradle = (project.findProperty("MAILLARDMAP_API_BASE_URL") as String?)?.trim()
+    val chosen = fromLocal ?: fromGradle ?: "http://10.0.2.2:3000"
+    return chosen.trimEnd('/') + "/"
 }
 
 android {
@@ -14,6 +30,9 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
+
+        val apiBaseUrl = resolvedApiBaseUrl(project)
+        buildConfigField("String", "API_BASE_URL", "\"${apiBaseUrl.replace("\\", "\\\\")}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -42,6 +61,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -82,7 +102,6 @@ dependencies {
     // Coil for images
     implementation("io.coil-kt:coil-compose:2.5.0")
 
-    // Mapbox
-    implementation("com.mapbox.maps:android:10.18.0")
-    implementation("com.mapbox.extension:maps-compose:10.18.0")
+    // v10 NDK27 variant: ELF segments aligned for 16 KB page devices (Android 15+). Do not add `android` without -ndk27.
+    implementation("com.mapbox.maps:android-ndk27:10.19.1")
 }

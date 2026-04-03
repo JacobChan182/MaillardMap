@@ -1,5 +1,6 @@
 package com.maillardmap.ui.restaurant
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,10 +14,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
+import androidx.compose.material.ExperimentalMaterialApi
+import kotlinx.coroutines.launch
 import com.maillardmap.common.PreviewTheme
 import com.maillardmap.data.Repository
 import com.maillardmap.domain.Restaurant
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun RestaurantSearchScreen(
     repository: Repository,
@@ -30,17 +34,18 @@ fun RestaurantSearchScreen(
 
     val scope = rememberCoroutineScope()
 
-    val doSearch = {
-        if (query.isBlank()) return@doSearch
-        isSearching = true
-        error = null
-        scope.launch {
-            try {
-                results = repository.searchRestaurants(query)
-            } catch (e: Exception) {
-                error = e.message ?: "Search failed"
-            } finally {
-                isSearching = false
+    val doSearch: () -> Unit = {
+        if (query.isNotBlank()) {
+            isSearching = true
+            error = null
+            scope.launch {
+                try {
+                    results = repository.searchRestaurants(query)
+                } catch (e: Exception) {
+                    error = e.message ?: "Search failed"
+                } finally {
+                    isSearching = false
+                }
             }
         }
     }
@@ -108,9 +113,11 @@ fun RestaurantSearchScreen(
                     LazyColumn(modifier = Modifier.fillMaxWidth()) {
                         items(results) { restaurant ->
                             ListItem(
+                                modifier = Modifier.clickable {
+                                    onRestaurantSelected?.invoke(restaurant)
+                                },
                                 text = { Text(restaurant.name) },
                                 secondaryText = { Text(restaurant.cuisine ?: "") },
-                                onClick = { onRestaurantSelected?.invoke(restaurant) }
                             )
                             Divider()
                         }
@@ -121,6 +128,7 @@ fun RestaurantSearchScreen(
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun RestaurantSearchDialog(
     onDismiss: () -> Unit,
@@ -133,15 +141,16 @@ fun RestaurantSearchDialog(
 
     val scope = rememberCoroutineScope()
 
-    val doSearch = {
-        if (query.isBlank()) return@doSearch
-        isSearching = true
-        scope.launch {
-            try {
-                results = repository.searchRestaurants(query)
-            } catch (e: Exception) {
-            } finally {
-                isSearching = false
+    val doSearch: () -> Unit = {
+        if (query.isNotBlank()) {
+            isSearching = true
+            scope.launch {
+                try {
+                    results = repository.searchRestaurants(query)
+                } catch (_: Exception) {
+                } finally {
+                    isSearching = false
+                }
             }
         }
     }
@@ -173,9 +182,9 @@ fun RestaurantSearchDialog(
                         LazyColumn(modifier = Modifier.heightIn(max = 300.dp)) {
                             items(results) { restaurant ->
                                 ListItem(
+                                    modifier = Modifier.clickable { onRestaurantSelected(restaurant) },
                                     text = { Text(restaurant.name) },
                                     secondaryText = { Text(restaurant.cuisine ?: "") },
-                                    onClick = { onRestaurantSelected(restaurant) }
                                 )
                             }
                         }

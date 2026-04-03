@@ -8,6 +8,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -28,6 +29,7 @@ fun BlendScreen(
     var isLoading by remember { mutableStateOf(true) }
     var blendLoading by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         try {
@@ -108,11 +110,10 @@ fun BlendScreen(
                         }
                         blendLoading = true
                         error = null
-                        val scope = rememberCoroutineScope()
                         scope.launch {
                             try {
                                 val userIds = listOf(currentUserId) + selectedFriends
-                                recommendations = repository.blendTastes(userIds)
+                                recommendations = repository.blendTastes(userIds).restaurants
                             } catch (e: Exception) {
                                 error = e.message ?: "Blend failed"
                             } finally {
@@ -154,8 +155,9 @@ fun BlendScreen(
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
-private fun RecommendationItem(restaurant: RestaurantRecommendation) {
+private fun RecommendationItem(restaurant: ScoredRestaurant) {
     ListItem(
         text = { Text(restaurant.name) },
         secondaryText = {

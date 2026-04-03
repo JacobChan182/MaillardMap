@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -15,12 +16,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 import coil.request.ImageRequest
 import com.maillardmap.domain.Post
 import com.maillardmap.data.Repository
 import com.maillardmap.common.PreviewTheme
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun FeedScreen(
     repository: Repository,
@@ -43,6 +49,19 @@ fun FeedScreen(
 
     LaunchedEffect(Unit) { loadFeed() }
 
+    val scope = rememberCoroutineScope()
+    var refreshing by remember { mutableStateOf(false) }
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing,
+        onRefresh = {
+            scope.launch {
+                refreshing = true
+                loadFeed()
+                refreshing = false
+            }
+        },
+    )
+
     PreviewTheme {
         if (isLoading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -53,13 +72,19 @@ fun FeedScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Failed to load feed")
                     Spacer(modifier = Modifier.height(8.dp))
-                    Button(onClick = { isLoading = true; Unit }) { Text("Retry") }
+                    Button(onClick = {
+                        scope.launch {
+                            isLoading = true
+                            loadFeed()
+                        }
+                    }) { Text("Retry") }
                 }
             }
         } else {
-            androidx.compose.material.SwipeRefresh(
-                state = androidx.compose.material.rememberSwipeRefreshState(isRefreshing = false),
-                onRefresh = { Unit }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pullRefresh(pullRefreshState),
             ) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -83,6 +108,7 @@ fun FeedScreen(
                         }
                     }
                 }
+                PullRefreshIndicator(refreshing, pullRefreshState, Modifier.align(Alignment.TopCenter))
             }
         }
     }

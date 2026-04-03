@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import com.maillardmap.viewmodel.RootViewModel
 import com.maillardmap.viewmodel.NavRoute
@@ -77,11 +78,11 @@ fun BigBackApp(context: Context) {
             }
 
             composable("feed") {
-                MainShell(vm = vm, defaultTab = "feed")
+                MainShell(navController = navController, vm = vm, defaultTab = "feed")
             }
 
             composable("friends") {
-                MainShell(vm = vm, defaultTab = "friends")
+                MainShell(navController = navController, vm = vm, defaultTab = "friends")
             }
 
             composable("create_post") {
@@ -93,11 +94,11 @@ fun BigBackApp(context: Context) {
             }
 
             composable("saved") {
-                MainShell(vm = vm, defaultTab = "saved")
+                MainShell(navController = navController, vm = vm, defaultTab = "saved")
             }
 
             composable("map") {
-                MainShell(vm = vm, defaultTab = "map")
+                MainShell(navController = navController, vm = vm, defaultTab = "map")
             }
         }
     }
@@ -106,6 +107,7 @@ fun BigBackApp(context: Context) {
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun MainShell(
+    navController: NavHostController,
     vm: RootViewModel,
     defaultTab: String
 ) {
@@ -120,7 +122,7 @@ fun MainShell(
                 title = { Text("BigBack") },
                 actions = {
                     IconButton(onClick = { showBlend = true }) {
-                        Icon(Icons.Default.Blend, "Blend tastes")
+                        Icon(Icons.Default.AutoAwesome, "Blend tastes")
                     }
                     IconButton(onClick = { showRestaurantSearch = true }) {
                         Icon(Icons.Default.Search, "Search restaurants")
@@ -134,12 +136,12 @@ fun MainShell(
         bottomBar = {
             BigBackBottomNav(
                 currentRoute = defaultTab,
-                onRouteClicked = { route -> vm.navigate(route) }
+                onRouteClicked = { route -> navController.navigate(route) { launchSingleTop = true } }
             )
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { vm.navigate(NavRoute.CreatePost) },
+                onClick = { navController.navigate("create_post") },
                 backgroundColor = MaterialTheme.colors.primary
             ) {
                 Icon(Icons.Default.Add, "Create Post", tint = MaterialTheme.colors.onPrimary)
@@ -156,7 +158,7 @@ fun MainShell(
                 )
                 "friends" -> FriendsScreen(
                     repository = vm.repository,
-                    currentUserId = vm.currentUserId() ?: "",
+                    currentUserId = vm.currentUserId().orEmpty(),
                     onOpenBlend = { showBlend = true }
                 )
                 "saved" -> SavedPlacesScreen(repository = vm.repository)
@@ -168,7 +170,7 @@ fun MainShell(
     if (showBlend) {
         com.maillardmap.ui.blend.BlendScreen(
             repository = vm.repository,
-            currentUserId = vm.currentUserId() ?: "",
+            currentUserId = vm.currentUserId().orEmpty(),
             onNavigateBack = { showBlend = false }
         )
     }

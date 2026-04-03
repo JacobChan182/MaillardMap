@@ -21,6 +21,8 @@ DerivedData/
 .gradle/
 **/build/
 local.properties
+*.hprof
+android/.idea/
 
 # Logs
 *.log

@@ -1,0 +1,6 @@
+# Copy to `local.properties` (gitignored) — required for command-line builds.
+# Android Studio: Settings → Languages & Frameworks → Android SDK → "Android SDK location"
+sdk.dir=/Users/YOUR_USER/Library/Android/sdk
+
+# Optional: point the app at a local backend (overrides MAILLARDMAP_API_BASE_URL in gradle.properties).
+# MAILLARDMAP_API_BASE_URL=http://10.0.2.2:3000

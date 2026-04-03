@@ -13,6 +13,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.maillardmap.common.BigBackTheme
+import com.maillardmap.BuildConfig
 import com.maillardmap.data.*
 import kotlinx.coroutines.flow.collectLatest
 
@@ -25,7 +26,7 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
             override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                 val sessionManager = SessionManager(context)
                 val okHttp = RetrofitClient.okHttpClient(sessionManager)
-                val api = RetrofitClient.create(okHttp, "http://10.0.2.2:3000/")
+                val api = RetrofitClient.create(okHttp, BuildConfig.API_BASE_URL)
                 val repository = Repository(api, sessionManager)
                 return AuthViewModel(repository) as T
             }

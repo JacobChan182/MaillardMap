@@ -1,8 +1,10 @@
 package com.maillardmap.ui.saved
 
-import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -10,9 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.maillardmap.common.PreviewTheme
+import kotlinx.coroutines.launch
 import com.maillardmap.data.Repository
 import com.maillardmap.domain.SavedPlace
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun SavedPlacesScreen(
     repository: Repository
@@ -30,6 +34,8 @@ fun SavedPlacesScreen(
             isLoading = false
         }
     }
+
+    val scope = rememberCoroutineScope()
 
     PreviewTheme {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -50,13 +56,19 @@ fun SavedPlacesScreen(
                     Text("No saved places yet")
                 }
             } else {
-                androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(savedPlaces) { place ->
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(savedPlaces, key = { it.id }) { place ->
                         SavedPlaceItem(
                             place = place,
                             onDelete = {
-                                repository.deleteSavedPlace(place.restaurantId)
-                                savedPlaces = savedPlaces.filterNot { it.id == place.id }
+                                scope.launch {
+                                    try {
+                                        repository.deleteSavedPlace(place.restaurantId)
+                                        savedPlaces = savedPlaces.filterNot { it.id == place.id }
+                                    } catch (e: Exception) {
+                                        error = e.message ?: "Remove failed"
+                                    }
+                                }
                             }
                         )
                     }
@@ -70,6 +82,7 @@ fun SavedPlacesScreen(
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 private fun SavedPlaceItem(
     place: SavedPlace,
@@ -78,7 +91,7 @@ private fun SavedPlaceItem(
     ListItem(
         text = { Text(place.restaurantName ?: "Restaurant") },
         secondaryText = { Text("Saved") },
-        trailingIcon = {
+        trailing = {
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, "Remove saved place")
             }
