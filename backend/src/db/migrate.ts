@@ -9,12 +9,18 @@ function isDbAuthFailure(err: unknown): err is DatabaseError {
   return typeof err === 'object' && err !== null && 'code' in err && (err as DatabaseError).code === '28P01';
 }
 
-function isDnsNotFound(err: unknown): err is NodeJS.ErrnoException {
-  return typeof err === 'object' && err !== null && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOTFOUND';
+/** Shapes like Node `dns` ENOTFOUND errors (`code`, optional `hostname`). */
+interface ErrnoExceptionLike {
+  code?: string;
+  hostname?: string;
 }
 
-function printDnsHelp(err: NodeJS.ErrnoException): void {
-  const hostname = 'hostname' in err && err.hostname != null ? String(err.hostname) : 'database host';
+function isDnsNotFound(err: unknown): err is ErrnoExceptionLike {
+  return typeof err === 'object' && err !== null && 'code' in err && (err as ErrnoExceptionLike).code === 'ENOTFOUND';
+}
+
+function printDnsHelp(err: ErrnoExceptionLike): void {
+  const hostname = err.hostname != null ? String(err.hostname) : 'database host';
   const isDirectDbHost = hostname.includes('.supabase.co') && hostname.startsWith('db.');
   console.error(`
 Could not resolve ${hostname} (DNS lookup failed).
