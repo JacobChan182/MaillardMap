@@ -32,47 +32,63 @@ struct FriendsView: View {
                     Text("Type a username to search")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                } else if let err = vm.findFriendsSearchError, !err.isEmpty, vm.searchResults.isEmpty, !vm.isSearchingUsers {
-                    Text(err)
-                        .font(.subheadline)
-                        .foregroundStyle(.red)
-                } else if vm.searchResults.isEmpty && !vm.isSearchingUsers {
-                    Text(vm.findFriendsAllExcluded
-                         ? "Everyone matching is already a friend or has a pending request"
-                         : "No users match")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
+                } else {
+                    if vm.isSearchingUsers {
+                        HStack(alignment: .center, spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Searching…")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            Spacer(minLength: 0)
+                        }
+                        .accessibilityElement(children: .combine)
+                    }
 
-                ForEach(vm.searchResults) { user in
-                    HStack(alignment: .center, spacing: 12) {
-                        Button {
-                            profileUserId = user.id
-                        } label: {
-                            HStack(alignment: .center, spacing: 12) {
-                                ProfileAvatarView(
-                                    url: user.avatarUrl,
-                                    name: userListTitle(user),
-                                    size: 36
-                                )
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(userListTitle(user))
-                                        .font(.headline)
-                                        .foregroundStyle(.primary)
-                                    Text("@\(user.username)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                    if let err = vm.findFriendsSearchError, !err.isEmpty, vm.searchResults.isEmpty, !vm.isSearchingUsers {
+                        Text(err)
+                            .font(.subheadline)
+                            .foregroundStyle(.red)
+                    } else if vm.searchResults.isEmpty, !vm.isSearchingUsers {
+                        Text(vm.findFriendsAllExcluded
+                             ? "Everyone matching is already a friend or has a pending request"
+                             : "No users match")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    ForEach(vm.searchResults) { user in
+                        HStack(alignment: .center, spacing: 12) {
+                            Button {
+                                profileUserId = user.id
+                            } label: {
+                                HStack(alignment: .center, spacing: 12) {
+                                    ProfileAvatarView(
+                                        url: user.avatarUrl,
+                                        name: userListTitle(user),
+                                        size: 36
+                                    )
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(userListTitle(user))
+                                            .font(.headline)
+                                            .foregroundStyle(.primary)
+                                        Text("@\(user.username)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .multilineTextAlignment(.leading)
                                 }
-                                .multilineTextAlignment(.leading)
                             }
+                            .buttonStyle(.plain)
+                            Spacer(minLength: 8)
+                            Button("Add") {
+                                Task { await vm.sendFriendRequest(userId: user.id) }
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.orange)
                         }
-                        .buttonStyle(.plain)
-                        Spacer(minLength: 8)
-                        Button("Add") {
-                            Task { await vm.sendFriendRequest(userId: user.id) }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.orange)
+                        .opacity(vm.isSearchingUsers ? 0.55 : 1)
+                        .animation(.easeInOut(duration: 0.2), value: vm.isSearchingUsers)
                     }
                 }
             }
@@ -195,11 +211,6 @@ struct FriendsView: View {
         .onChange(of: auth.currentUser?.id) { _, id in
             vm.currentUserId = id
             vm.reapplyFindFriendsSearchFilter()
-        }
-        .overlay {
-            if vm.isSearchingUsers && !vm.trimmedFindFriendsQuery.isEmpty {
-                ProgressView()
-            }
         }
     }
 }

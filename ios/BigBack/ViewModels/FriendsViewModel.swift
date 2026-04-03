@@ -14,7 +14,7 @@ final class FriendsViewModel: ObservableObject {
     @Published var findFriendsSearchError: String?
     /// Loading the friends/pending/sent lists (not the username search).
     @Published var isLoadingFriends = false
-    /// In-flight `users/search` request.
+    /// In-flight `users/search` request (empty states, stale-result phase).
     @Published var isSearchingUsers = false
 
     /// Excludes self from Find Friends results when set.
