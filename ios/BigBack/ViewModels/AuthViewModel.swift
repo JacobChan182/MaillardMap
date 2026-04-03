@@ -4,12 +4,13 @@ import Foundation
 final class AuthViewModel: ObservableObject {
     @Published var currentUser: User?
     @Published var errorMessage: String?
+    @Published var infoMessage: String?
     @Published var isLoading = false
     @Published var isSignupMode = false
 
     @Published var username = ""
     @Published var password = ""
-    @Published var phoneOrEmail = ""
+    @Published var email = ""
 
     let api: APIClient
 
@@ -51,6 +52,7 @@ final class AuthViewModel: ObservableObject {
         }
         isLoading = true
         errorMessage = nil
+        infoMessage = nil
         defer { isLoading = false }
         do {
             let resp = try await api.login(username: username, password: password)
@@ -70,6 +72,15 @@ final class AuthViewModel: ObservableObject {
             errorMessage = "Username must be at least 3 characters"
             return
         }
+        let addr = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !addr.isEmpty else {
+            errorMessage = "Enter your email"
+            return
+        }
+        guard addr.contains("@"), addr.contains(".") else {
+            errorMessage = "Enter a valid email address"
+            return
+        }
         guard !password.isEmpty else {
             errorMessage = "Choose a password"
             return
@@ -80,12 +91,12 @@ final class AuthViewModel: ObservableObject {
         }
         isLoading = true
         errorMessage = nil
+        infoMessage = nil
         defer { isLoading = false }
         do {
-            let contact = phoneOrEmail.trimmingCharacters(in: .whitespacesAndNewlines)
-            let resp = try await api.signup(username: username, password: password, phoneOrEmail: contact.isEmpty ? nil : contact)
-            currentUser = resp.user
-            saveUser(resp.user)
+            let result = try await api.signup(username: username, email: addr, password: password)
+            infoMessage = result.message.isEmpty ? "Check your email to confirm your account before logging in." : result.message
+            password = ""
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -101,7 +112,7 @@ final class AuthViewModel: ObservableObject {
         api.clearSession()
         username = ""
         password = ""
-        phoneOrEmail = ""
+        email = ""
         UserDefaults.standard.removeObject(forKey: "currentUser")
         UserDefaults.standard.removeObject(forKey: "currentUserId")
         UserDefaults.standard.removeObject(forKey: "currentUsername")

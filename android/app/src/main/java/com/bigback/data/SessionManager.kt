@@ -1,15 +1,15 @@
-package com.bigback.data
+package com.maillardmap.data
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.bigback.domain.User
+import com.maillardmap.domain.User
 
 /**
  * Manages session persistence using SharedPreferences.
  */
 class SessionManager(context: Context) {
     private val prefs: SharedPreferences =
-        context.getSharedPreferences("bigback_prefs", Context.MODE_PRIVATE)
+        context.getSharedPreferences("maillardmap_prefs", Context.MODE_PRIVATE)
 
     companion object {
         private const val PREF_TOKEN = "auth_token"
@@ -17,7 +17,7 @@ class SessionManager(context: Context) {
         private const val PREF_USERNAME = "username"
     }
 
-    fun saveSession(token: String, user: com.bigback.domain.User) {
+    fun saveSession(token: String, user: com.maillardmap.domain.User) {
         prefs.edit()
             .putString(PREF_TOKEN, token)
             .putString(PREF_USER_ID, user.id)

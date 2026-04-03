@@ -1,4 +1,4 @@
-package com.bigback.common
+package com.maillardmap.common
 
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem

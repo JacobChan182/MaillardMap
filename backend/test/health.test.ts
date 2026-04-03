@@ -5,7 +5,7 @@ describe('health', () => {
   it('returns ok response', () => {
     const health = getHealth();
     expect(health.ok).toBe(true);
-    expect(health.service).toBe('bigback-api');
+    expect(health.service).toBe('maillardmap-api');
     expect(typeof health.time).toBe('string');
   });
 });

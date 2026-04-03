@@ -1,12 +1,12 @@
-package com.bigback.viewmodel
+package com.maillardmap.viewmodel
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.*
-import com.bigback.data.Repository
-import com.bigback.data.SessionManager
-import com.bigback.data.RetrofitClient
-import com.bigback.data.BigBackApi
+import com.maillardmap.data.Repository
+import com.maillardmap.data.SessionManager
+import com.maillardmap.data.RetrofitClient
+import com.maillardmap.data.BigBackApi
 import okhttp3.OkHttpClient
 
 sealed class NavRoute {

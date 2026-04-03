@@ -1,14 +1,16 @@
+# POSTGRES_* are only applied on first start (empty data volume). Renaming the app
+# does not change an existing cluster — align DATABASE_URL with real users or `down -v`.
 services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-bigback}
+      POSTGRES_USER: ${POSTGRES_USER:-maillardmap}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
-      POSTGRES_DB: ${POSTGRES_DB:-bigback}
+      POSTGRES_DB: ${POSTGRES_DB:-maillardmap}
     ports:
       - "5432:5432"
     volumes:
-      - bigback_postgres_data:/var/lib/postgresql/data
+      - maillardmap_postgres_data:/var/lib/postgresql/data
 
 volumes:
-  bigback_postgres_data:
+  maillardmap_postgres_data:

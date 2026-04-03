@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.bigback"
+    namespace = "com.maillardmap"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.bigback"
+        applicationId = "com.maillardmap"
         minSdk = 26
         targetSdk = 34
         versionCode = 1

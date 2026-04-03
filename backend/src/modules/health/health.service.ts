@@ -1,7 +1,7 @@
 export function getHealth() {
   return {
     ok: true,
-    service: 'bigback-api',
+    service: 'maillardmap-api',
     time: new Date().toISOString(),
   };
 }

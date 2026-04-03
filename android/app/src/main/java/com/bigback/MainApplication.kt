@@ -1,8 +1,8 @@
-package com.bigback
+package com.maillardmap
 
 import android.app.Application
-import com.bigback.data.RetrofitClient
-import com.bigback.data.SessionManager
+import com.maillardmap.data.RetrofitClient
+import com.maillardmap.data.SessionManager
 
 class MainApplication : Application() {
     override fun onCreate() {

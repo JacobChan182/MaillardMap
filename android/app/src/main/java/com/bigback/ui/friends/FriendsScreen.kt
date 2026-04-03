@@ -1,4 +1,4 @@
-package com.bigback.ui.friends
+package com.maillardmap.ui.friends
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,11 +13,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
-import com.bigback.common.PreviewTheme
-import com.bigback.data.Repository
-import com.bigback.domain.Friendship
-import com.bigback.domain.User
-import com.bigback.ui.restaurant.RestaurantSearchDialog
+import com.maillardmap.common.PreviewTheme
+import com.maillardmap.data.Repository
+import com.maillardmap.domain.Friendship
+import com.maillardmap.domain.User
+import com.maillardmap.ui.restaurant.RestaurantSearchDialog
 import kotlinx.coroutines.delay
 
 @Composable

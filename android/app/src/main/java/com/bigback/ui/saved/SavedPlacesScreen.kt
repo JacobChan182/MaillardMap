@@ -1,4 +1,4 @@
-package com.bigback.ui.saved
+package com.maillardmap.ui.saved
 
 import android.content.Context
 import androidx.compose.foundation.clickable
@@ -9,9 +9,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.bigback.common.PreviewTheme
-import com.bigback.data.Repository
-import com.bigback.domain.SavedPlace
+import com.maillardmap.common.PreviewTheme
+import com.maillardmap.data.Repository
+import com.maillardmap.domain.SavedPlace
 
 @Composable
 fun SavedPlacesScreen(

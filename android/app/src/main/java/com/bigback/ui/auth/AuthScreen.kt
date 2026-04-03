@@ -1,4 +1,4 @@
-package com.bigback.ui.auth
+package com.maillardmap.ui.auth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
@@ -11,8 +11,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.bigback.common.BigBackTheme
-import com.bigback.data.*
+import com.maillardmap.common.BigBackTheme
+import com.maillardmap.data.*
 import kotlinx.coroutines.flow.collectLatest
 
 @Composable
@@ -42,9 +42,11 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
     BigBackTheme {
         AuthenticationForm(
             onLogin = { user, pass -> vm.login(user, pass) },
-            onSignup = { user, pass -> vm.signup(user, pass) },
+            onSignup = { user, pass, em -> vm.signup(user, pass, em) },
+            onToggleMode = { vm.clearFormMessages() },
             isLoading = state.isLoading,
-            errorMessage = state.error
+            errorMessage = state.error,
+            verificationMessage = state.verificationMessage
         )
     }
 }
@@ -52,12 +54,15 @@ fun AuthScreen(onAuthSuccess: () -> Unit) {
 @Composable
 private fun AuthenticationForm(
     onLogin: (String, String) -> Unit,
-    onSignup: (String, String) -> Unit,
+    onSignup: (String, String, String) -> Unit,
+    onToggleMode: () -> Unit,
     isLoading: Boolean,
-    errorMessage: String?
+    errorMessage: String?,
+    verificationMessage: String?
 ) {
     var isLogin by remember { mutableStateOf(true) }
     var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
     Column(
@@ -90,21 +95,19 @@ private fun AuthenticationForm(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            OutlinedTextField(
+                value = username,
+                onValueChange = { username = it },
+                label = { Text(if (isLogin) "Username or email" else "Username") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
             if (!isLogin) {
                 OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Username") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            if (isLogin) {
-                OutlinedTextField(
-                    value = username,
-                    onValueChange = { username = it },
-                    label = { Text("Username") },
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -125,7 +128,7 @@ private fun AuthenticationForm(
                 onClick = {
                     if (username.isNotBlank() && password.isNotBlank()) {
                         if (isLogin) onLogin(username, password)
-                        else onSignup(username, password)
+                        else if (email.isNotBlank()) onSignup(username, password, email)
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -144,9 +147,20 @@ private fun AuthenticationForm(
             if (errorMessage != null) {
                 Text(text = errorMessage, color = MaterialTheme.colors.error, style = MaterialTheme.typography.body2)
             }
+            if (verificationMessage != null) {
+                Text(
+                    text = verificationMessage,
+                    color = MaterialTheme.colors.onSurface.copy(alpha = 0.6f),
+                    style = MaterialTheme.typography.body2
+                )
+            }
 
             TextButton(
-                onClick = { isLogin = !isLogin },
+                onClick = {
+                    onToggleMode()
+                    isLogin = !isLogin
+                    email = ""
+                },
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
                 Text(

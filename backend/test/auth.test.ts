@@ -1,6 +1,10 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import bcrypt from 'bcryptjs';
 
+vi.mock('../src/services/email.js', () => ({
+  sendSignupConfirmationEmail: vi.fn().mockResolvedValue(undefined),
+}));
+
 // ---------------------------------------------------------------------------
 // Mock the DB pool so we can unit-test auth services in isolation
 // ---------------------------------------------------------------------------
@@ -19,7 +23,25 @@ class FakePool {
     this.mockResult = null;
   }
 
-  async query() {
+  async query(sql: string | unknown, params?: unknown[]) {
+    if (typeof sql === 'string') {
+      const t = sql.trim().toLowerCase();
+      if (t === 'begin' || t === 'commit' || t === 'rollback') {
+        return { rows: [] };
+      }
+      if (sql.includes('phone_or_email = $2') && params && params.length >= 2) {
+        if (this.mockError) throw this.mockError;
+        const raw = String(params[0]);
+        const emailKey = String(params[1]);
+        const rows = this.mockResult?.rows ?? [];
+        const user = rows[0];
+        if (!user) return { rows: [] };
+        const match =
+          user.username === raw ||
+          (user.phone_or_email != null && user.phone_or_email === emailKey);
+        return { rows: match ? [user] : [] };
+      }
+    }
     if (this.mockError) throw this.mockError;
     return this.mockResult || { rows: [] };
   }
@@ -42,16 +64,26 @@ describe('auth service', () => {
   });
 
   describe('signup', () => {
-    it('creates a user and returns user object with ok=true', async () => {
+    it('creates a user and returns needsVerification with user object', async () => {
       const row = {
         id: '550e8400-e29b-41d4-a716-446655440000',
         username: 'alice',
         password_hash: '$2a$12$dummy',
+        phone_or_email: 'alice@example.com',
+        display_name: null,
+        avatar_url: null,
+        bio: null,
         created_at: '2026-01-01T00:00:00Z',
+        profile_private: false,
+        email_verified_at: null,
       };
       fakePool.setRows([row]);
 
-      const result = await signup({ username: 'alice', password: 'password123' });
+      const result = await signup({
+        username: 'alice',
+        email: 'alice@example.com',
+        password: 'password123',
+      });
 
       expect(result.ok).toBe(true);
       if (result.ok === true) {
@@ -66,7 +98,11 @@ describe('auth service', () => {
       err.code = '23505';
       fakePool.setError(err);
 
-      const result = await signup({ username: 'alice', password: 'password123' });
+      const result = await signup({
+        username: 'alice',
+        email: 'alice@example.com',
+        password: 'password123',
+      });
 
       expect(result.ok).toBe(false);
       if (result.ok === false) {
@@ -79,7 +115,9 @@ describe('auth service', () => {
       const err = new Error('connection refused');
       fakePool.setError(err);
 
-      await expect(signup({ username: 'alice', password: 'password123' })).rejects.toThrow('connection refused');
+      await expect(
+        signup({ username: 'alice', email: 'a@b.com', password: 'password123' }),
+      ).rejects.toThrow('connection refused');
     });
   });
 
@@ -89,8 +127,14 @@ describe('auth service', () => {
       const row = {
         id: '550e8400-e29b-41d4-a716-446655440001',
         username: 'bob',
+        phone_or_email: 'bob@example.com',
+        display_name: null,
+        avatar_url: null,
+        bio: null,
         password_hash: hashed,
         created_at: '2026-01-01T00:00:00Z',
+        profile_private: false,
+        email_verified_at: '2026-01-01T00:00:00Z',
       };
       fakePool.setRows([row]);
 
@@ -102,6 +146,54 @@ describe('auth service', () => {
         expect(typeof result.token).toBe('string');
         expect(result.user.id).toBe(row.id);
         expect(result.user.username).toBe('bob');
+      }
+    });
+
+    it('matches email case-insensitively (stored lowercase)', async () => {
+      const hashed = await bcrypt.hash('password123', 12);
+      const row = {
+        id: '550e8400-e29b-41d4-a716-446655440003',
+        username: 'bob',
+        phone_or_email: 'bob@example.com',
+        display_name: null,
+        avatar_url: null,
+        bio: null,
+        password_hash: hashed,
+        created_at: '2026-01-01T00:00:00Z',
+        profile_private: false,
+        email_verified_at: '2026-01-01T00:00:00Z',
+      };
+      fakePool.setRows([row]);
+
+      const result = await login({ username: 'Bob@EXAMPLE.COM', password: 'password123' });
+
+      expect(result.ok).toBe(true);
+      if (result.ok === true) {
+        expect(result.user.username).toBe('bob');
+      }
+    });
+
+    it('returns EMAIL_NOT_VERIFIED when email not confirmed', async () => {
+      const hashed = await bcrypt.hash('password123', 12);
+      fakePool.setRows([{
+        id: '550e8400-e29b-41d4-a716-446655440001',
+        username: 'bob',
+        phone_or_email: 'bob@example.com',
+        display_name: null,
+        avatar_url: null,
+        bio: null,
+        password_hash: hashed,
+        created_at: '2026-01-01T00:00:00Z',
+        profile_private: false,
+        email_verified_at: null,
+      }]);
+
+      const result = await login({ username: 'bob', password: 'password123' });
+
+      expect(result.ok).toBe(false);
+      if (result.ok === false) {
+        expect(result.status).toBe(403);
+        expect(result.code).toBe('EMAIL_NOT_VERIFIED');
       }
     });
 
@@ -122,8 +214,14 @@ describe('auth service', () => {
       fakePool.setRows([{
         id: '550e8400-e29b-41d4-a716-446655440002',
         username: 'bob',
+        phone_or_email: null,
+        display_name: null,
+        avatar_url: null,
+        bio: null,
         password_hash: hashed,
         created_at: '2026-01-01T00:00:00Z',
+        profile_private: false,
+        email_verified_at: '2026-01-01T00:00:00Z',
       }]);
 
       const result = await login({ username: 'bob', password: 'wrong' });

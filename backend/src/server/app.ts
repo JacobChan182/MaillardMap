@@ -41,7 +41,7 @@ export function createApp() {
   app.use(morgan('dev'));
 
   app.get('/', (_req, res) => {
-    res.json({ ok: true, service: 'bigback-api' });
+    res.json({ ok: true, service: 'maillardmap-api' });
   });
 
   app.use('/auth', authRouter);

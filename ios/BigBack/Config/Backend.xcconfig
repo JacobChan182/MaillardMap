@@ -7,4 +7,4 @@
 
 BACKEND_TEST = 0
 BACKEND_MAC_BASE = http:/$()/10.3.14.126:3000
-BACKEND_PRODUCTION_BASE = https:/$()/api.example.com
+BACKEND_PRODUCTION_BASE = https:/$()/bigback-production.up.railway.app

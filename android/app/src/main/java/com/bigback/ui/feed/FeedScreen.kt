@@ -1,4 +1,4 @@
-package com.bigback.ui.feed
+package com.maillardmap.ui.feed
 
 import android.content.Context
 import androidx.compose.foundation.clickable
@@ -17,9 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.bigback.domain.Post
-import com.bigback.data.Repository
-import com.bigback.common.PreviewTheme
+import com.maillardmap.domain.Post
+import com.maillardmap.data.Repository
+import com.maillardmap.common.PreviewTheme
 
 @Composable
 fun FeedScreen(

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ZodError } from 'zod';
 import { loginSchema, signupSchema } from './auth.schemas.js';
-import { login, signup } from './auth.service.js';
+import { login, signup, verifyEmail } from './auth.service.js';
 
 export const authRouter = Router();
 
@@ -21,7 +21,12 @@ authRouter.post('/signup', async (req, res) => {
     if (!result.ok) {
       return res.status(result.status).json({ error: { code: result.code, message: result.message } });
     }
-    return res.status(201).json(result);
+    return res.status(201).json({
+      ok: true,
+      needsVerification: true,
+      user: result.user,
+      message: result.message,
+    });
   } catch (err) {
     if (err instanceof ZodError) {
       return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: formatZodErrors(err) } });
@@ -48,3 +53,16 @@ authRouter.post('/login', async (req, res) => {
   }
 });
 
+authRouter.get('/verify-email', async (req, res) => {
+  try {
+    const token = typeof req.query.token === 'string' ? req.query.token : '';
+    const result = await verifyEmail(token);
+    if (!result.ok) {
+      return res.status(result.status).json({ error: { code: result.code, message: result.message } });
+    }
+    return res.status(200).json({ ok: true, token: result.token, user: result.user });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
+  }
+});

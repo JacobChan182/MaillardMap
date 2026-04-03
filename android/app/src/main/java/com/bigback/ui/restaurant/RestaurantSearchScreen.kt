@@ -1,4 +1,4 @@
-package com.bigback.ui.restaurant
+package com.maillardmap.ui.restaurant
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,9 +13,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
-import com.bigback.common.PreviewTheme
-import com.bigback.data.Repository
-import com.bigback.domain.Restaurant
+import com.maillardmap.common.PreviewTheme
+import com.maillardmap.data.Repository
+import com.maillardmap.domain.Restaurant
 
 @Composable
 fun RestaurantSearchScreen(

@@ -7,6 +7,6 @@ const port = Number(process.env.PORT ?? 3000);
 const app = createApp();
 
 app.listen(port, () => {
-  console.log(`bigback-api listening on http://localhost:${port}`);
+  console.log(`maillardmap-api listening on http://localhost:${port}`);
 });
 

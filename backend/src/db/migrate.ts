@@ -2,7 +2,57 @@ import 'dotenv/config';
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { DatabaseError } from 'pg';
 import { getPool } from './pool.js';
+
+function isDbAuthFailure(err: unknown): err is DatabaseError {
+  return typeof err === 'object' && err !== null && 'code' in err && (err as DatabaseError).code === '28P01';
+}
+
+function isDnsNotFound(err: unknown): err is NodeJS.ErrnoException {
+  return typeof err === 'object' && err !== null && 'code' in err && (err as NodeJS.ErrnoException).code === 'ENOTFOUND';
+}
+
+function printDnsHelp(err: NodeJS.ErrnoException): void {
+  const hostname = 'hostname' in err && err.hostname != null ? String(err.hostname) : 'database host';
+  const isDirectDbHost = hostname.includes('.supabase.co') && hostname.startsWith('db.');
+  console.error(`
+Could not resolve ${hostname} (DNS lookup failed).
+
+${isDirectDbHost ? `The Supabase "direct" host (db.<ref>.supabase.co) is often IPv6-only. If your Mac or network does not resolve IPv6, use the Session pooler string instead:
+  Dashboard → Connect → Session mode (host like *.pooler.supabase.com, username often postgres.<project-ref>).
+
+` : ''}- Re-copy from Supabase Connect: use Session pooler for IPv4, or Direct if your network supports IPv6.
+- Fix typos in the project ref; resume the project if it was paused.
+- Or try another network / disable VPN if DNS is filtered.
+`.trim());
+}
+
+function printDbAuthHelp(): void {
+  const url = process.env.DATABASE_URL ?? '';
+  let hintedUser = '';
+  try {
+    const u = new URL(url.replace(/^postgresql:/i, 'http:'));
+    if (u.username) hintedUser = ` (connecting as "${decodeURIComponent(u.username)}")`;
+  } catch {
+    /* ignore */
+  }
+  console.error(`
+Postgres authentication failed${hintedUser}.
+
+DATABASE_URL must match the running database user and password.
+
+If you use repo docker-compose defaults, set:
+  DATABASE_URL=postgresql://maillardmap:change-me@localhost:5432/maillardmap
+
+If you changed POSTGRES_USER / POSTGRES_PASSWORD after Postgres was first created,
+the old users are still in the data volume. Reset local dev data (drops DB):
+  cd .. && docker compose down -v && docker compose up -d
+Then run migrations again.
+
+See backend/README.md ("Postgres: password authentication failed").
+`.trim());
+}
 
 type Migration = { id: string; filename: string; sql: string };
 
@@ -74,7 +124,13 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(err);
-  process.exitCode = 1;
+  if (isDbAuthFailure(err)) {
+    printDbAuthHelp();
+  } else if (isDnsNotFound(err)) {
+    printDnsHelp(err);
+  } else {
+    console.error(err);
+  }
+  process.exit(1);
 });
 

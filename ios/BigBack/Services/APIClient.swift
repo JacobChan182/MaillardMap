@@ -3,7 +3,6 @@ import Foundation
 // MARK: - Errors
 
 enum APIError: Error, LocalizedError {
-    case unauthorized
     case badResponse(Int, Data?)
     case networkError(Error)
     case decodingError(Error)
@@ -11,10 +10,12 @@ enum APIError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unauthorized: return "Session expired. Please log in again."
-        case .badResponse(_, let data):
+        case .badResponse(let code, let data):
             if let data, let body = try? JSONDecoder().decode(ServerError.self, from: data) {
                 return body.error.message
+            }
+            if code == 401 {
+                return "Invalid or expired session. Please log in again."
             }
             return "Something went wrong. Please try again."
         case .networkError: return "Unable to connect. Check your internet and try again."
@@ -88,7 +89,6 @@ final class APIClient {
         do {
             let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse else { throw APIError.badResponse(0, data) }
-            if http.statusCode == 401 { throw APIError.unauthorized }
             guard (200...299).contains(http.statusCode) else { throw APIError.badResponse(http.statusCode, data) }
             return data
         } catch let err as APIError { throw err }
@@ -102,12 +102,15 @@ final class APIClient {
 
     // MARK: - Auth
 
-    func signup(username: String, password: String, phoneOrEmail: String?) async throws -> (user: User, token: String) {
-        let req = SignupRequest(username: username, password: password, phoneOrEmail: phoneOrEmail)
+    /// Signup does not return a session token until the user confirms their email.
+    func signup(username: String, email: String, password: String) async throws -> (user: User, message: String) {
+        let req = SignupRequest(username: username, email: email, password: password)
         let data = try await request("auth/signup", method: "POST", body: req)
-        let resp = try decode(AuthResponse.self, from: data)
-        authToken = resp.token
-        return (resp.user, resp.token)
+        let resp = try decode(SignupResponseBody.self, from: data)
+        guard resp.ok, let user = resp.user else {
+            throw APIError.decodingError(NSError(domain: "Auth", code: 0))
+        }
+        return (user, resp.message ?? "")
     }
 
     func login(username: String, password: String) async throws -> (user: User, token: String) {
@@ -156,7 +159,6 @@ final class APIClient {
         req.httpBody = try JSONSerialization.data(withJSONObject: payload)
         let (data, response) = try await session.data(for: req)
         guard let http = response as? HTTPURLResponse else { throw APIError.badResponse(0, data) }
-        if http.statusCode == 401 { throw APIError.unauthorized }
         guard (200...299).contains(http.statusCode) else { throw APIError.badResponse(http.statusCode, data) }
         struct Resp: Decodable { let user: User }
         return try decode(Resp.self, from: data).user
@@ -376,8 +378,15 @@ struct AuthRequest: Encodable {
 
 struct SignupRequest: Encodable {
     let username: String
+    let email: String
     let password: String
-    let phoneOrEmail: String?
+}
+
+struct SignupResponseBody: Decodable {
+    let ok: Bool
+    let needsVerification: Bool?
+    let message: String?
+    let user: User?
 }
 
 struct AuthResponse: Decodable {

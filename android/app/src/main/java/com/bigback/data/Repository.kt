@@ -1,6 +1,6 @@
-package com.bigback.data
+package com.maillardmap.data
 
-import com.bigback.domain.*
+import com.maillardmap.domain.*
 
 class Repository(
     private val api: BigBackApi,
@@ -8,10 +8,12 @@ class Repository(
 ) {
 
     // --- Auth ---
-    suspend fun signup(username: String, password: String): AuthResponse {
-        val resp = api.signup(SignupRequest(username, password))
-        sessionManager.saveSession(resp.token, User(resp.user.id, resp.user.username, resp.user.createdAt))
-        return AuthResponse(User(resp.user.id, resp.user.username, resp.user.createdAt), resp.token)
+    /** Does not save a session; user must confirm email before logging in. */
+    suspend fun signup(username: String, password: String, email: String): Pair<User, String> {
+        val resp = api.signup(SignupRequest(username, password, email.trim().lowercase()))
+        val dto = resp.user ?: throw IllegalStateException("Signup response missing user")
+        val msg = resp.message ?: "Check your email to confirm your account before logging in."
+        return Pair(User(dto.id, dto.username, dto.createdAt), msg)
     }
 
     suspend fun login(username: String, password: String): AuthResponse {

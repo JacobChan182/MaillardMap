@@ -28,6 +28,10 @@ class FakePool {
 
   async query(sql: string) {
     const normalised = sql.trim().replace(/\s+/g, ' ');
+    const cmd = normalised.split(' ')[0]?.toLowerCase();
+    if (cmd === 'begin' || cmd === 'commit' || cmd === 'rollback') {
+      return { rows: [] };
+    }
     for (const [key, handler] of this.handlers) {
       if (normalised.includes(key)) return handler();
     }
@@ -39,6 +43,10 @@ const pool = new FakePool();
 
 vi.mock('../src/db/pool.js', () => ({
   getPool: () => pool as unknown as Pool,
+}));
+
+vi.mock('../src/services/email.js', () => ({
+  sendSignupConfirmationEmail: vi.fn().mockResolvedValue(undefined),
 }));
 
 function serve(app: any): Promise<number> {
@@ -93,8 +101,23 @@ import { createApp } from '../src/server/app.js';
 // Shared test data
 // ---------------------------------------------------------------------------
 
-const userA = { username: 'usera', password: 'password1234' };
-const userB = { username: 'userb', password: 'password1234' };
+const userA = { username: 'usera', email: 'usera@example.com', password: 'password1234' };
+const userB = { username: 'userb', email: 'userb@example.com', password: 'password1234' };
+
+function loginRow(id: string, username: string, hash: string, email: string) {
+  return {
+    id,
+    username,
+    phone_or_email: email,
+    display_name: null,
+    avatar_url: null,
+    bio: null,
+    password_hash: hash,
+    created_at: '2026-01-01T00:00:00Z',
+    profile_private: false,
+    email_verified_at: '2026-01-01T00:00:01Z',
+  };
+}
 
 let app: ReturnType<typeof createApp>;
 
@@ -114,9 +137,20 @@ beforeEach(() => {
 describe('Flow A: User signup, post, and feed', () => {
   it('user signs up, creates a post, and sees it in their own feed', async () => {
     // --- Step 1: Sign up User A ---
-    pool.setHandler('insert into users', async () => {
-      return { rows: [{ id: 'aaa', username: 'usera', password_hash: 'hash', created_at: '2026-01-01T00:00:00Z' }] };
-    });
+    pool.setHandler('insert into users', async () => ({
+      rows: [{
+        id: 'aaa',
+        username: 'usera',
+        phone_or_email: userA.email,
+        display_name: null,
+        avatar_url: null,
+        bio: null,
+        password_hash: 'hash',
+        created_at: '2026-01-01T00:00:00Z',
+        profile_private: false,
+        email_verified_at: null,
+      }],
+    }));
     const signupRes = await post(app, '/auth/signup', userA);
     expect(signupRes.status).toBe(201);
     expect(signupRes.body.user.username).toBe('usera');
@@ -126,9 +160,9 @@ describe('Flow A: User signup, post, and feed', () => {
     const bcrypt = await import('bcryptjs');
     const hash = await bcrypt.hash(userA.password, 12);
     pool.setHandler('from users where username', async () => ({
-      rows: [{ id: userIdA, username: 'usera', password_hash: hash, created_at: '2026-01-01T00:00:00Z' }],
+      rows: [loginRow(userIdA, 'usera', hash, userA.email)],
     }));
-    const loginRes = await post(app, '/auth/login', userA);
+    const loginRes = await post(app, '/auth/login', { username: userA.username, password: userA.password });
     expect(loginRes.status).toBe(200);
     const tokenA = loginRes.body.token;
     expect(typeof tokenA).toBe('string');
@@ -159,7 +193,21 @@ describe('Flow B: Friendship and post liking', () => {
       signupCount += 1;
       const username = signupCount === 1 ? 'usera' : 'userb';
       const id = signupCount === 1 ? 'aaa' : 'bbb';
-      return { rows: [{ id, username, password_hash: 'hash', created_at: '2026-01-01T00:00:00Z' }] };
+      const email = signupCount === 1 ? userA.email : userB.email;
+      return {
+        rows: [{
+          id,
+          username,
+          phone_or_email: email,
+          display_name: null,
+          avatar_url: null,
+          bio: null,
+          password_hash: 'hash',
+          created_at: '2026-01-01T00:00:00Z',
+          profile_private: false,
+          email_verified_at: null,
+        }],
+      };
     });
     const signupA = await post(app, '/auth/signup', userA);
     const signupB = await post(app, '/auth/signup', userB);
@@ -175,13 +223,13 @@ describe('Flow B: Friendship and post liking', () => {
     pool.setHandler('from users where username', async () => {
       loginCount += 1;
       const row = loginCount === 1
-        ? { id: 'aaa', username: 'usera', password_hash: hash, created_at: '2026-01-01T00:00:00Z' }
-        : { id: 'bbb', username: 'userb', password_hash: hashB, created_at: '2026-01-01T00:00:00Z' };
+        ? loginRow('aaa', 'usera', hash, userA.email)
+        : loginRow('bbb', 'userb', hashB, userB.email);
       return { rows: [row] };
     });
 
-    const loginA = await post(app, '/auth/login', userA);
-    const loginB = await post(app, '/auth/login', userB);
+    const loginA = await post(app, '/auth/login', { username: userA.username, password: userA.password });
+    const loginB = await post(app, '/auth/login', { username: userB.username, password: userB.password });
     expect(loginA.status).toBe(200);
     expect(loginB.status).toBe(200);
     const tokenA = loginA.body.token;
@@ -239,7 +287,18 @@ describe('Flow D: Saving and viewing saved places', () => {
   it('user saves a restaurant, views saved list, and removes it', async () => {
     // --- Step 1: Sign up and log in ---
     pool.setHandler('insert into users', async () => ({
-      rows: [{ id: 'aaa', username: 'usera', password_hash: 'hash', created_at: '2026-01-01T00:00:00Z' }],
+      rows: [{
+        id: 'aaa',
+        username: 'usera',
+        phone_or_email: userA.email,
+        display_name: null,
+        avatar_url: null,
+        bio: null,
+        password_hash: 'hash',
+        created_at: '2026-01-01T00:00:00Z',
+        profile_private: false,
+        email_verified_at: null,
+      }],
     }));
     const signup = await post(app, '/auth/signup', userA);
     expect(signup.status).toBe(201);
@@ -247,9 +306,9 @@ describe('Flow D: Saving and viewing saved places', () => {
     const bcrypt = await import('bcryptjs');
     const hash = await bcrypt.hash(userA.password, 12);
     pool.setHandler('from users where username', async () => ({
-      rows: [{ id: 'aaa', username: 'usera', password_hash: hash, created_at: '2026-01-01T00:00:00Z' }],
+      rows: [loginRow('aaa', 'usera', hash, userA.email)],
     }));
-    const login = await post(app, '/auth/login', userA);
+    const login = await post(app, '/auth/login', { username: userA.username, password: userA.password });
     expect(login.status).toBe(200);
     const token = login.body.token;
 

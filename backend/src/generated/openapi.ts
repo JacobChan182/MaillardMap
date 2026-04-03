@@ -51,7 +51,7 @@ export interface operations {
                     /**
                      * @example {
                      *       "ok": true,
-                     *       "service": "bigback-api",
+                     *       "service": "maillardmap-api",
                      *       "time": "2026-03-31T00:00:00.000Z"
                      *     }
                      */

@@ -1,4 +1,4 @@
-package com.bigback.ui.blend
+package com.maillardmap.ui.blend
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,10 +11,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.bigback.common.PreviewTheme
-import com.bigback.data.Repository
-import com.bigback.domain.Friendship
-import com.bigback.domain.ScoredRestaurant
+import com.maillardmap.common.PreviewTheme
+import com.maillardmap.data.Repository
+import com.maillardmap.domain.Friendship
+import com.maillardmap.domain.ScoredRestaurant
 
 @Composable
 fun BlendScreen(

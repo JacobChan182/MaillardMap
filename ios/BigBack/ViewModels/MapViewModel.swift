@@ -428,7 +428,7 @@ enum MapAnnotationItem: Identifiable {
         switch self {
         case .feed(let pin): return pin.id
         case .temporaryGrayPin(let rid, _): return "__gray_\(rid)"
-        case .callout: return "__bigback_callout__"
+        case .callout: return "__maillardmap_callout__"
         }
     }
 

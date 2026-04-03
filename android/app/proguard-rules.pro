@@ -3,14 +3,14 @@
 # proguardFiles setting in build.gradle.kts.
 
 # Keep domain models
--keep class com.bigback.domain.** { *; }
--keep class com.bigback.data.** { *; }
+-keep class com.maillardmap.domain.** { *; }
+-keep class com.maillardmap.data.** { *; }
 
 # Retrofit
 -keepattributes Signature
 -keepattributes Exceptions
 -keep class retrofit2.** { *; }
--keepclasseswithmembers class com.bigback.data.BigBackApi { *; }
+-keepclasseswithmembers class com.maillardmap.data.BigBackApi { *; }
 
 # Gson
 -keep class com.google.gson.** { *; }

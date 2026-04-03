@@ -1,4 +1,4 @@
-package com.bigback.ui.post
+package com.maillardmap.ui.post
 
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,10 +18,10 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 import coil.compose.rememberAsyncImagePainter
-import com.bigback.common.PreviewTheme
-import com.bigback.data.Repository
-import com.bigback.domain.Restaurant
-import com.bigback.ui.restaurant.RestaurantSearchDialog
+import com.maillardmap.common.PreviewTheme
+import com.maillardmap.data.Repository
+import com.maillardmap.domain.Restaurant
+import com.maillardmap.ui.restaurant.RestaurantSearchDialog
 
 @Composable
 fun CreatePostScreen(

@@ -11,10 +11,10 @@ This repo uses **MVVM** for the mobile clients.
 
 ## Android (Compose)
 
-- **ui**: `android/app/src/main/java/com/bigback/ui/` (Compose screens)
-- **viewmodel**: `android/app/src/main/java/com/bigback/viewmodel/`
-- **domain**: `android/app/src/main/java/com/bigback/domain/` (models + use cases)
-- **data**: `android/app/src/main/java/com/bigback/data/` (network + persistence + repos)
+- **ui**: `android/app/src/main/java/com/maillardmap/ui/` (Compose screens)
+- **viewmodel**: `android/app/src/main/java/com/maillardmap/viewmodel/`
+- **domain**: `android/app/src/main/java/com/maillardmap/domain/` (models + use cases)
+- **data**: `android/app/src/main/java/com/maillardmap/data/` (network + persistence + repos)
 
 ## Backend (layering, not MVVM)
 

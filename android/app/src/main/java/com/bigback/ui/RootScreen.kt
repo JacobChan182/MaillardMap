@@ -1,4 +1,4 @@
-package com.bigback.ui
+package com.maillardmap.ui
 
 import android.content.Context
 import androidx.compose.foundation.layout.*
@@ -11,18 +11,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.*
-import com.bigback.viewmodel.RootViewModel
-import com.bigback.viewmodel.NavRoute
-import com.bigback.ui.auth.AuthScreen
-import com.bigback.ui.feed.FeedScreen
-import com.bigback.ui.post.CreatePostScreen
-import com.bigback.ui.friends.FriendsScreen
-import com.bigback.ui.saved.SavedPlacesScreen
-import com.bigback.ui.map.MapScreen
-import com.bigback.ui.restaurant.RestaurantSearchDialog
-import com.bigback.common.BigBackTheme
-import com.bigback.common.BigBackBottomNav
-import com.bigback.common.PreviewTheme
+import com.maillardmap.viewmodel.RootViewModel
+import com.maillardmap.viewmodel.NavRoute
+import com.maillardmap.ui.auth.AuthScreen
+import com.maillardmap.ui.feed.FeedScreen
+import com.maillardmap.ui.post.CreatePostScreen
+import com.maillardmap.ui.friends.FriendsScreen
+import com.maillardmap.ui.saved.SavedPlacesScreen
+import com.maillardmap.ui.map.MapScreen
+import com.maillardmap.ui.restaurant.RestaurantSearchDialog
+import com.maillardmap.common.BigBackTheme
+import com.maillardmap.common.BigBackBottomNav
+import com.maillardmap.common.PreviewTheme
 
 @Composable
 fun BigBackApp(context: Context) {
@@ -166,7 +166,7 @@ fun MainShell(
     }
 
     if (showBlend) {
-        com.bigback.ui.blend.BlendScreen(
+        com.maillardmap.ui.blend.BlendScreen(
             repository = vm.repository,
             currentUserId = vm.currentUserId() ?: "",
             onNavigateBack = { showBlend = false }

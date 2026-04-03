@@ -1,5 +1,5 @@
 {
-  "name": "@bigback/api",
+  "name": "@maillardmap/api",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "db:migrate": "tsx src/db/migrate.ts",
+    "db:migrate:prod": "node dist/db/migrate.js",
     "format": "prettier . --check"
   },
   "dependencies": {
@@ -21,10 +22,12 @@
     "dotenv": "^16.4.5",
     "express": "^5.1.0",
     "express-rate-limit": "^7.5.0",
+    "bcryptjs": "^2.4.3",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "pg": "^8.15.6",
+    "resend": "^4.8.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -37,7 +40,6 @@
     "@types/pg": "^8.15.2",
     "@typescript-eslint/eslint-plugin": "^8.33.1",
     "@typescript-eslint/parser": "^8.33.1",
-    "bcryptjs": "^2.4.3",
     "eslint": "^9.20.1",
     "globals": "^15.15.0",
     "prettier": "^3.5.3",

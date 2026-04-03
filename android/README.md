@@ -5,7 +5,7 @@ BigBack Android app built with Jetpack Compose and MVVM architecture.
 ## Architecture
 
 ```
-android/app/src/main/java/com/bigback/
+android/app/src/main/java/com/maillardmap/
   data/          # API client, Repository, SessionManager
   domain/        # Pure domain models (no serialization)
   ui/            # Compose screens (auth, feed, post, friends, saved, map, restaurant, blend)

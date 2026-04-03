@@ -12,7 +12,7 @@ struct AuthView: View {
                         .frame(width: 80, height: 80)
                         .foregroundStyle(.orange)
 
-                    Text("BigBack")
+                    Text("MaillardMap")
                         .font(.largeTitle.weight(.bold))
                     Text(auth.isSignupMode ? "Create your account" : "Welcome back")
                         .foregroundStyle(.secondary)
@@ -26,7 +26,7 @@ struct AuthView: View {
                         .autocorrectionDisabled()
 
                     if auth.isSignupMode {
-                        TextField("Email or phone (optional)", text: $auth.phoneOrEmail)
+                        TextField("Email", text: $auth.email)
                             .textInputAutocapitalization(.never)
                             .textContentType(.emailAddress)
                             .keyboardType(.emailAddress)
@@ -64,6 +64,12 @@ struct AuthView: View {
                             .font(.caption)
                             .foregroundStyle(.red)
                     }
+                    if let info = auth.infoMessage {
+                        Text(info)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
                 }
                 .textFieldStyle(.roundedBorder)
 
@@ -73,6 +79,7 @@ struct AuthView: View {
                     Button {
                         auth.isSignupMode.toggle()
                         auth.errorMessage = nil
+                        auth.infoMessage = nil
                     } label: {
                         Text(auth.isSignupMode
                              ? "Already have an account? Log in"

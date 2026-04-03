@@ -75,8 +75,13 @@ class FakePool {
     this.mockResult = null;
   }
 
-  async query() {
+  async query(sql: string | { text: string } = '') {
     if (this.mockError) throw this.mockError;
+    const text = typeof sql === 'string' ? sql : sql.text;
+    const cmd = text.trim().split(/\s+/)[0]?.toLowerCase();
+    if (cmd === 'begin' || cmd === 'commit' || cmd === 'rollback') {
+      return { rows: [] };
+    }
     return this.mockResult || { rows: [] };
   }
 }
@@ -85,6 +90,10 @@ const fakePool = new FakePool();
 
 vi.mock('../src/db/pool.js', () => ({
   getPool: () => fakePool,
+}));
+
+vi.mock('../src/services/email.js', () => ({
+  sendSignupConfirmationEmail: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { createApp } from '../src/server/app.js';
@@ -109,7 +118,7 @@ describe('HTTP routes', () => {
       const { status, body } = await httpGet(app, '/');
       expect(status).toBe(200);
       expect(body.ok).toBe(true);
-      expect(body.service).toBe('bigback-api');
+      expect(body.service).toBe('maillardmap-api');
     });
   });
 
@@ -123,7 +132,7 @@ describe('HTTP routes', () => {
       const { status, body } = await httpGet(app, '/health');
       expect(status).toBe(200);
       expect(body.ok).toBe(true);
-      expect(body.service).toBe('bigback-api');
+      expect(body.service).toBe('maillardmap-api');
       expect(typeof body.time).toBe('string');
     });
   });
@@ -133,36 +142,48 @@ describe('HTTP routes', () => {
   // ---------------------------------------------------------------------------
 
   describe('POST /auth/signup', () => {
-    it('returns 201 and the created user on success', async () => {
+    it('returns 201 and the created user on success (needs email verification)', async () => {
       const row = {
         id: '550e8400-e29b-41d4-a716-446655440010',
         username: 'alice',
+        phone_or_email: 'alice@example.com',
+        display_name: null,
+        avatar_url: null,
+        bio: null,
         password_hash: 'hashed',
         created_at: '2026-01-01T00:00:00Z',
+        profile_private: false,
+        email_verified_at: null,
       };
       fakePool.setRows([row]);
 
       const app = createApp();
       const { status, body } = await httpPost(app, '/auth/signup', {
         username: 'alice',
+        email: 'alice@example.com',
         password: 'password123',
       });
 
       expect(status).toBe(201);
       expect(body.ok).toBe(true);
+      expect(body.needsVerification).toBe(true);
+      expect(body.token).toBeUndefined();
       expect(body.user.id).toBe(row.id);
       expect(body.user.username).toBe('alice');
       expect(body.user.createdAt).toBe(row.created_at);
+      expect(typeof body.message).toBe('string');
     });
 
     it('returns 409 when username is taken (unique violation)', async () => {
-      const err = new Error('dup') as Error & { code: string };
+      const err = new Error('dup') as Error & { code: string; detail?: string };
       err.code = '23505';
+      err.detail = 'Key (username)=(alice) already exists.';
       fakePool.setError(err);
 
       const app = createApp();
       const { status, body } = await httpPost(app, '/auth/signup', {
         username: 'alice',
+        email: 'new@example.com',
         password: 'password123',
       });
 
@@ -170,10 +191,28 @@ describe('HTTP routes', () => {
       expect(body.error.code).toBe('USERNAME_TAKEN');
     });
 
+    it('returns 409 when email is already registered', async () => {
+      const err = new Error('dup') as Error & { code: string; detail?: string };
+      err.code = '23505';
+      err.detail = 'Key (phone_or_email)=(taken@example.com) already exists.';
+      fakePool.setError(err);
+
+      const app = createApp();
+      const { status, body } = await httpPost(app, '/auth/signup', {
+        username: 'newbie',
+        email: 'taken@example.com',
+        password: 'password123',
+      });
+
+      expect(status).toBe(409);
+      expect(body.error.code).toBe('EMAIL_TAKEN');
+    });
+
     it('returns 400 on Zod validation error (username too short)', async () => {
       const app = createApp();
       const { status, body } = await httpPost(app, '/auth/signup', {
         username: 'ab',
+        email: 'a@b.co',
         password: 'password123',
       });
 
@@ -185,6 +224,7 @@ describe('HTTP routes', () => {
       const app = createApp();
       const { status, body } = await httpPost(app, '/auth/signup', {
         username: 'alice',
+        email: 'alice@example.com',
         password: 'short',
       });
 
@@ -195,6 +235,18 @@ describe('HTTP routes', () => {
     it('returns 400 when username is missing', async () => {
       const app = createApp();
       const { status, body } = await httpPost(app, '/auth/signup', {
+        email: 'alice@example.com',
+        password: 'password123',
+      });
+
+      expect(status).toBe(400);
+      expect(body.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 400 when email is missing', async () => {
+      const app = createApp();
+      const { status, body } = await httpPost(app, '/auth/signup', {
+        username: 'alice',
         password: 'password123',
       });
 
@@ -206,6 +258,7 @@ describe('HTTP routes', () => {
       const app = createApp();
       const { status, body } = await httpPost(app, '/auth/signup', {
         username: 'alice',
+        email: 'alice@example.com',
       });
 
       expect(status).toBe(400);
@@ -224,8 +277,14 @@ describe('HTTP routes', () => {
       fakePool.setRows([{
         id: '550e8400-e29b-41d4-a716-446655440011',
         username: 'bob',
+        phone_or_email: 'bob@example.com',
+        display_name: null,
+        avatar_url: null,
+        bio: null,
         password_hash: hash,
         created_at: '2026-01-01T00:00:00Z',
+        profile_private: false,
+        email_verified_at: '2026-01-01T00:00:01Z',
       }]);
 
       const app = createApp();
@@ -238,6 +297,32 @@ describe('HTTP routes', () => {
       expect(body.ok).toBe(true);
       expect(typeof body.token).toBe('string');
       expect(body.user.username).toBe('bob');
+    });
+
+    it('returns 403 when email is not verified', async () => {
+      const bcrypt = await import('bcryptjs');
+      const hash = await bcrypt.hash('password123', 12);
+      fakePool.setRows([{
+        id: '550e8400-e29b-41d4-a716-446655440099',
+        username: 'unverified',
+        phone_or_email: 'u@example.com',
+        display_name: null,
+        avatar_url: null,
+        bio: null,
+        password_hash: hash,
+        created_at: '2026-01-01T00:00:00Z',
+        profile_private: false,
+        email_verified_at: null,
+      }]);
+
+      const app = createApp();
+      const { status, body } = await httpPost(app, '/auth/login', {
+        username: 'unverified',
+        password: 'password123',
+      });
+
+      expect(status).toBe(403);
+      expect(body.error.code).toBe('EMAIL_NOT_VERIFIED');
     });
 
     it('returns 401 for non-existent user', async () => {
@@ -258,8 +343,14 @@ describe('HTTP routes', () => {
       fakePool.setRows([{
         id: '550e8400-e29b-41d4-a716-446655440012',
         username: 'bob',
+        phone_or_email: null,
+        display_name: null,
+        avatar_url: null,
+        bio: null,
         password_hash: hash,
         created_at: '2026-01-01T00:00:00Z',
+        profile_private: false,
+        email_verified_at: '2026-01-01T00:00:01Z',
       }]);
 
       const app = createApp();

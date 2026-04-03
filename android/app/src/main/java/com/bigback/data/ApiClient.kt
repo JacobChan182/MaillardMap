@@ -1,6 +1,6 @@
-package com.bigback.data
+package com.maillardmap.data
 
-import com.bigback.domain.*
+import com.maillardmap.domain.*
 import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 import okhttp3.Interceptor
@@ -15,7 +15,15 @@ import java.util.concurrent.TimeUnit
 
 data class SignupRequest(
     val username: String,
-    val password: String
+    val password: String,
+    val email: String
+)
+
+data class SignupApiResponse(
+    val ok: Boolean = true,
+    val needsVerification: Boolean? = null,
+    val message: String? = null,
+    val user: UserDTO? = null
 )
 
 data class LoginRequest(
@@ -157,7 +165,7 @@ interface BigBackApi {
 
     // Auth
     @POST("auth/signup")
-    suspend fun signup(@Body body: SignupRequest): AuthResponse
+    suspend fun signup(@Body body: SignupRequest): SignupApiResponse
 
     @POST("auth/login")
     suspend fun login(@Body body: LoginRequest): AuthResponse

@@ -1,4 +1,4 @@
-package com.bigback.domain
+package com.maillardmap.domain
 
 data class User(
     val id: String,

@@ -1,4 +1,4 @@
-package com.bigback.ui.map
+package com.maillardmap.ui.map
 
 import android.Manifest
 import android.content.Context
@@ -14,9 +14,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import com.bigback.common.PreviewTheme
-import com.bigback.data.Repository
-import com.bigback.domain.Post
+import com.maillardmap.common.PreviewTheme
+import com.maillardmap.data.Repository
+import com.maillardmap.domain.Post
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapInitOptions
