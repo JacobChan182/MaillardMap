@@ -2,8 +2,6 @@
 
 **Social restaurant discovery for friends** — share short visits (photos + comment), see activity on a map, save places, and blend tastes with friends for heuristic recommendations. Restaurant data comes from **Foursquare** only (no user-created venues).
 
-> **Repo one-liner (GitHub description):** Full-stack social dining app — **SwiftUI** & **Jetpack Compose** clients, **Node.js (Express) + TypeScript** REST API, **PostgreSQL**, **S3** photo uploads, **Mapbox** maps, **Foursquare** places, **OpenAPI** contract.
-
 ## Features
 
 - **Auth** — Sign up / log in; optional email verification (Resend).
