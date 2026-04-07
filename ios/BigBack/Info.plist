@@ -2,16 +2,22 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>API_BASE_URL_DEPLOYED</key>
+	<string>$(BACKEND_PRODUCTION_BASE)</string>
+	<key>API_BASE_URL_MAC</key>
+	<string>$(BACKEND_MAC_BASE)</string>
+	<key>BACKEND_TEST</key>
+	<string>$(BACKEND_TEST)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>MaillardMap</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
-	<key>CFBundleDisplayName</key>
-	<string>MaillardMap</string>
 	<key>CFBundleName</key>
 	<string>MaillardMap</string>
 	<key>CFBundlePackageType</key>
@@ -22,14 +28,19 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>BigBack needs access to your camera to take photos for your restaurant posts and memories. This allows you to capture and share your food experiences instantly.</string>
+	<string>MaillardMap needs access to your camera to take photos for your restaurant posts and memories. This allows you to capture and share your food experiences instantly.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>BigBack uses your location to show nearby restaurants and your posts on the map. Location access is only used in background when the app is running to provide seamless navigation between your posts and local restaurants.</string>
+	<string>MaillardMap uses your location to show nearby restaurants and your posts on the map. Location access is only used in background when the app is running to provide seamless navigation between your posts and local restaurants.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>BigBack may need access to your microphone for future recording features to capture audio clips of your restaurant experiences or friend recommendations.</string>
+	<string>MaillardMap may need access to your microphone for future recording features to capture audio clips of your restaurant experiences or friend recommendations.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>BigBack needs access to your photo library to allow you to select photos from your existing collection for your restaurant posts and memories. This helps you share your favorite dining moments.</string>
+	<string>MaillardMap needs access to your photo library to allow you to select photos from your existing collection for your restaurant posts and memories. This helps you share your favorite dining moments.</string>
 	<key>UIApplicationWhenInBackgroundKey</key>
 	<true/>
 	<key>UIBackgroundModes</key>
@@ -53,16 +64,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>BACKEND_TEST</key>
-	<string>$(BACKEND_TEST)</string>
-	<key>API_BASE_URL_MAC</key>
-	<string>$(BACKEND_MAC_BASE)</string>
-	<key>API_BASE_URL_DEPLOYED</key>
-	<string>$(BACKEND_PRODUCTION_BASE)</string>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<key>NSAllowsLocalNetworking</key>
-		<true/>
-	</dict>
 </dict>
 </plist>
