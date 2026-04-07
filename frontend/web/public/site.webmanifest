@@ -1,0 +1,22 @@
+{
+  "name": "MaillardMap",
+  "short_name": "MaillardMap",
+  "description": "MaillardMap — support, privacy, and account help.",
+  "icons": [
+    {
+      "src": "/app-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fef3c7",
+  "theme_color": "#fbbf24"
+}

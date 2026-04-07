@@ -1,4 +1,5 @@
 import { FormEvent, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { apiBase } from '../lib/apiBase';
 
 type SubmitState = 'idle' | 'sending' | 'ok' | 'err';
@@ -51,10 +52,12 @@ export function SupportPage() {
   }
 
   return (
-    <div className="page">
+    <main className="page page-narrow">
       <span className="badge">Support</span>
-      <h1>Contact us</h1>
-      <p className="lead">Questions, bugs, or feedback — we read every message.</p>
+      <h1>We&apos;re listening</h1>
+      <p className="lead">
+        Bugs, ideas, or account issues — send a note and we&apos;ll get back by email when we can.
+      </p>
 
       <div className="card">
         <form onSubmit={onSubmit}>
@@ -121,14 +124,22 @@ export function SupportPage() {
           </button>
         </form>
 
-        {state === 'ok' && <div className="status ok">Thanks — we got your message and will reply by email when we can.</div>}
-        {state === 'err' && <div className="status err">{errMsg}</div>}
+        {state === 'ok' && (
+          <div className="status ok" role="status">
+            Thanks — we got your message and will reply by email when we can.
+          </div>
+        )}
+        {state === 'err' && (
+          <div className="status err" role="alert">
+            {errMsg}
+          </div>
+        )}
       </div>
 
-      <p className="muted" style={{ marginTop: '1.5rem' }}>
-        For account email confirmation, use the link from your signup email — it opens the confirmation page on this
-        site.
+      <p className="muted" style={{ marginTop: '2rem' }}>
+        Confirming your account? Use the link in your signup email — it opens our{' '}
+        <Link to="/verify-email">email confirmation</Link> page on this site.
       </p>
-    </div>
+    </main>
   );
 }

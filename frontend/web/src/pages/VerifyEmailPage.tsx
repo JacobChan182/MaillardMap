@@ -29,7 +29,7 @@ export function VerifyEmailPage() {
       try {
         const url = `${base}/auth/verify-email?token=${encodeURIComponent(token)}`;
         const res = await fetch(url);
-        const data = (await res.json().catch(() => (null))) as
+        const data = (await res.json().catch(() => null)) as
           | { ok?: boolean; message?: string; error?: { message?: string } }
           | null;
         if (cancelled) return;
@@ -57,34 +57,46 @@ export function VerifyEmailPage() {
   }, [token]);
 
   return (
-    <div className="page">
+    <main className="page page-narrow">
       <span className="badge">Account</span>
       <h1>Email confirmation</h1>
+      <p className="lead" style={phase === 'loading' ? undefined : { marginBottom: 0 }}>
+        {phase === 'loading' ? 'Hang tight — we’re confirming your link.' : 'Here’s what we found.'}
+      </p>
 
       {phase === 'loading' && (
-        <p className="lead">
-          Confirming your email…
-        </p>
+        <div className="verify-card">
+          <div className="verify-loading">
+            <span className="spinner" aria-hidden />
+            <span>Confirming with our servers…</span>
+          </div>
+        </div>
       )}
 
       {phase !== 'loading' && (
-        <>
-          <div className={phase === 'ok' ? 'status ok' : 'status err'}>{message}</div>
+        <div className="verify-card">
+          <div
+            className={phase === 'ok' ? 'status ok' : 'status err'}
+            style={{ marginTop: 0 }}
+            role={phase === 'ok' ? 'status' : 'alert'}
+          >
+            {message}
+          </div>
           {phase === 'ok' && (
-            <p style={{ marginTop: '1rem' }}>
+            <div style={{ marginTop: '1.35rem' }}>
               <Link to="/support" className="btn">
                 Need help?
               </Link>
-            </p>
+            </div>
           )}
           {(phase === 'err' || phase === 'missing') && (
-            <p style={{ marginTop: '1rem' }} className="muted">
-              You can request a new confirmation email from the MaillardMap app after signing up, or{' '}
+            <p style={{ marginTop: '1.25rem', marginBottom: 0 }} className="muted">
+              Request a new confirmation email from the MaillardMap app, or{' '}
               <Link to="/support">contact support</Link>.
             </p>
           )}
-        </>
+        </div>
       )}
-    </div>
+    </main>
   );
 }
