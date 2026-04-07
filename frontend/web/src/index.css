@@ -33,22 +33,20 @@
   -webkit-font-smoothing: antialiased;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color-scheme: light;
-    --bg: #faf8f5;
-    --bg-2: #f5f0e8;
-    --surface: rgba(255, 255, 255, 0.78);
-    --surface-solid: #ffffff;
-    --text: #1c1917;
-    --text-secondary: #57534e;
-    --text-tertiary: #78716c;
-    --glow: rgba(234, 88, 12, 0.12);
-    --glow-strong: rgba(234, 88, 12, 0.18);
-    --border: rgba(28, 25, 23, 0.08);
-    --border-strong: rgba(28, 25, 23, 0.12);
-    --shadow: 0 20px 40px -16px rgba(28, 25, 23, 0.12);
-  }
+html[data-theme='light'] {
+  color-scheme: light;
+  --bg: #faf8f5;
+  --bg-2: #f5f0e8;
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-solid: #ffffff;
+  --text: #1c1917;
+  --text-secondary: #57534e;
+  --text-tertiary: #78716c;
+  --glow: rgba(234, 88, 12, 0.12);
+  --glow-strong: rgba(234, 88, 12, 0.18);
+  --border: rgba(28, 25, 23, 0.08);
+  --border-strong: rgba(28, 25, 23, 0.12);
+  --shadow: 0 20px 40px -16px rgba(28, 25, 23, 0.12);
 }
 
 *,
@@ -143,10 +141,8 @@ a:hover {
   border-radius: 22%;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
 }
-@media (prefers-color-scheme: light) {
-  .brand__mark--img {
-    box-shadow: 0 2px 12px rgba(28, 25, 23, 0.12);
-  }
+html[data-theme='light'] .brand__mark--img {
+  box-shadow: 0 2px 12px rgba(28, 25, 23, 0.12);
 }
 .brand__text span {
   color: var(--text-secondary);
@@ -208,6 +204,28 @@ a:hover {
 .site-footer__links a {
   font-size: 0.88rem;
   color: var(--text-secondary);
+}
+
+.theme-toggle {
+  margin-top: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background: color-mix(in srgb, var(--surface-solid) 55%, transparent);
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.theme-toggle:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--glow) 40%, var(--surface-solid));
 }
 
 /* ——— Pages ——— */
@@ -301,12 +319,10 @@ p.lead {
   background-clip: text;
   color: transparent;
 }
-@media (prefers-color-scheme: light) {
-  .hero__title {
-    background: linear-gradient(115deg, #1c1917 30%, #c2410c 85%, #ea580c 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-  }
+html[data-theme='light'] .hero__title {
+  background: linear-gradient(115deg, #1c1917 30%, #c2410c 85%, #ea580c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 .hero__sub {
   font-size: 1.2rem;

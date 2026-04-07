@@ -1,8 +1,12 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { BrandMark } from './BrandMark';
+import { useTheme } from '../theme/ThemeContext';
 
 export function Layout({ children }: { children: ReactNode }) {
+  const { theme, toggleTheme } = useTheme();
+  const themeLabel = theme === 'dark' ? 'Light mode' : 'Dark mode';
+
   return (
     <div className="site">
       <header className="site-header">
@@ -29,6 +33,14 @@ export function Layout({ children }: { children: ReactNode }) {
               people you know.
             </p>
             <p style={{ marginTop: '0.5rem' }}>© {new Date().getFullYear()} MaillardMap</p>
+            <button
+              type="button"
+              className="theme-toggle"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {themeLabel}
+            </button>
           </div>
           <div className="site-footer__links">
             <Link to="/support">Contact</Link>
