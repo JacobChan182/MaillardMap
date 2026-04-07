@@ -1,0 +1,111 @@
+export function PrivacyPage() {
+  return (
+    <div className="page">
+      <span className="badge">Legal</span>
+      <h1>Privacy Policy</h1>
+      <p className="muted">
+        <strong>MaillardMap</strong> · Last updated: <strong>April 7, 2026</strong>
+      </p>
+
+      <p>
+        This policy describes how <strong>Jacob Chan</strong> (&quot;we&quot;, &quot;us&quot;) handles information when
+        you use the MaillardMap mobile application (&quot;App&quot;) and related services (&quot;Services&quot;).
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions:{' '}
+        <a href="mailto:maillardmap@gmail.com">maillardmap@gmail.com</a>
+      </p>
+
+      <h2>What we collect</h2>
+      <ul className="policy">
+        <li>
+          <strong>Account data:</strong> such as username, email (if provided), authentication credentials (stored
+          securely; passwords are hashed on our servers), and profile details you choose to add (e.g. display name,
+          bio, profile photo).
+        </li>
+        <li>
+          <strong>Content you submit:</strong> restaurant-related posts, captions, photos (stored to provide the
+          Service), likes, comments, friend connections, and saved places.
+        </li>
+        <li>
+          <strong>Location:</strong> if you allow it, we use approximate device location to improve map and nearby
+          search experiences. You can disable location in your device settings.
+        </li>
+        <li>
+          <strong>Technical data:</strong> basic diagnostics and network requests needed to operate the App (e.g. IP
+          address, device/OS type, timestamps) as transmitted in ordinary HTTPS traffic to our API.
+        </li>
+        <li>
+          <strong>This website:</strong> if you use our support form, we process the name, email, and message you send
+          to respond to you, and our email provider may process delivery metadata.
+        </li>
+      </ul>
+
+      <h2>How we use information</h2>
+      <ul className="policy">
+        <li>To create and maintain your account and provide core features (feed, map, posting, friends, recommendations).</li>
+        <li>To answer support requests sent through this site.</li>
+        <li>To secure the Services, prevent abuse, and comply with law.</li>
+      </ul>
+
+      <h2>Third-party services</h2>
+      <p>We rely on service providers that may process data on our behalf, for example:</p>
+      <ul className="policy">
+        <li>
+          <strong>Maps:</strong> map display and location-related features may use <strong>Mapbox</strong> subject to
+          Mapbox&apos;s policies.
+        </li>
+        <li>
+          <strong>Places data:</strong> restaurant search and structured venue data may be obtained via{' '}
+          <strong>Foursquare</strong> (or similar providers) and stored on our systems to power the App.
+        </li>
+        <li>
+          <strong>Hosting &amp; infrastructure:</strong> servers, databases, and file storage used to operate the API
+          and store photos, and hosting for this website (e.g. Firebase).
+        </li>
+        <li>
+          <strong>Email:</strong> if we send verification, transactional, or support-related email, a provider such as{' '}
+          <strong>Resend</strong> (or another vendor) may process message delivery metadata and addresses involved in
+          sending.
+        </li>
+      </ul>
+      <p>
+        These providers are instructed to use data only as needed to perform their services. Their privacy policies
+        govern their own practices.
+      </p>
+
+      <h2>Retention &amp; deletion</h2>
+      <p>
+        We keep information as long as needed to run the Services or as required by law. You may request account or
+        content deletion by contacting us at the email above; we will respond consistent with applicable law and
+        technical feasibility.
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        The Services are not directed to children under 13 (or the minimum age required in your region). We do not
+        knowingly collect personal information from children.
+      </p>
+
+      <h2>Security</h2>
+      <p>
+        We use reasonable technical and organizational measures to protect information, including HTTPS for data in
+        transit. No method of storage or transmission is 100% secure.
+      </p>
+
+      <h2>International transfers</h2>
+      <p>
+        If you access the Services from outside the country where our infrastructure is located, your information may
+        be processed in other regions where privacy laws differ.
+      </p>
+
+      <h2>Changes</h2>
+      <p>
+        We may update this policy from time to time. We will post the updated version with a new &quot;Last
+        updated&quot; date (and, where appropriate, notify you in the App).
+      </p>
+    </div>
+  );
+}
