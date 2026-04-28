@@ -18,6 +18,7 @@ type ApnsConfig = {
 };
 
 let cachedToken: { value: string; issuedAtSeconds: number } | null = null;
+let hasWarnedMissingConfig = false;
 
 function apnsConfig(): ApnsConfig | null {
   const keyId = process.env.APNS_KEY_ID?.trim();
@@ -32,6 +33,15 @@ function apnsConfig(): ApnsConfig | null {
       : '';
 
   if (!keyId || !teamId || !bundleId || !privateKey) {
+    if (!hasWarnedMissingConfig) {
+      hasWarnedMissingConfig = true;
+      console.warn('[apns] disabled: missing configuration', {
+        hasKeyId: Boolean(keyId),
+        hasTeamId: Boolean(teamId),
+        hasBundleId: Boolean(bundleId),
+        hasPrivateKey: Boolean(privateKey),
+      });
+    }
     return null;
   }
   return { keyId, teamId, bundleId, privateKey };
@@ -123,6 +133,15 @@ export async function sendPushToUser(userId: string, payload: ApnsPayload): Prom
 
   try {
     const devices = await getApnsTokensForUser(userId);
+    if (devices.length === 0) {
+      console.info('[apns] no registered devices for user', { userId });
+      return;
+    }
+    console.info('[apns] sending push', {
+      userId,
+      title: payload.title,
+      deviceCount: devices.length,
+    });
     await Promise.all(devices.map((d) => sendToDevice(d.deviceToken, d.environment, payload, config)));
   } catch (err) {
     console.warn('[apns] push fanout failed', err);
