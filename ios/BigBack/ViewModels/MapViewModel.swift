@@ -34,9 +34,10 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     // Threshold for zoom level: span < 0.01 = zoomed in = show pins
     let zoomThreshold: Double = 0.01
 
-    /// For restaurant search: GPS when available, otherwise the map’s visible center (initial default is SF, not NYC).
+    /// For restaurant search: always the map’s visible center so results match the area you’re browsing.
+    /// (Using live GPS here caused repeated re-queries on every location fix and ignored map pans.)
     var searchAnchor: CLLocationCoordinate2D {
-        userLocation ?? region.center
+        region.center
     }
 
     init(api: APIClient = .live()) {

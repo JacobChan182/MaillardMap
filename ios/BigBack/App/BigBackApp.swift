@@ -13,7 +13,11 @@ struct BigBackApp: App {
                     AuthView(auth: auth)
                 }
             }
+            .dismissKeyboardOnTap()
             .environmentObject(auth)
+            .onReceive(NotificationCenter.default.publisher(for: .bigBackSessionExpired)) { _ in
+                auth.logout()
+            }
         }
     }
 }

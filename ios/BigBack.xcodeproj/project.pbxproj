@@ -45,6 +45,7 @@
 		C5A888769C7A6DE76D5D2345 /* PostDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A60F2374FC7DBD30CF7C0966 /* PostDetailView.swift */; };
 		CE448D4CBEDB3439DEE39A32 /* User.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADFB2B999924C69213674FA9 /* User.swift */; };
 		D23E7052736E3B5D6F9F292A /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 256F63F73A4EAB72EA607925 /* AuthView.swift */; };
+		F8A1C2D3E4B5061728394A5B /* DismissKeyboardOnTapOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7A1C2D3E4B5061728394A5A /* DismissKeyboardOnTapOverlay.swift */; };
 		D68E3D8157BFB753C2A9978F /* RestaurantPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A7A677FC0F94DA00838BC90 /* RestaurantPicker.swift */; };
 		E95CEE2D2A1E1D635B270CB2 /* RestaurantPostsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95E6A8DE9798A01E148399D3 /* RestaurantPostsView.swift */; };
 		ED23E065718EB2C1CBDEC45D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 26BD00D74C58B608F72496FB /* Assets.xcassets */; };
@@ -59,6 +60,7 @@
 		099607FB36423A20A5355EF4 /* FeedViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedViewModel.swift; sourceTree = "<group>"; };
 		0B24927B8FCEAAA8EE8F9985 /* CommentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommentsView.swift; sourceTree = "<group>"; };
 		256F63F73A4EAB72EA607925 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
+		F7A1C2D3E4B5061728394A5A /* DismissKeyboardOnTapOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DismissKeyboardOnTapOverlay.swift; sourceTree = "<group>"; };
 		26BD00D74C58B608F72496FB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		287FF606428C46622D2DC860 /* AppNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppNotification.swift; sourceTree = "<group>"; };
 		28834C88D12ECD0A6EF224DD /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
@@ -150,6 +152,7 @@
 			isa = PBXGroup;
 			children = (
 				82221F5BD33196F5511C00F0 /* Auth */,
+				F6A1C2D3E4B5061728394A59 /* Components */,
 				7BAEC89C29C5C937CE753484 /* Blend */,
 				8A2D8DDA1056F3E1165D434E /* Friends */,
 				5E49387C5B868F2A9C949C57 /* Main */,
@@ -216,6 +219,14 @@
 				256F63F73A4EAB72EA607925 /* AuthView.swift */,
 			);
 			path = Auth;
+			sourceTree = "<group>";
+		};
+		F6A1C2D3E4B5061728394A59 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				F7A1C2D3E4B5061728394A5A /* DismissKeyboardOnTapOverlay.swift */,
+			);
+			path = Components;
 			sourceTree = "<group>";
 		};
 		8A2D8DDA1056F3E1165D434E /* Friends */ = {
@@ -364,6 +375,7 @@
 				603772ABE8E3B3EA6B34378B /* AppNotification.swift in Sources */,
 				D23E7052736E3B5D6F9F292A /* AuthView.swift in Sources */,
 				4174D20F298F669997EDCA42 /* AuthViewModel.swift in Sources */,
+				F8A1C2D3E4B5061728394A5B /* DismissKeyboardOnTapOverlay.swift in Sources */,
 				F65B073A10B0304E2EB2FEDE /* AvatarImageLoader.swift in Sources */,
 				91FEFE987E93FD8E43B765E2 /* BigBackApp.swift in Sources */,
 				FFCA0913430E550FC56EB692 /* Blend.swift in Sources */,

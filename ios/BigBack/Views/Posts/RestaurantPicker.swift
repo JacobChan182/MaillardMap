@@ -59,10 +59,6 @@ struct RestaurantPickerSheet: View {
                     }
                 }
             }
-            .onChange(of: mapVM.userLocation?.latitude) { _, _ in
-                guard !searchVM.query.isEmpty else { return }
-                Task { await searchVM.search(near: mapVM.searchAnchor) }
-            }
         }
     }
 }

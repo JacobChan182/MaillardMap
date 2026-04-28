@@ -73,6 +73,14 @@ authRouter.post('/resend-confirmation', async (req, res) => {
 authRouter.get('/verify-email', async (req, res) => {
   try {
     const token = typeof req.query.token === 'string' ? req.query.token : '';
+    const webBase = process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL?.replace(/\/$/, '');
+    const accept = req.get('Accept') ?? '';
+    // Top-level browser visits send text/html; fetch() from the SPA uses */* — keep JSON API for that path.
+    if (webBase && token && accept.includes('text/html')) {
+      const dest = new URL('/verify-email', `${webBase}/`);
+      dest.searchParams.set('token', token);
+      return res.redirect(302, dest.toString());
+    }
     const result = await verifyEmail(token);
     if (!result.ok) {
       return res.status(result.status).json({ error: { code: result.code, message: result.message } });

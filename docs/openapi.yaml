@@ -94,3 +94,54 @@ paths:
           description: Bad request
         "500":
           description: Server error
+  /support/contact:
+    post:
+      summary: Public support form (marketing site; email via Resend)
+      operationId: supportContact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, subject, message]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 120
+                email:
+                  type: string
+                  format: email
+                  maxLength: 254
+                subject:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                message:
+                  type: string
+                  minLength: 1
+                  maxLength: 8000
+                website:
+                  type: string
+                  description: Honeypot; if non-empty, server returns 204
+      responses:
+        "200":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        "204":
+          description: Honeypot triggered
+        "400":
+          description: Validation error
+        "429":
+          description: Rate limited
+        "503":
+          description: Email not configured
+        "500":
+          description: Server error

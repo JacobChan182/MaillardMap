@@ -56,6 +56,18 @@ struct FeedTab: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 12) {
+                            if let err = feedVM.errorMessage {
+                                ContentUnavailableView(
+                                    "Couldn't load feed",
+                                    systemImage: "wifi.exclamationmark",
+                                    description: Text(err)
+                                )
+                                Button("Try again") {
+                                    Task { await feedVM.loadFeed() }
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .padding(.bottom, 8)
+                            }
                             ForEach(feedVM.posts) { post in
                                 PostCardView(
                                     post: post,
@@ -67,10 +79,13 @@ struct FeedTab: View {
                                     onOpenDetail: { selectedPost = post }
                                 )
                             }
-                            if feedVM.posts.isEmpty && !feedVM.isLoading {
+                            if feedVM.posts.isEmpty && !feedVM.isLoading && feedVM.errorMessage == nil {
                                 ContentUnavailableView(
                                     "No posts yet",
-                                    systemImage: "doc.text"
+                                    systemImage: "doc.text",
+                                    description: Text(
+                                        "Posts from you and your friends appear here. Try creating a visit or connecting with friends."
+                                    )
                                 )
                             }
                         }

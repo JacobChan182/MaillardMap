@@ -75,10 +75,12 @@ private struct CommentThreadBlock: View {
     let depth: Int
     let onReply: (Comment) -> Void
 
-    /// Public-facing label only (never the login username).
+    /// Prefer display name; fall back to the author's username.
     private func commentAuthorLabel(_ c: Comment) -> String {
-        let n = c.displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return n.isEmpty ? "User" : n
+        let display = c.displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !display.isEmpty { return display }
+        let username = c.username.trimmingCharacters(in: .whitespacesAndNewlines)
+        return username.isEmpty ? "User" : "@\(username)"
     }
 
     private var children: [Comment] {
@@ -179,6 +181,7 @@ private struct MentionPickerSheet: View {
             .navigationTitle("Mention someone")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $query, prompt: "Search by username")
+            .dismissKeyboardOnTap()
             .onChange(of: query) { _, newVal in
                 searchDebounceTask?.cancel()
                 let t = newVal.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -324,8 +327,10 @@ struct CommentsInputPanel: View {
     }
 
     private func replyAuthorLabel(_ c: Comment) -> String {
-        let n = c.displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return n.isEmpty ? "User" : n
+        let display = c.displayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !display.isEmpty { return display }
+        let username = c.username.trimmingCharacters(in: .whitespacesAndNewlines)
+        return username.isEmpty ? "User" : "@\(username)"
     }
 
     private func send() async {
@@ -366,6 +371,7 @@ struct CommentsView: View {
                     onReply: startReply
                 )
             }
+            .scrollDismissesKeyboard(.interactively)
 
             CommentsInputPanel(
                 vm: vm,
@@ -376,6 +382,7 @@ struct CommentsView: View {
                 onCommentPosted: nil
             )
         }
+        .dismissKeyboardOnTap()
         .task { await vm.loadComments(postId: postId) }
     }
 

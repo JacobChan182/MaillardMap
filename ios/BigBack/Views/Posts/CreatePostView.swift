@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 struct CreatePostView: View {
     @ObservedObject var vm: CreatePostViewModel
@@ -126,6 +127,12 @@ struct CreatePostView: View {
                 }
             }
             .padding()
+            .contentShape(Rectangle())
+            .onTapGesture {
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
         }
+        .scrollDismissesKeyboard(.interactively)
+        .dismissKeyboardOnTap()
     }
 }

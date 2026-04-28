@@ -40,7 +40,7 @@ final class RestaurantSearchViewModel: ObservableObject {
         }
     }
 
-    /// Prefer coordinates from the shared `MapViewModel` (`userLocation` or map `region.center`) so search matches what the map shows.
+    /// Coordinates come from the shared `MapViewModel.searchAnchor` (map viewport center).
     /// Runs immediately (e.g. map anchor changed, screen appeared with existing query).
     func search(near coordinate: CLLocationCoordinate2D) async {
         debounceTask?.cancel()

@@ -1,6 +1,7 @@
 package com.maillardmap.ui
 
 import android.content.Context
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -8,7 +9,8 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
@@ -27,6 +29,7 @@ import com.maillardmap.common.PreviewTheme
 
 @Composable
 fun BigBackApp(context: Context) {
+    val focusManager = LocalFocusManager.current
     BigBackTheme {
         val vm: RootViewModel = viewModel(
             factory = object : androidx.lifecycle.ViewModelProvider.Factory {
@@ -39,10 +42,17 @@ fun BigBackApp(context: Context) {
         val navController = rememberNavController()
         val navState by vm.navState.collectAsState()
 
-        NavHost(
-            navController = navController,
-            startDestination = "splash"
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures(onTap = { focusManager.clearFocus() })
+                }
         ) {
+            NavHost(
+                navController = navController,
+                startDestination = "splash"
+            ) {
             composable("splash") {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -99,6 +109,7 @@ fun BigBackApp(context: Context) {
 
             composable("map") {
                 MainShell(navController = navController, vm = vm, defaultTab = "map")
+            }
             }
         }
     }

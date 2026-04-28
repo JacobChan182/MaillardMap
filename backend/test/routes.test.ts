@@ -57,6 +57,40 @@ async function httpGet(app: any, path: string): Promise<{ status: number; body: 
   });
 }
 
+async function httpGetWithHeaders(
+  app: any,
+  path: string,
+  headers: http.OutgoingHttpHeaders,
+): Promise<{ status: number; body: any; headers: http.IncomingHttpHeaders }> {
+  const port = await getPort(app);
+  return new Promise((resolve, reject) => {
+    const server = app.listen(port, () => {
+      const req = http.request(
+        { hostname: '127.0.0.1', port, path, method: 'GET', headers },
+        (res) => {
+          let data = '';
+          res.on('data', (chunk) => { data += chunk; });
+          res.on('end', () => {
+            server.close();
+            let parsed: any = {};
+            try {
+              parsed = data ? JSON.parse(data) : {};
+            } catch {
+              parsed = { raw: data };
+            }
+            resolve({ status: res.statusCode!, body: parsed, headers: res.headers });
+          });
+        },
+      );
+      req.on('error', (err) => {
+        server.close();
+        reject(err);
+      });
+      req.end();
+    });
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Pool mock
 // ---------------------------------------------------------------------------
@@ -94,6 +128,7 @@ vi.mock('../src/db/pool.js', () => ({
 
 vi.mock('../src/services/email.js', () => ({
   sendSignupConfirmationEmail: vi.fn().mockResolvedValue(undefined),
+  sendSupportInquiryEmail: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { createApp } from '../src/server/app.js';
@@ -375,6 +410,45 @@ describe('HTTP routes', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // GET /auth/verify-email
+  // ---------------------------------------------------------------------------
+
+  describe('GET /auth/verify-email', () => {
+    it('redirects top-level browser visits to PUBLIC_EMAIL_CONFIRM_WEB_URL when set', async () => {
+      const prev = process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL;
+      process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL = 'https://maillardmap.web.app';
+      try {
+        const app = createApp();
+        const { status, headers } = await httpGetWithHeaders(app, '/auth/verify-email?token=hello', {
+          Accept: 'text/html,application/xhtml+xml',
+        });
+        expect(status).toBe(302);
+        expect(headers.location).toBe('https://maillardmap.web.app/verify-email?token=hello');
+      } finally {
+        if (prev === undefined) delete process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL;
+        else process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL = prev;
+      }
+    });
+
+    it('returns JSON for non-HTML clients when web URL is set (SPA fetch)', async () => {
+      const prev = process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL;
+      process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL = 'https://maillardmap.web.app';
+      try {
+        fakePool.setRows([]);
+        const app = createApp();
+        const { status, body } = await httpGetWithHeaders(app, '/auth/verify-email?token=hello', {
+          Accept: '*/*',
+        });
+        expect(status).toBe(400);
+        expect(body.error?.code).toBe('INVALID_OR_EXPIRED_TOKEN');
+      } finally {
+        if (prev === undefined) delete process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL;
+        else process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL = prev;
+      }
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // Security: helmet headers
   // ---------------------------------------------------------------------------
 
@@ -422,6 +496,49 @@ describe('HTTP routes', () => {
       });
 
       expect(result.status).toBe(400);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // POST /support/contact
+  // ---------------------------------------------------------------------------
+
+  describe('POST /support/contact', () => {
+    it('returns 200 on valid payload', async () => {
+      const app = createApp();
+      const { status, body } = await httpPost(app, '/support/contact', {
+        name: 'Test User',
+        email: 'test@example.com',
+        subject: 'Hello',
+        message: 'Body text',
+      });
+      expect(status).toBe(200);
+      expect(body.ok).toBe(true);
+    });
+
+    it('returns 400 when validation fails', async () => {
+      const app = createApp();
+      const { status, body } = await httpPost(app, '/support/contact', {
+        name: '',
+        email: 'not-an-email',
+        subject: 'x',
+        message: 'y',
+      });
+      expect(status).toBe(400);
+      expect(body.error?.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('returns 204 when honeypot website is set', async () => {
+      const app = createApp();
+      const { status, body } = await httpPost(app, '/support/contact', {
+        name: 'Bot',
+        email: 'bot@example.com',
+        subject: 'spam',
+        message: 'spam',
+        website: 'http://evil.com',
+      });
+      expect(status).toBe(204);
+      expect(Object.keys(body).length).toBe(0);
     });
   });
 

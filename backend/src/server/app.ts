@@ -11,6 +11,7 @@ import { postsRouter } from '../modules/posts/posts.routes.js';
 import { recommendationsRouter } from '../modules/recommendations/recommendations.routes.js';
 import { restaurantsRouter } from '../modules/restaurants/restaurants.routes.js';
 import { savedRouter } from '../modules/saved/saved.routes.js';
+import { supportRouter } from '../modules/support/support.routes.js';
 import { uploadsRouter } from '../modules/uploads/uploads.routes.js';
 import { usersRouter } from '../modules/users/users.routes.js';
 
@@ -66,6 +67,7 @@ export function createApp() {
   app.use('/recommendations', recommendationsRouter);
   app.use('/restaurants', restaurantsRouter);
   app.use('/saved', savedRouter);
+  app.use('/support', supportRouter);
   app.use('/uploads', uploadsRouter);
   app.use('/users', usersRouter);
 

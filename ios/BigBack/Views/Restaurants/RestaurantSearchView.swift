@@ -56,9 +56,5 @@ struct RestaurantSearchView: View {
                 }
             }
         }
-        .onChange(of: mapVM.userLocation?.latitude) { _, _ in
-            guard !vm.query.isEmpty else { return }
-            Task { await vm.search(near: mapVM.searchAnchor) }
-        }
     }
 }

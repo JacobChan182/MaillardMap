@@ -26,6 +26,7 @@
 | **Maps** | Mapbox (native SDKs) |
 | **Places** | Foursquare Places API |
 | **Contract** | `docs/openapi.yaml` (source of truth for mobile + backend) |
+| **Web (support site)** | React (Vite), Firebase Hosting (static, Spark), support mail via API (`frontend/`) |
 | **Ops** | Docker Compose for local Postgres; deploy docs under `docs/` |
 
 ## Repository layout
@@ -35,6 +36,7 @@
 ├── ios/           # SwiftUI app (Xcode project: BigBack.xcodeproj)
 ├── android/       # Kotlin + Compose app
 ├── docs/          # OpenAPI, architecture, deployment guides
+├── frontend/      # Support + privacy + email-confirm pages (Firebase)
 ├── .claude/       # Agent/skill configuration (optional tooling)
 └── docker-compose.yml   # Local PostgreSQL
 ```

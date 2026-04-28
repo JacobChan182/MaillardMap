@@ -2,6 +2,11 @@ import Foundation
 
 // MARK: - Errors
 
+extension Notification.Name {
+    /// Posted when API returns 401 for an authenticated request.
+    static let bigBackSessionExpired = Notification.Name("bigBackSessionExpired")
+}
+
 enum APIError: Error, LocalizedError {
     case badResponse(Int, Data?)
     case networkError(Error)
@@ -99,7 +104,17 @@ final class APIClient {
         do {
             let (data, response) = try await session.data(for: request)
             guard let http = response as? HTTPURLResponse else { throw APIError.badResponse(0, data) }
-            guard (200...299).contains(http.statusCode) else { throw APIError.badResponse(http.statusCode, data) }
+            guard (200...299).contains(http.statusCode) else {
+                if http.statusCode == 401 {
+                    // Token can become stale after backend reset/secret rotation. Clear local session and force re-auth.
+                    let hadToken = (authToken != nil)
+                    clearSession()
+                    if hadToken {
+                        NotificationCenter.default.post(name: .bigBackSessionExpired, object: nil)
+                    }
+                }
+                throw APIError.badResponse(http.statusCode, data)
+            }
             return data
         } catch let err as APIError { throw err }
         catch { throw APIError.networkError(error) }

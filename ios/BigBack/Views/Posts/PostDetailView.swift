@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Full-screen post with comments below and a pinned composer.
 struct PostDetailView: View {
@@ -46,7 +47,19 @@ struct PostDetailView: View {
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 8)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                fieldFocused = false
+                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+            }
         }
+        .scrollDismissesKeyboard(.interactively)
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                fieldFocused = false
+            },
+            including: .subviews
+        )
         .safeAreaInset(edge: .bottom, spacing: 0) {
             CommentsInputPanel(
                 vm: commentsVM,
@@ -57,6 +70,7 @@ struct PostDetailView: View {
                 onCommentPosted: { bumpCommentCount() }
             )
         }
+        .dismissKeyboardOnTap()
         .navigationTitle("Post")
         .navigationBarTitleDisplayMode(.inline)
         .task { await commentsVM.loadComments(postId: post.id) }
