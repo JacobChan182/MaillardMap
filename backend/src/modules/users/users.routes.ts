@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { ZodError } from 'zod';
 import { requireAuth } from '../../middleware/auth.js';
-import { getUserById, searchUsers, updateMyProfile } from './users.service.js';
+import { deleteMyAccount, getUserById, searchUsers, updateMyProfile } from './users.service.js';
 import { patchMeSchema } from './users.schemas.js';
 
 export const usersRouter = Router();
@@ -64,6 +64,20 @@ usersRouter.patch('/me', requireAuth, async (req, res) => {
     if (err instanceof ZodError) {
       return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid request' } });
     }
+    console.error(err);
+    return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
+  }
+});
+
+usersRouter.delete('/me', requireAuth, async (req, res) => {
+  try {
+    const userId = (req as { userId: string }).userId;
+    const ok = await deleteMyAccount(userId);
+    if (!ok) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'User not found' } });
+    }
+    return res.status(204).send();
+  } catch (err) {
     console.error(err);
     return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
   }

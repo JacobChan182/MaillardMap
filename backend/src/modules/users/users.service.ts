@@ -167,3 +167,10 @@ export async function updateMyProfile(
   if (!u) return { ok: false, status: 404, code: 'NOT_FOUND', message: 'User not found' };
   return { ok: true, user: u };
 }
+
+/** Permanently removes the user row; FK cascades remove posts, comments, friendships, etc. */
+export async function deleteMyAccount(userId: string): Promise<boolean> {
+  const pool = getPool();
+  const res = await pool.query('delete from users where id = $1', [userId]);
+  return (res.rowCount ?? 0) > 0;
+}

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { ZodError } from 'zod';
+import { getPublicEmailConfirmWebBase } from '../../config/publicWeb.js';
 import { loginSchema, resendConfirmationSchema, signupSchema } from './auth.schemas.js';
 import { login, resendConfirmationEmail, signup, verifyEmail } from './auth.service.js';
 
@@ -73,10 +74,10 @@ authRouter.post('/resend-confirmation', async (req, res) => {
 authRouter.get('/verify-email', async (req, res) => {
   try {
     const token = typeof req.query.token === 'string' ? req.query.token : '';
-    const webBase = process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL?.replace(/\/$/, '');
+    const webBase = getPublicEmailConfirmWebBase();
     const accept = req.get('Accept') ?? '';
     // Top-level browser visits send text/html; fetch() from the SPA uses */* — keep JSON API for that path.
-    if (webBase && token && accept.includes('text/html')) {
+    if (token && accept.includes('text/html')) {
       const dest = new URL('/verify-email', `${webBase}/`);
       dest.searchParams.set('token', token);
       return res.redirect(302, dest.toString());

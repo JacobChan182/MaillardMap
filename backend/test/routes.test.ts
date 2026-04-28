@@ -57,6 +57,42 @@ async function httpGet(app: any, path: string): Promise<{ status: number; body: 
   });
 }
 
+async function httpDeleteWithHeaders(
+  app: any,
+  path: string,
+  headers: http.OutgoingHttpHeaders,
+): Promise<{ status: number; body: any }> {
+  const port = await getPort(app);
+  return new Promise((resolve, reject) => {
+    const server = app.listen(port, () => {
+      const req = http.request(
+        { hostname: '127.0.0.1', port, path, method: 'DELETE', headers },
+        (res) => {
+          let data = '';
+          res.on('data', (chunk) => {
+            data += chunk;
+          });
+          res.on('end', () => {
+            server.close();
+            let parsed: any = {};
+            try {
+              parsed = data ? JSON.parse(data) : {};
+            } catch {
+              parsed = { raw: data };
+            }
+            resolve({ status: res.statusCode!, body: parsed });
+          });
+        },
+      );
+      req.on('error', (err) => {
+        server.close();
+        reject(err);
+      });
+      req.end();
+    });
+  });
+}
+
 async function httpGetWithHeaders(
   app: any,
   path: string,
@@ -112,9 +148,16 @@ class FakePool {
   async query(sql: string | { text: string } = '') {
     if (this.mockError) throw this.mockError;
     const text = typeof sql === 'string' ? sql : sql.text;
-    const cmd = text.trim().split(/\s+/)[0]?.toLowerCase();
+    const normalized = text.trim().replace(/\s+/g, ' ');
+    const cmd = normalized.split(/\s+/)[0]?.toLowerCase();
     if (cmd === 'begin' || cmd === 'commit' || cmd === 'rollback') {
       return { rows: [] };
+    }
+    if (/^select\s+1\s+from\s+users\s+where\s+id/i.test(normalized)) {
+      return { rows: [{ ok: 1 }] };
+    }
+    if (/^delete\s+from\s+users/i.test(normalized)) {
+      return { rows: [], rowCount: 1 };
     }
     return this.mockResult || { rows: [] };
   }
@@ -406,6 +449,34 @@ describe('HTTP routes', () => {
 
       expect(status).toBe(400);
       expect(body.error.code).toBe('VALIDATION_ERROR');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // DELETE /users/me
+  // ---------------------------------------------------------------------------
+
+  describe('DELETE /users/me', () => {
+    it('returns 204 when Bearer token is valid', async () => {
+      const jwt = await import('jsonwebtoken');
+      const userId = '550e8400-e29b-41d4-a716-446655440011';
+      const token = jwt.default.sign(
+        { sub: userId, username: 'bob' },
+        process.env.JWT_SECRET!,
+        { expiresIn: '1h' },
+      );
+      const app = createApp();
+      const { status } = await httpDeleteWithHeaders(app, '/users/me', {
+        Authorization: `Bearer ${token}`,
+      });
+      expect(status).toBe(204);
+    });
+
+    it('returns 401 without Authorization', async () => {
+      const app = createApp();
+      const { status, body } = await httpDeleteWithHeaders(app, '/users/me', {});
+      expect(status).toBe(401);
+      expect(body.error?.code).toBe('UNAUTHORIZED');
     });
   });
 

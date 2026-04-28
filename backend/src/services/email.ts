@@ -1,12 +1,10 @@
 import { Resend } from 'resend';
 
+import { getPublicEmailConfirmWebBase } from '../config/publicWeb.js';
+
 function confirmLink(token: string): string {
-  const webBase = process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL?.replace(/\/$/, '');
-  if (webBase) {
-    return `${webBase}/verify-email?token=${encodeURIComponent(token)}`;
-  }
-  const base = (process.env.PUBLIC_API_BASE_URL ?? process.env.API_PUBLIC_URL ?? 'http://localhost:3000').replace(/\/$/, '');
-  return `${base}/auth/verify-email?token=${encodeURIComponent(token)}`;
+  const webBase = getPublicEmailConfirmWebBase();
+  return `${webBase}/verify-email?token=${encodeURIComponent(token)}`;
 }
 
 /** Resend `from`: inbox shows `RESEND_FROM_NAME` (default MaillardMap) with your verified sender email. */

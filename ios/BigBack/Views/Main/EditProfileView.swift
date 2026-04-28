@@ -16,6 +16,7 @@ struct EditProfileView: View {
     @State private var pickerItem: PhotosPickerItem?
     @State private var isBusy = false
     @State private var errorMessage: String?
+    @State private var showDeleteAccountConfirm = false
 
     var body: some View {
         Form {
@@ -77,9 +78,31 @@ struct EditProfileView: View {
                 }
                 .disabled(isBusy || auth.currentUser == nil)
             }
+
+            Section {
+                Button("Delete account", role: .destructive) {
+                    showDeleteAccountConfirm = true
+                }
+                .disabled(isBusy || auth.currentUser == nil)
+            } footer: {
+                Text("Permanently delete your account and all your posts, comments, friends, and saved places. This cannot be undone.")
+                    .font(.caption)
+            }
         }
         .navigationTitle("Edit profile")
         .navigationBarTitleDisplayMode(.inline)
+        .confirmationDialog(
+            "Delete your account?",
+            isPresented: $showDeleteAccountConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Delete account", role: .destructive) {
+                Task { await deleteAccount() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("You will lose access immediately. This cannot be undone.")
+        }
         .task { await syncFromAuth() }
         .onChange(of: pickerItem) { _, item in
             Task { await uploadPickedPhoto(item) }
@@ -148,6 +171,19 @@ struct EditProfileView: View {
                 profilePrivate: profilePrivate
             )
             auth.replaceCurrentUser(u)
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func deleteAccount() async {
+        isBusy = true
+        errorMessage = nil
+        defer { isBusy = false }
+        do {
+            try await api.deleteMyAccount()
+            auth.logout()
             dismiss()
         } catch {
             errorMessage = error.localizedDescription

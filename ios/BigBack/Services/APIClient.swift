@@ -198,6 +198,11 @@ final class APIClient {
         return try decode(Resp.self, from: data).user
     }
 
+    /// Permanently deletes the signed-in account on the server (posts, comments, friends, etc. cascade).
+    func deleteMyAccount() async throws {
+        _ = try await request("users/me", method: "DELETE")
+    }
+
     /// Single presigned slot for profile photo (`POST uploads/presign-avatar`).
     func presignAvatarUpload(contentType: String) async throws -> PresignedUploadSlot {
         struct Body: Encodable { let contentType: String }
