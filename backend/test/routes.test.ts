@@ -485,16 +485,19 @@ describe('HTTP routes', () => {
   // ---------------------------------------------------------------------------
 
   describe('GET /auth/verify-email', () => {
-    it('redirects top-level browser visits to PUBLIC_EMAIL_CONFIRM_WEB_URL when set', async () => {
+    it('verifies then redirects browser visits to the web app (success or error query)', async () => {
       const prev = process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL;
       process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL = 'https://maillardmap.web.app';
       try {
+        fakePool.setRows([]);
         const app = createApp();
         const { status, headers } = await httpGetWithHeaders(app, '/auth/verify-email?token=hello', {
           Accept: 'text/html,application/xhtml+xml',
         });
         expect(status).toBe(302);
-        expect(headers.location).toBe('https://maillardmap.web.app/verify-email?token=hello');
+        expect(headers.location).toBe(
+          'https://maillardmap.web.app/verify-email?error=INVALID_OR_EXPIRED_TOKEN',
+        );
       } finally {
         if (prev === undefined) delete process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL;
         else process.env.PUBLIC_EMAIL_CONFIRM_WEB_URL = prev;

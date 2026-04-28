@@ -2,7 +2,21 @@ import { Resend } from 'resend';
 
 import { getPublicEmailConfirmWebBase } from '../config/publicWeb.js';
 
+/**
+ * Prefer the API verify URL so a single tap confirms in the browser before redirecting to the hosted SPA.
+ * Falls back to opening the SPA with `token` when no public API base is configured (typical local dev).
+ */
 function confirmLink(token: string): string {
+  const apiBase = (
+    process.env.PUBLIC_API_BASE_URL ??
+    process.env.API_PUBLIC_URL ??
+    ''
+  )
+    .trim()
+    .replace(/\/$/, '');
+  if (apiBase) {
+    return `${apiBase}/auth/verify-email?token=${encodeURIComponent(token)}`;
+  }
   const webBase = getPublicEmailConfirmWebBase();
   return `${webBase}/verify-email?token=${encodeURIComponent(token)}`;
 }

@@ -4,13 +4,36 @@ import { apiBase } from '../lib/apiBase';
 
 type Phase = 'loading' | 'ok' | 'err' | 'missing';
 
+function messageForErrorCode(code: string): string {
+  switch (code) {
+    case 'INVALID_OR_EXPIRED_TOKEN':
+      return 'This confirmation link is invalid or has expired. Sign up again or request a new email.';
+    case 'MISSING_TOKEN':
+      return 'Confirmation token is required.';
+    default:
+      return 'Could not confirm your email. Try requesting a new link from the app.';
+  }
+}
+
 export function VerifyEmailPage() {
   const [params] = useSearchParams();
   const token = useMemo(() => params.get('token')?.trim() ?? '', [params]);
+  const confirmedRedirect = useMemo(() => params.get('confirmed') === '1', [params]);
+  const errorCode = useMemo(() => params.get('error')?.trim() ?? '', [params]);
   const [phase, setPhase] = useState<Phase>('loading');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
+    if (confirmedRedirect) {
+      setPhase('ok');
+      setMessage('Your email is confirmed. You can open MaillardMap and log in.');
+      return;
+    }
+    if (errorCode) {
+      setPhase('err');
+      setMessage(messageForErrorCode(errorCode));
+      return;
+    }
     if (!token) {
       setPhase('missing');
       setMessage('This link is missing a token. Open the confirmation link from your email.');
@@ -30,7 +53,7 @@ export function VerifyEmailPage() {
         const url = `${base}/auth/verify-email?token=${encodeURIComponent(token)}`;
         const res = await fetch(url);
         const data = (await res.json().catch(() => null)) as
-          | { ok?: boolean; message?: string; error?: { message?: string } }
+          | { ok?: boolean; message?: string; error?: { message?: string; code?: string } }
           | null;
         if (cancelled) return;
         if (res.ok && data && 'ok' in data && data.ok) {
@@ -54,7 +77,7 @@ export function VerifyEmailPage() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, confirmedRedirect, errorCode]);
 
   return (
     <main className="page page-narrow">
