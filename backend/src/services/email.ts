@@ -7,6 +7,46 @@ function confirmLink(token: string): string {
   return `${webBase}/verify-email?token=${encodeURIComponent(token)}`;
 }
 
+function escapeHtmlAttr(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function signupConfirmationBodies(href: string): { text: string; html: string } {
+  const text = [
+    'Thanks for signing up for MaillardMap.',
+    '',
+    `Confirm your email by opening this link in your browser:`,
+    href,
+    '',
+    'If you did not create an account, you can ignore this message.',
+  ].join('\n');
+
+  const safeHref = escapeHtmlAttr(href);
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Confirm your email</title>
+</head>
+<body style="margin:0;padding:24px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.5;color:#111827;background:#f9fafb;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:12px;padding:24px;border:1px solid #e5e7eb;">
+    <tr>
+      <td>
+        <p style="margin:0 0 16px;">Thanks for signing up.</p>
+        <p style="margin:0 0 16px;">
+          <a href="${safeHref}" style="color:#ea580c;font-weight:600;">Confirm your email</a>
+        </p>
+        <p style="margin:0;font-size:14px;color:#6b7280;">If you did not create an account, ignore this message.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  return { text, html };
+}
+
 /** Resend `from`: inbox shows `RESEND_FROM_NAME` (default MaillardMap) with your verified sender email. */
 function resendFromHeader(): string {
   const raw = process.env.RESEND_FROM?.trim();
@@ -33,15 +73,13 @@ export async function sendSignupConfirmationEmail(toEmail: string, plainToken: s
   const from = resendFromHeader();
   const resend = new Resend(apiKey);
   const href = confirmLink(plainToken);
+  const { text, html } = signupConfirmationBodies(href);
   const { error } = await resend.emails.send({
     from,
-    to: toEmail,
+    to: [toEmail],
     subject: 'Confirm your MaillardMap account',
-    html: `
-      <p>Thanks for signing up.</p>
-      <p><a href="${href}">Confirm your email</a></p>
-      <p>If you did not create an account, ignore this message.</p>
-    `,
+    text,
+    html,
   });
   if (error) {
     throw new Error(error.message);
