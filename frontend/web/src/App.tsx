@@ -6,12 +6,25 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { SupportPage } from './pages/SupportPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 
-function VerifyEmailStripTrailingSlash() {
+function StripTrailingSlash({ to }: { to: string }) {
   const { search } = useLocation();
-  return <Navigate to={{ pathname: '/verify-email', search }} replace />;
+  return <Navigate to={{ pathname: to, search }} replace />;
 }
 
 export default function App() {
+  const location = useLocation();
+  const normalizedPath = location.pathname.replace(/\/+$/, '') || '/';
+  const accountActionPage =
+    normalizedPath === '/verify-email' ? (
+      <VerifyEmailPage />
+    ) : normalizedPath === '/reset-password' ? (
+      <ResetPasswordPage />
+    ) : null;
+
+  if (accountActionPage) {
+    return <Layout>{accountActionPage}</Layout>;
+  }
+
   return (
     <Layout>
       <Routes>
@@ -19,8 +32,9 @@ export default function App() {
         <Route path="/support" element={<SupportPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
-        <Route path="/verify-email/" element={<VerifyEmailStripTrailingSlash />} />
+        <Route path="/verify-email/" element={<StripTrailingSlash to="/verify-email" />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/reset-password/" element={<StripTrailingSlash to="/reset-password" />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

@@ -20,8 +20,16 @@ export function VerifyEmailPage() {
   const token = useMemo(() => params.get('token')?.trim() ?? '', [params]);
   const confirmedRedirect = useMemo(() => params.get('confirmed') === '1', [params]);
   const errorCode = useMemo(() => params.get('error')?.trim() ?? '', [params]);
-  const [phase, setPhase] = useState<Phase>('loading');
-  const [message, setMessage] = useState('');
+  const initialPhase: Phase = confirmedRedirect ? 'ok' : errorCode ? 'err' : token ? 'loading' : 'missing';
+  const initialMessage = confirmedRedirect
+    ? 'Your email is confirmed. You can open MaillardMap and log in.'
+    : errorCode
+      ? messageForErrorCode(errorCode)
+      : token
+        ? ''
+        : 'This link is missing a token. Open the confirmation link from your email.';
+  const [phase, setPhase] = useState<Phase>(initialPhase);
+  const [message, setMessage] = useState(initialMessage);
 
   useEffect(() => {
     if (confirmedRedirect) {
@@ -83,9 +91,7 @@ export function VerifyEmailPage() {
     <main className="page page-narrow">
       <span className="badge">Account</span>
       <h1>Email confirmation</h1>
-      <p className="lead" style={phase === 'loading' ? undefined : { marginBottom: 0 }}>
-        {phase === 'loading' ? 'Hang tight — we’re confirming your link.' : 'Here’s what we found.'}
-      </p>
+      {phase === 'loading' && <p className="lead">Hang tight — we’re confirming your link.</p>}
 
       {phase === 'loading' && (
         <div className="verify-card">

@@ -9,8 +9,8 @@ export function ResetPasswordPage() {
   const token = useMemo(() => params.get('token')?.trim() ?? '', [params]);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [state, setState] = useState<SubmitState>('idle');
-  const [message, setMessage] = useState('');
+  const [state, setState] = useState<SubmitState>(token ? 'idle' : 'err');
+  const [message, setMessage] = useState(token ? '' : 'This reset link is missing a token. Request a new one in the app.');
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -70,40 +70,42 @@ export function ResetPasswordPage() {
       <p className="lead">Set a new password for your MaillardMap account.</p>
 
       <div className="card">
-        <form onSubmit={onSubmit}>
-          <div className="form-field">
-            <label htmlFor="password">New password</label>
-            <input
-              id="password"
-              type="password"
-              required
-              minLength={8}
-              maxLength={200}
-              autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={state === 'sending' || state === 'ok'}
-            />
-          </div>
-          <div className="form-field">
-            <label htmlFor="confirmPassword">Confirm password</label>
-            <input
-              id="confirmPassword"
-              type="password"
-              required
-              minLength={8}
-              maxLength={200}
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              disabled={state === 'sending' || state === 'ok'}
-            />
-          </div>
+        {token && (
+          <form onSubmit={onSubmit}>
+            <div className="form-field">
+              <label htmlFor="password">New password</label>
+              <input
+                id="password"
+                type="password"
+                required
+                minLength={8}
+                maxLength={200}
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={state === 'sending' || state === 'ok'}
+              />
+            </div>
+            <div className="form-field">
+              <label htmlFor="confirmPassword">Confirm password</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                required
+                minLength={8}
+                maxLength={200}
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={state === 'sending' || state === 'ok'}
+              />
+            </div>
 
-          <button className="btn" type="submit" disabled={state === 'sending' || state === 'ok'}>
-            {state === 'sending' ? 'Saving…' : 'Set new password'}
-          </button>
-        </form>
+            <button className="btn" type="submit" disabled={state === 'sending' || state === 'ok'}>
+              {state === 'sending' ? 'Saving...' : 'Set new password'}
+            </button>
+          </form>
+        )}
 
         {message && (
           <p className={state === 'ok' ? 'status ok' : 'status err'} style={{ marginTop: '1rem' }}>
