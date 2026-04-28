@@ -155,6 +155,15 @@ final class APIClient {
         return r.message ?? "Check your email."
     }
 
+    /// Sends a password reset email with a one-time link to the web reset page.
+    func requestPasswordReset(usernameOrEmail: String) async throws -> String {
+        struct Body: Encodable { let username: String }
+        let data = try await request("auth/request-password-reset", method: "POST", body: Body(username: usernameOrEmail))
+        struct Resp: Decodable { let ok: Bool; let message: String? }
+        let r = try decode(Resp.self, from: data)
+        return r.message ?? "If an account exists, we sent a password reset link."
+    }
+
     // MARK: - Users
 
     func getUser(id: String) async throws -> User {

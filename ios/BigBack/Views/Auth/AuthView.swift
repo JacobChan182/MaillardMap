@@ -112,8 +112,7 @@ struct AuthView: View {
 
                     if !auth.isSignupMode {
                         Button {
-                            auth.isSignupMode.toggle()
-                            auth.resetVerificationUI()
+                            Task { await auth.requestPasswordResetEmail() }
                         } label: {
                             Text("Need to reset your password?")
                                 .font(.caption2)

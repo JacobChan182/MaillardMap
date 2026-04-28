@@ -14,6 +14,7 @@ struct BigBackApp: App {
                 }
             }
             .dismissKeyboardOnTap()
+            .keyboardDoneToolbar()
             .environmentObject(auth)
             .onReceive(NotificationCenter.default.publisher(for: .bigBackSessionExpired)) { _ in
                 auth.logout()

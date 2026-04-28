@@ -2,6 +2,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { HomePage } from './pages/HomePage';
 import { PrivacyPage } from './pages/PrivacyPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { SupportPage } from './pages/SupportPage';
 import { VerifyEmailPage } from './pages/VerifyEmailPage';
 
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/verify-email/" element={<VerifyEmailStripTrailingSlash />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

@@ -139,6 +139,22 @@ final class AuthViewModel: ObservableObject {
         startResendCooldown()
     }
 
+    func requestPasswordResetEmail() async {
+        let id = username.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard id.count >= 3 else {
+            errorMessage = "Enter your username or email first."
+            return
+        }
+        isLoading = true
+        errorMessage = nil
+        defer { isLoading = false }
+        do {
+            infoMessage = try await api.requestPasswordReset(usernameOrEmail: id)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
     private func startResendCooldown() {
         resendCooldownTask?.cancel()
         resendCooldownSeconds = 30
