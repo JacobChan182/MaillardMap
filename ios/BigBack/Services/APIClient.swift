@@ -249,6 +249,13 @@ final class APIClient {
         return try decode(Resp.self, from: data).notifications
     }
 
+    func dismissNotification(id: String) async throws {
+        var allowed = CharacterSet.alphanumerics
+        allowed.insert(charactersIn: "-._~")
+        let encoded = id.addingPercentEncoding(withAllowedCharacters: allowed) ?? id
+        _ = try await request("notifications/\(encoded)", method: "DELETE")
+    }
+
     // MARK: - Posts
 
     /// Ask the API for presigned PUT URLs (R2/S3). Body uses snake_case keys (`content_type`) via default encoder.

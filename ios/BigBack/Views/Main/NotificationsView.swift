@@ -145,8 +145,13 @@ struct NotificationPostView: View {
 struct NotificationsView: View {
     @EnvironmentObject private var mapVM: MapViewModel
     @EnvironmentObject private var tabRouter: TabRouter
-    @StateObject private var vm = NotificationsViewModel()
+    @ObservedObject private var vm: NotificationsViewModel
     @State private var notificationNav: NotificationNav?
+
+    @MainActor
+    init(vm: NotificationsViewModel) {
+        self.vm = vm
+    }
 
     var body: some View {
         Group {
@@ -160,6 +165,13 @@ struct NotificationsView: View {
                 List {
                     ForEach(vm.items) { item in
                         notificationCell(item)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    Task { await vm.dismiss(item) }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                     }
                 }
                 .listStyle(.plain)

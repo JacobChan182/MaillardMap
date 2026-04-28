@@ -46,6 +46,7 @@ struct FeedTab: View {
     @EnvironmentObject private var mapVM: MapViewModel
     @EnvironmentObject private var tabRouter: TabRouter
     @StateObject private var feedVM = FeedViewModel()
+    @StateObject private var notificationsVM = NotificationsViewModel()
     @State private var selectedPost: Post?
 
     var body: some View {
@@ -99,9 +100,9 @@ struct FeedTab: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink {
-                        NotificationsView()
+                        NotificationsView(vm: notificationsVM)
                     } label: {
-                        Image(systemName: "bell")
+                        NotificationBell(count: notificationsVM.items.count)
                     }
                 }
             }
@@ -116,10 +117,43 @@ struct FeedTab: View {
                 )
             }
         }
-        .task { await feedVM.loadFeed() }
+        .task {
+            await feedVM.loadFeed()
+            await notificationsVM.load()
+        }
+        .onAppear {
+            Task { await notificationsVM.load() }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .bigBackDidCreatePost)) { _ in
             Task { await feedVM.loadFeed() }
         }
+    }
+}
+
+private struct NotificationBell: View {
+    let count: Int
+
+    private var badgeText: String {
+        count > 99 ? "99+" : "\(count)"
+    }
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Image(systemName: count > 0 ? "bell.fill" : "bell")
+                .font(.body)
+
+            if count > 0 {
+                Text(badgeText)
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+                    .padding(.horizontal, count > 9 ? 4 : 5)
+                    .frame(minWidth: 16, minHeight: 16)
+                    .background(Color.red, in: Capsule())
+                    .offset(x: 9, y: -8)
+            }
+        }
+        .accessibilityLabel(count > 0 ? "\(count) notifications" : "Notifications")
     }
 }
 

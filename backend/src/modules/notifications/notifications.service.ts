@@ -1,3 +1,4 @@
+import type { Pool } from 'pg';
 import { getPool } from '../../db/pool.js';
 import { rewritePublicMediaUrl } from '../../services/s3.js';
 
@@ -48,8 +49,21 @@ function iso(d: unknown): string {
   return String(d);
 }
 
+async function ensureDismissedNotificationsTable(pool: Pool): Promise<void> {
+  await pool.query(`
+    create table if not exists dismissed_notifications (
+      user_id uuid not null references users(id) on delete cascade,
+      notification_id text not null,
+      dismissed_at timestamptz not null default now(),
+      primary key (user_id, notification_id)
+    )
+  `);
+  await pool.query('create index if not exists idx_dismissed_notifications_user_id on dismissed_notifications(user_id)');
+}
+
 export async function getNotifications(userId: string): Promise<AppNotification[]> {
   const pool = getPool();
+  await ensureDismissedNotificationsTable(pool);
   const userRes = await pool.query<{ username: string }>('select username from users where id = $1', [userId]);
   const myUsername = userRes.rows[0]?.username ?? '';
 
@@ -321,6 +335,23 @@ export async function getNotifications(userId: string): Promise<AppNotification[
     }
   }
 
+  const dismissedRes = await pool.query<{ notification_id: string }>(
+    'select notification_id from dismissed_notifications where user_id = $1',
+    [userId],
+  );
+  const dismissed = new Set(dismissedRes.rows.map((r) => r.notification_id));
+
   items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  return items.slice(0, LIMIT);
+  return items.filter((item) => !dismissed.has(item.id)).slice(0, LIMIT);
+}
+
+export async function dismissNotification(userId: string, notificationId: string): Promise<void> {
+  const pool = getPool();
+  await ensureDismissedNotificationsTable(pool);
+  await pool.query(
+    `insert into dismissed_notifications (user_id, notification_id)
+     values ($1, $2)
+     on conflict (user_id, notification_id) do nothing`,
+    [userId, notificationId],
+  );
 }
