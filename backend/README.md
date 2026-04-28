@@ -49,6 +49,7 @@ Copy `.env.example` to `.env` and set values.
 - **`PUBLIC_API_BASE_URL`** (or `API_PUBLIC_URL`): public base URL of this API **with no trailing slash**. When set, confirmation emails link to **`{API}/auth/verify-email?token=...`** so the server confirms the account **before** redirecting to the hosted web app. Required for production email flows; if unset (typical local dev), emails fall back to opening the SPA with `token` only.
 - **`PUBLIC_EMAIL_CONFIRM_WEB_URL`** (optional): public base URL of your **marketing/support site** **with no trailing slash**. Defaults to **`https://maillardmap.web.app`** when unset. After confirmation (or on error), `GET /auth/verify-email` **302-redirects** HTML browsers to `/verify-email?confirmed=1` or `?error=...` on this host. Override for local dev (e.g. `http://localhost:5173`).
 - **`SUPPORT_INBOX_EMAIL`**: address where **`POST /support/contact`** (public support form from the Firebase site) delivers mail via Resend. Required for that feature; use the same **`RESEND_API_KEY`** and **`RESEND_FROM`** as other mail.
+- **`APNS_KEY_ID`**, **`APNS_TEAM_ID`**, **`APNS_BUNDLE_ID`**, and **`APNS_PRIVATE_KEY`** or **`APNS_PRIVATE_KEY_BASE64`**: Apple Push Notification service credentials. `APNS_BUNDLE_ID` defaults to `com.maillardmap.app`; use the raw `.p8` contents with escaped newlines or a base64-encoded `.p8` value.
 - `FOURSQUARE_API_KEY`: restaurant search
 - `S3_*`: see `.env.example` for presigned uploads
 

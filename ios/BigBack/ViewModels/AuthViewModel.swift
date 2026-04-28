@@ -182,6 +182,7 @@ final class AuthViewModel: ObservableObject {
     }
 
     func logout() {
+        api.unregisterStoredAPNSTokenBestEffort()
         currentUser = nil
         api.clearSession()
         username = ""

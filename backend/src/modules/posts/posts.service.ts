@@ -1,6 +1,7 @@
 import type { Pool } from 'pg';
 import { areMutualFriends } from '../friends/friends.service.js';
 import { getPool } from '../../db/pool.js';
+import { sendPushToUser, truncatePushText } from '../../services/apns.js';
 import { rewritePublicMediaUrl } from '../../services/s3.js';
 
 const UUID_RE =
@@ -8,6 +9,15 @@ const UUID_RE =
 
 function isUuid(s: string): boolean {
   return UUID_RE.test(s);
+}
+
+function displayName(row: { username: string; display_name: string | null }): string {
+  return row.display_name?.trim() || `@${row.username}`;
+}
+
+function mentionedUsernames(text: string): string[] {
+  const matches = text.matchAll(/@([A-Za-z0-9_]{1,30})/g);
+  return [...new Set(Array.from(matches, (m) => m[1].toLowerCase()))];
 }
 
 type PostData = {
@@ -324,7 +334,13 @@ export async function getPostsByUserForProfile(
 export async function toggleLike(userId: string, postId: string): Promise<boolean> {
   const pool = getPool();
 
-  const postCheck = await pool.query('select id from posts where id = $1', [postId]);
+  const postCheck = await pool.query<{ id: string; user_id: string; restaurant_name: string }>(
+    `select p.id, p.user_id, r.name as restaurant_name
+     from posts p
+     join restaurants r on r.id = p.restaurant_id
+     where p.id = $1`,
+    [postId],
+  );
   if (postCheck.rows.length === 0) {
     return false; // Post not found; treat as "already unliked"
   }
@@ -334,6 +350,19 @@ export async function toggleLike(userId: string, postId: string): Promise<boolea
       `insert into likes (user_id, post_id) values ($1, $2)`,
       [userId, postId],
     );
+    const post = postCheck.rows[0];
+    if (post.user_id !== userId) {
+      const actor = await pool.query<{ username: string; display_name: string | null }>(
+        'select username, display_name from users where id = $1',
+        [userId],
+      );
+      const actorName = actor.rows[0] ? displayName(actor.rows[0]) : 'Someone';
+      void sendPushToUser(post.user_id, {
+        title: 'New like',
+        body: `${actorName} liked your post at ${post.restaurant_name}`,
+        data: { type: 'like', postId, actorId: userId },
+      });
+    }
     return true;
   } catch (e) {
     const err = e as { code?: string };
@@ -468,6 +497,62 @@ export async function addComment(
     const e = new Error('Comment not found after insert') as Error & { statusCode?: number };
     e.statusCode = 500;
     throw e;
+  }
+
+  const meta = await pool.query<{
+    post_owner_id: string;
+    restaurant_name: string;
+    parent_owner_id: string | null;
+  }>(
+    `select p.user_id as post_owner_id, r.name as restaurant_name, pc.user_id as parent_owner_id
+     from posts p
+     join restaurants r on r.id = p.restaurant_id
+     left join comments pc on pc.id = $2
+     where p.id = $1`,
+    [postId, parentCommentId ?? null],
+  );
+  const postMeta = meta.rows[0];
+  const actorName = displayName({ username: comment.username, display_name: comment.displayName });
+  const recipients = new Map<string, { title: string; body: string; type: string }>();
+
+  if (postMeta && postMeta.post_owner_id !== userId) {
+    recipients.set(postMeta.post_owner_id, {
+      title: 'New comment',
+      body: `${actorName} commented on your post at ${postMeta.restaurant_name}: "${truncatePushText(text, 80)}"`,
+      type: 'comment',
+    });
+  }
+  if (postMeta?.parent_owner_id && postMeta.parent_owner_id !== userId) {
+    recipients.set(postMeta.parent_owner_id, {
+      title: 'New reply',
+      body: `${actorName} replied: "${truncatePushText(text, 80)}"`,
+      type: 'reply',
+    });
+  }
+
+  const mentions = mentionedUsernames(text);
+  if (mentions.length > 0) {
+    const mentionRows = await pool.query<{ id: string }>(
+      'select id from users where lower(username) = any($1::text[])',
+      [mentions],
+    );
+    for (const r of mentionRows.rows) {
+      if (r.id !== userId) {
+        recipients.set(r.id, {
+          title: 'You were mentioned',
+          body: `${actorName} mentioned you: "${truncatePushText(text, 80)}"`,
+          type: 'mention',
+        });
+      }
+    }
+  }
+
+  for (const [recipientId, push] of recipients) {
+    void sendPushToUser(recipientId, {
+      title: push.title,
+      body: push.body,
+      data: { type: push.type, postId, commentId, actorId: userId },
+    });
   }
   return comment;
 }

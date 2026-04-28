@@ -1,5 +1,6 @@
 import type { DatabaseError } from 'pg';
 import { getPool } from '../../db/pool.js';
+import { sendPushToUser } from '../../services/apns.js';
 import { rewritePublicMediaUrl } from '../../services/s3.js';
 import type { FriendRequestInput } from './friends.schemas.js';
 
@@ -8,6 +9,10 @@ const UUID_RE =
 
 function isUuid(s: string): boolean {
   return UUID_RE.test(s);
+}
+
+function displayName(row: { username: string; display_name: string | null }): string {
+  return row.display_name?.trim() || `@${row.username}`;
 }
 
 type FriendshipRow = {
@@ -61,6 +66,16 @@ export async function sendFriendRequest(userId: string, input: FriendRequestInpu
        values ($1, $2, 'pending')`,
       [userId, input.friendId],
     );
+    const sender = await pool.query<{ username: string; display_name: string | null }>(
+      'select username, display_name from users where id = $1',
+      [userId],
+    );
+    const actorName = sender.rows[0] ? displayName(sender.rows[0]) : 'Someone';
+    void sendPushToUser(input.friendId, {
+      title: 'New friend request',
+      body: `${actorName} sent you a friend request`,
+      data: { type: 'friend_request', actorId: userId },
+    });
     return { ok: true as const };
   } catch (e) {
     const err = e as Partial<DatabaseError>;
@@ -86,6 +101,17 @@ export async function acceptFriendRequest(userId: string, friendId: string) {
   if (result.rows.length === 0) {
     return { ok: false as const, status: 404, code: 'REQUEST_NOT_FOUND' as const };
   }
+
+  const accepter = await pool.query<{ username: string; display_name: string | null }>(
+    'select username, display_name from users where id = $1',
+    [userId],
+  );
+  const actorName = accepter.rows[0] ? displayName(accepter.rows[0]) : 'Someone';
+  void sendPushToUser(friendId, {
+    title: 'Friend request accepted',
+    body: `${actorName} accepted your friend request`,
+    data: { type: 'friend_accept', actorId: userId },
+  });
 
   return { ok: true as const };
 }

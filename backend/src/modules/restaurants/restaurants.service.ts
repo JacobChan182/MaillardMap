@@ -1,6 +1,7 @@
 import { getPool } from '../../db/pool.js';
 import { areMutualFriends } from '../friends/friends.service.js';
 import { searchNearby } from '../../external/foursquare.js';
+import { sendPushToUser } from '../../services/apns.js';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -14,6 +15,10 @@ type RestaurantRow = {
   cuisine: string | null;
   address: string | null;
 };
+
+function displayName(row: { username: string; display_name: string | null }): string {
+  return row.display_name?.trim() || `@${row.username}`;
+}
 
 /**
  * Search restaurants from Foursquare, caching results locally.
@@ -192,5 +197,15 @@ export async function createRestaurantShare(
      values ($1, $2, $3)`,
     [fromUserId, recipientId, restaurantId],
   );
+  const actor = await pool.query<{ username: string; display_name: string | null }>(
+    'select username, display_name from users where id = $1',
+    [fromUserId],
+  );
+  const actorName = actor.rows[0] ? displayName(actor.rows[0]) : 'Someone';
+  void sendPushToUser(recipientId, {
+    title: 'Restaurant shared',
+    body: `${actorName} shared ${restaurant.name}`,
+    data: { type: 'restaurant_share', restaurantId, actorId: fromUserId },
+  });
   return { ok: true };
 }

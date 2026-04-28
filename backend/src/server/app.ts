@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { authRouter } from '../modules/auth/auth.routes.js';
+import { devicesRouter } from '../modules/devices/devices.routes.js';
 import { friendsRouter } from '../modules/friends/friends.routes.js';
 import { healthRouter } from '../modules/health/health.routes.js';
 import { notificationsRouter } from '../modules/notifications/notifications.routes.js';
@@ -60,6 +61,7 @@ export function createApp() {
   });
 
   app.use('/auth', authRouter);
+  app.use('/devices', devicesRouter);
   app.use('/friends', friendsRouter);
   app.use('/health', healthRouter);
   app.use('/notifications', notificationsRouter);

@@ -5,6 +5,8 @@ import Foundation
 extension Notification.Name {
     /// Posted when API returns 401 for an authenticated request.
     static let bigBackSessionExpired = Notification.Name("bigBackSessionExpired")
+    /// Posted when a push notification should open the in-app notifications surface.
+    static let bigBackOpenNotifications = Notification.Name("bigBackOpenNotifications")
 }
 
 enum APIError: Error, LocalizedError {
@@ -254,6 +256,43 @@ final class APIClient {
         allowed.insert(charactersIn: "-._~")
         let encoded = id.addingPercentEncoding(withAllowedCharacters: allowed) ?? id
         _ = try await request("notifications/\(encoded)", method: "DELETE")
+    }
+
+    func registerAPNSToken(token: String, environment: String) async throws {
+        struct Body: Encodable {
+            let token: String
+            let environment: String
+        }
+        _ = try await request("devices/apns", method: "POST", body: Body(token: token, environment: environment))
+        UserDefaults.standard.set(token, forKey: "apnsDeviceToken")
+    }
+
+    func unregisterStoredAPNSToken() async throws {
+        guard let token = UserDefaults.standard.string(forKey: "apnsDeviceToken") else { return }
+        try await unregisterAPNSToken(token: token, bearer: authToken)
+    }
+
+    func unregisterStoredAPNSTokenBestEffort() {
+        guard let token = UserDefaults.standard.string(forKey: "apnsDeviceToken") else { return }
+        let bearer = authToken
+        Task { try? await unregisterAPNSToken(token: token, bearer: bearer) }
+    }
+
+    private func unregisterAPNSToken(token: String, bearer: String?) async throws {
+        var allowed = CharacterSet.alphanumerics
+        allowed.insert(charactersIn: "-._~")
+        let encoded = token.addingPercentEncoding(withAllowedCharacters: allowed) ?? token
+        guard let url = URL(string: "devices/apns/\(encoded)", relativeTo: baseURL) else { throw APIError.invalidURL }
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.cachePolicy = .reloadIgnoringLocalCacheData
+        if let bearer {
+            request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse else { throw APIError.badResponse(0, data) }
+        guard (200...299).contains(http.statusCode) else { throw APIError.badResponse(http.statusCode, data) }
+        UserDefaults.standard.removeObject(forKey: "apnsDeviceToken")
     }
 
     // MARK: - Posts

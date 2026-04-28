@@ -38,6 +38,33 @@ async function httpPost(app: any, path: string, body: Record<string, unknown>): 
   });
 }
 
+async function httpPostWithHeaders(
+  app: any,
+  path: string,
+  body: Record<string, unknown>,
+  headers: http.OutgoingHttpHeaders,
+): Promise<{ status: number; body: any }> {
+  const port = await getPort(app);
+  return new Promise((resolve, reject) => {
+    const server = app.listen(port, () => {
+      const req = http.request(
+        { hostname: '127.0.0.1', port, path, method: 'POST', headers: { 'Content-Type': 'application/json', ...headers } },
+        (res) => {
+          let data = '';
+          res.on('data', (chunk) => { data += chunk; });
+          res.on('end', () => {
+            server.close();
+            resolve({ status: res.statusCode!, body: data ? JSON.parse(data) : {} });
+          });
+        },
+      );
+      req.on('error', (err) => { server.close(); reject(err); });
+      req.write(JSON.stringify(body));
+      req.end();
+    });
+  });
+}
+
 async function httpGet(app: any, path: string): Promise<{ status: number; body: any; headers: http.IncomingHttpHeaders }> {
   const port = await getPort(app);
   return new Promise((resolve, reject) => {
@@ -503,6 +530,46 @@ describe('HTTP routes', () => {
       const { status, body } = await httpDeleteWithHeaders(app, '/users/me', {});
       expect(status).toBe(401);
       expect(body.error?.code).toBe('UNAUTHORIZED');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // POST/DELETE /devices/apns
+  // ---------------------------------------------------------------------------
+
+  describe('APNs device routes', () => {
+    it('registers an APNs device token for the authenticated user', async () => {
+      const jwt = await import('jsonwebtoken');
+      const userId = '550e8400-e29b-41d4-a716-446655440011';
+      const token = jwt.default.sign(
+        { sub: userId, username: 'bob' },
+        process.env.JWT_SECRET!,
+        { expiresIn: '1h' },
+      );
+      const app = createApp();
+      const { status, body } = await httpPostWithHeaders(
+        app,
+        '/devices/apns',
+        { token: 'a'.repeat(64), environment: 'sandbox' },
+        { Authorization: `Bearer ${token}` },
+      );
+      expect(status).toBe(200);
+      expect(body.ok).toBe(true);
+    });
+
+    it('unregisters an APNs device token for the authenticated user', async () => {
+      const jwt = await import('jsonwebtoken');
+      const userId = '550e8400-e29b-41d4-a716-446655440011';
+      const token = jwt.default.sign(
+        { sub: userId, username: 'bob' },
+        process.env.JWT_SECRET!,
+        { expiresIn: '1h' },
+      );
+      const app = createApp();
+      const { status } = await httpDeleteWithHeaders(app, `/devices/apns/${'a'.repeat(64)}`, {
+        Authorization: `Bearer ${token}`,
+      });
+      expect(status).toBe(204);
     });
   });
 

@@ -48,6 +48,7 @@ struct FeedTab: View {
     @StateObject private var feedVM = FeedViewModel()
     @StateObject private var notificationsVM = NotificationsViewModel()
     @State private var selectedPost: Post?
+    @State private var showNotifications = false
 
     var body: some View {
         NavigationStack {
@@ -116,6 +117,9 @@ struct FeedTab: View {
                     }
                 )
             }
+            .navigationDestination(isPresented: $showNotifications) {
+                NotificationsView(vm: notificationsVM)
+            }
         }
         .task {
             await feedVM.loadFeed()
@@ -126,6 +130,11 @@ struct FeedTab: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .bigBackDidCreatePost)) { _ in
             Task { await feedVM.loadFeed() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .bigBackOpenNotifications)) { _ in
+            tabRouter.selectedTab = TabRouter.Tab.feed.rawValue
+            showNotifications = true
+            Task { await notificationsVM.load() }
         }
     }
 }
