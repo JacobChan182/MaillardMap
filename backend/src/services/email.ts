@@ -30,33 +30,74 @@ function escapeHtmlAttr(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
 
-function signupConfirmationBodies(href: string): { text: string; html: string } {
+function accountActionEmailBodies(input: {
+  title: string;
+  preview: string;
+  intro: string;
+  buttonText: string;
+  href: string;
+  note: string;
+  fallbackIntro: string;
+}): { text: string; html: string } {
   const text = [
-    'Thanks for signing up for MaillardMap.',
+    input.title,
     '',
-    `Confirm your email by opening this link in your browser:`,
-    href,
+    input.intro,
     '',
-    'If you did not create an account, you can ignore this message.',
+    `${input.buttonText}:`,
+    input.href,
+    '',
+    input.note,
+    '',
+    'MaillardMap',
   ].join('\n');
 
-  const safeHref = escapeHtmlAttr(href);
+  const safeTitle = escapeHtml(input.title);
+  const safePreview = escapeHtml(input.preview);
+  const safeIntro = escapeHtml(input.intro);
+  const safeButtonText = escapeHtml(input.buttonText);
+  const safeNote = escapeHtml(input.note);
+  const safeFallbackIntro = escapeHtml(input.fallbackIntro);
+  const safeHref = escapeHtmlAttr(input.href);
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Confirm your email</title>
+  <title>${safeTitle}</title>
 </head>
-<body style="margin:0;padding:24px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.5;color:#111827;background:#f9fafb;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:12px;padding:24px;border:1px solid #e5e7eb;">
+<body style="margin:0;padding:0;background:#fff7ed;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;color:#1f2937;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fff7ed;padding:32px 16px;">
     <tr>
-      <td>
-        <p style="margin:0 0 16px;">Thanks for signing up.</p>
-        <p style="margin:0 0 16px;">
-          <a href="${safeHref}" style="color:#ea580c;font-weight:600;">Confirm your email</a>
-        </p>
-        <p style="margin:0;font-size:14px;color:#6b7280;">If you did not create an account, ignore this message.</p>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border-radius:20px;border:1px solid #fed7aa;box-shadow:0 16px 40px rgba(154,52,18,0.12);overflow:hidden;">
+          <tr>
+            <td style="padding:28px 28px 18px;background:linear-gradient(135deg,#fb923c,#ea580c);color:#ffffff;">
+              <p style="margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">MaillardMap</p>
+              <h1 style="margin:0;font-size:28px;line-height:1.15;font-weight:800;">${safeTitle}</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:26px 28px 28px;">
+              <p style="margin:0 0 18px;font-size:17px;line-height:1.55;color:#374151;">${safePreview}</p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">${safeIntro}</p>
+              <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 24px;">
+                <tr>
+                  <td bgcolor="#ea580c" style="border-radius:999px;">
+                    <a href="${safeHref}" style="display:inline-block;padding:13px 22px;border-radius:999px;color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;">${safeButtonText}</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 10px;font-size:13px;line-height:1.55;color:#6b7280;">${safeFallbackIntro}</p>
+              <p style="margin:0 0 22px;font-size:13px;line-height:1.55;word-break:break-all;">
+                <a href="${safeHref}" style="color:#c2410c;text-decoration:underline;">${safeHref}</a>
+              </p>
+              <div style="border-top:1px solid #ffedd5;padding-top:18px;">
+                <p style="margin:0;font-size:13px;line-height:1.55;color:#78716c;">${safeNote}</p>
+              </div>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>
@@ -66,40 +107,28 @@ function signupConfirmationBodies(href: string): { text: string; html: string } 
   return { text, html };
 }
 
-function resetPasswordBodies(href: string): { text: string; html: string } {
-  const text = [
-    'We received a request to reset your MaillardMap password.',
-    '',
-    'Open this link to choose a new password:',
+function signupConfirmationBodies(href: string): { text: string; html: string } {
+  return accountActionEmailBodies({
+    title: 'Confirm your email',
+    preview: 'Welcome to MaillardMap. Confirm your email to finish setting up your account.',
+    intro: 'Once confirmed, you can log in and start sharing restaurant visits with friends.',
+    buttonText: 'Confirm email',
     href,
-    '',
-    'If you did not request this, you can ignore this message.',
-  ].join('\n');
+    fallbackIntro: 'If the button does not open, copy and paste this link into your browser:',
+    note: 'This link expires soon. If you did not create a MaillardMap account, you can ignore this email.',
+  });
+}
 
-  const safeHref = escapeHtmlAttr(href);
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Reset your password</title>
-</head>
-<body style="margin:0;padding:24px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.5;color:#111827;background:#f9fafb;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:12px;padding:24px;border:1px solid #e5e7eb;">
-    <tr>
-      <td>
-        <p style="margin:0 0 16px;">We received a request to reset your password.</p>
-        <p style="margin:0 0 16px;">
-          <a href="${safeHref}" style="color:#ea580c;font-weight:600;">Reset password</a>
-        </p>
-        <p style="margin:0;font-size:14px;color:#6b7280;">If you did not request this, ignore this message.</p>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-
-  return { text, html };
+function resetPasswordBodies(href: string): { text: string; html: string } {
+  return accountActionEmailBodies({
+    title: 'Reset your password',
+    preview: 'We received a request to reset your MaillardMap password.',
+    intro: 'Choose a new password on the MaillardMap website. The link is single-use and expires in about one hour.',
+    buttonText: 'Reset password',
+    href,
+    fallbackIntro: 'If the button does not open, copy and paste this link into your browser:',
+    note: 'If you did not request this reset, you can safely ignore this email and your password will stay the same.',
+  });
 }
 
 /** Resend `from`: inbox shows `RESEND_FROM_NAME` (default MaillardMap) with your verified sender email. */
@@ -133,6 +162,9 @@ export async function sendSignupConfirmationEmail(toEmail: string, plainToken: s
     from,
     to: [toEmail],
     subject: 'Confirm your MaillardMap account',
+    headers: {
+      'X-Entity-Ref-ID': `confirm-${plainToken.slice(0, 16)}`,
+    },
     text,
     html,
   });
@@ -155,6 +187,9 @@ export async function sendPasswordResetEmail(toEmail: string, plainToken: string
     from,
     to: [toEmail],
     subject: 'Reset your MaillardMap password',
+    headers: {
+      'X-Entity-Ref-ID': `reset-${plainToken.slice(0, 16)}`,
+    },
     text,
     html,
   });
