@@ -453,6 +453,32 @@ describe('HTTP routes', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // POST /auth/request-password-reset + POST /auth/reset-password
+  // ---------------------------------------------------------------------------
+
+  describe('password reset routes', () => {
+    it('returns 200 generic message for password reset request', async () => {
+      const app = createApp();
+      const { status, body } = await httpPost(app, '/auth/request-password-reset', {
+        username: 'alice@example.com',
+      });
+      expect(status).toBe(200);
+      expect(body.ok).toBe(true);
+      expect(typeof body.message).toBe('string');
+    });
+
+    it('returns 400 for invalid or expired reset token', async () => {
+      const app = createApp();
+      const { status, body } = await httpPost(app, '/auth/reset-password', {
+        token: '1234567890abcdef',
+        password: 'newpassword123',
+      });
+      expect(status).toBe(400);
+      expect(body.error?.code).toBe('INVALID_OR_EXPIRED_TOKEN');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // DELETE /users/me
   // ---------------------------------------------------------------------------
 

@@ -1,8 +1,14 @@
 import { Router } from 'express';
 import { ZodError } from 'zod';
 import { getPublicEmailConfirmWebBase } from '../../config/publicWeb.js';
-import { loginSchema, resendConfirmationSchema, signupSchema } from './auth.schemas.js';
-import { login, resendConfirmationEmail, signup, verifyEmail } from './auth.service.js';
+import {
+  loginSchema,
+  requestPasswordResetSchema,
+  resendConfirmationSchema,
+  resetPasswordSchema,
+  signupSchema,
+} from './auth.schemas.js';
+import { login, requestPasswordReset, resendConfirmationEmail, resetPassword, signup, verifyEmail } from './auth.service.js';
 
 export const authRouter = Router();
 
@@ -58,6 +64,37 @@ authRouter.post('/resend-confirmation', async (req, res) => {
   try {
     const resendInput = resendConfirmationSchema.parse(req.body);
     const result = await resendConfirmationEmail(resendInput);
+    if (!result.ok) {
+      return res.status(result.status).json({ error: { code: result.code, message: result.message } });
+    }
+    return res.status(200).json({ ok: true, message: result.message });
+  } catch (err) {
+    if (err instanceof ZodError) {
+      return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: formatZodErrors(err) } });
+    }
+    console.error(err);
+    return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
+  }
+});
+
+authRouter.post('/request-password-reset', async (req, res) => {
+  try {
+    const input = requestPasswordResetSchema.parse(req.body);
+    const result = await requestPasswordReset(input);
+    return res.status(200).json({ ok: true, message: result.message });
+  } catch (err) {
+    if (err instanceof ZodError) {
+      return res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: formatZodErrors(err) } });
+    }
+    console.error(err);
+    return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
+  }
+});
+
+authRouter.post('/reset-password', async (req, res) => {
+  try {
+    const input = resetPasswordSchema.parse(req.body);
+    const result = await resetPassword(input);
     if (!result.ok) {
       return res.status(result.status).json({ error: { code: result.code, message: result.message } });
     }

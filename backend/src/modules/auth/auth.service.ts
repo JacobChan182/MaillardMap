@@ -2,10 +2,10 @@ import bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import type { DatabaseError } from 'pg';
-import type { LoginInput, ResendConfirmationInput, SignupInput } from './auth.schemas.js';
+import type { LoginInput, RequestPasswordResetInput, ResendConfirmationInput, ResetPasswordInput, SignupInput } from './auth.schemas.js';
 import { getPool } from '../../db/pool.js';
 import { rewritePublicMediaUrl } from '../../services/s3.js';
-import { sendSignupConfirmationEmail } from '../../services/email.js';
+import { sendPasswordResetEmail, sendSignupConfirmationEmail } from '../../services/email.js';
 
 type UserRow = {
   id: string;
@@ -18,6 +18,8 @@ type UserRow = {
   created_at: string;
   profile_private: boolean;
   email_verified_at: string | null;
+  password_reset_token_hash?: string | null;
+  password_reset_expires_at?: string | null;
 };
 
 function getJwtSecret(): string {
@@ -237,4 +239,67 @@ export async function resendConfirmationEmail(input: ResendConfirmationInput): P
 
   await sendSignupConfirmationEmail(email, plainToken);
   return { ok: true, message: 'Check your email for a new confirmation link.' };
+}
+
+const resetGenericMessage = 'If an account exists, we sent a password reset link.';
+
+export type RequestPasswordResetResult = { ok: true; message: string };
+
+export async function requestPasswordReset(input: RequestPasswordResetInput): Promise<RequestPasswordResetResult> {
+  const raw = input.username.trim();
+  const phoneOrEmailLookup = raw.includes('@') ? raw.toLowerCase() : raw;
+  const pool = getPool();
+  const res = await pool.query<Pick<UserRow, 'id' | 'phone_or_email'>>(
+    `select id, phone_or_email from users where username = $1 or phone_or_email = $2`,
+    [raw, phoneOrEmailLookup],
+  );
+
+  const user = res.rows[0];
+  if (!user || !user.phone_or_email) {
+    return { ok: true, message: resetGenericMessage };
+  }
+
+  const plainToken = randomBytes(32).toString('hex');
+  const tokenHash = createHash('sha256').update(plainToken).digest('hex');
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+  await pool.query(
+    `update users
+       set password_reset_token_hash = $1,
+           password_reset_expires_at = $2
+     where id = $3`,
+    [tokenHash, expiresAt.toISOString(), user.id],
+  );
+
+  await sendPasswordResetEmail(user.phone_or_email, plainToken);
+  return { ok: true, message: 'Check your email for a password reset link.' };
+}
+
+export type ResetPasswordResult =
+  | { ok: true; message: string }
+  | { ok: false; status: number; code: string; message: string };
+
+export async function resetPassword(input: ResetPasswordInput): Promise<ResetPasswordResult> {
+  const tokenHash = createHash('sha256').update(input.token.trim()).digest('hex');
+  const passwordHash = await bcrypt.hash(input.password, 12);
+  const pool = getPool();
+  const res = await pool.query(
+    `update users
+       set password_hash = $1,
+           password_reset_token_hash = null,
+           password_reset_expires_at = null
+     where password_reset_token_hash = $2
+       and (password_reset_expires_at is null or password_reset_expires_at > now())`,
+    [passwordHash, tokenHash],
+  );
+
+  if ((res.rowCount ?? 0) === 0) {
+    return {
+      ok: false,
+      status: 400,
+      code: 'INVALID_OR_EXPIRED_TOKEN',
+      message: 'This password reset link is invalid or has expired. Request a new one.',
+    };
+  }
+  return { ok: true, message: 'Password updated. You can now log in with your new password.' };
 }

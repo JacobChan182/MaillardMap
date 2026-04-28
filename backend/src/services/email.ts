@@ -21,6 +21,11 @@ function confirmLink(token: string): string {
   return `${webBase}/verify-email?token=${encodeURIComponent(token)}`;
 }
 
+function resetPasswordLink(token: string): string {
+  const webBase = getPublicEmailConfirmWebBase();
+  return `${webBase}/reset-password?token=${encodeURIComponent(token)}`;
+}
+
 function escapeHtmlAttr(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 }
@@ -61,6 +66,42 @@ function signupConfirmationBodies(href: string): { text: string; html: string } 
   return { text, html };
 }
 
+function resetPasswordBodies(href: string): { text: string; html: string } {
+  const text = [
+    'We received a request to reset your MaillardMap password.',
+    '',
+    'Open this link to choose a new password:',
+    href,
+    '',
+    'If you did not request this, you can ignore this message.',
+  ].join('\n');
+
+  const safeHref = escapeHtmlAttr(href);
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reset your password</title>
+</head>
+<body style="margin:0;padding:24px;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:16px;line-height:1.5;color:#111827;background:#f9fafb;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;margin:0 auto;background:#ffffff;border-radius:12px;padding:24px;border:1px solid #e5e7eb;">
+    <tr>
+      <td>
+        <p style="margin:0 0 16px;">We received a request to reset your password.</p>
+        <p style="margin:0 0 16px;">
+          <a href="${safeHref}" style="color:#ea580c;font-weight:600;">Reset password</a>
+        </p>
+        <p style="margin:0;font-size:14px;color:#6b7280;">If you did not request this, ignore this message.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  return { text, html };
+}
+
 /** Resend `from`: inbox shows `RESEND_FROM_NAME` (default MaillardMap) with your verified sender email. */
 function resendFromHeader(): string {
   const raw = process.env.RESEND_FROM?.trim();
@@ -92,6 +133,28 @@ export async function sendSignupConfirmationEmail(toEmail: string, plainToken: s
     from,
     to: [toEmail],
     subject: 'Confirm your MaillardMap account',
+    text,
+    html,
+  });
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+export async function sendPasswordResetEmail(toEmail: string, plainToken: string): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    console.warn('[email] RESEND_API_KEY not set; skipping password reset email (dev only)');
+    return;
+  }
+  const from = resendFromHeader();
+  const resend = new Resend(apiKey);
+  const href = resetPasswordLink(plainToken);
+  const { text, html } = resetPasswordBodies(href);
+  const { error } = await resend.emails.send({
+    from,
+    to: [toEmail],
+    subject: 'Reset your MaillardMap password',
     text,
     html,
   });
