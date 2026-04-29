@@ -1,6 +1,6 @@
 import http2 from 'node:http2';
 import jwt from 'jsonwebtoken';
-import { deleteApnsToken, getApnsTokensForUser } from '../modules/devices/devices.service.js';
+import { deleteApnsToken, getApnsTokensForUser, updateApnsTokenEnvironment } from '../modules/devices/devices.service.js';
 import type { ApnsEnvironment } from '../modules/devices/devices.schemas.js';
 
 type ApnsPayload = {
@@ -20,6 +20,15 @@ type ApnsConfig = {
 let cachedToken: { value: string; issuedAtSeconds: number } | null = null;
 let hasWarnedMissingConfig = false;
 
+function normalizePrivateKey(value: string): string {
+  let key = value.trim();
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1);
+  }
+  key = key.replace(/\\n/g, '\n').replace(/\r/g, '').trim();
+  return key;
+}
+
 function apnsConfig(): ApnsConfig | null {
   const keyId = process.env.APNS_KEY_ID?.trim();
   const teamId = process.env.APNS_TEAM_ID?.trim();
@@ -27,9 +36,9 @@ function apnsConfig(): ApnsConfig | null {
   const rawKey = process.env.APNS_PRIVATE_KEY?.trim();
   const base64Key = process.env.APNS_PRIVATE_KEY_BASE64?.trim();
   const privateKey = rawKey
-    ? rawKey.replace(/\\n/g, '\n')
+    ? normalizePrivateKey(rawKey)
     : base64Key
-      ? Buffer.from(base64Key, 'base64').toString('utf8')
+      ? normalizePrivateKey(Buffer.from(base64Key, 'base64').toString('utf8'))
       : '';
 
   if (!keyId || !teamId || !bundleId || !privateKey) {
@@ -42,6 +51,10 @@ function apnsConfig(): ApnsConfig | null {
         hasPrivateKey: Boolean(privateKey),
       });
     }
+    return null;
+  }
+  if (!privateKey.includes('BEGIN PRIVATE KEY')) {
+    console.warn('[apns] disabled: APNS_PRIVATE_KEY format is invalid (expected .p8 PKCS#8 key)');
     return null;
   }
   return { keyId, teamId, bundleId, privateKey };
@@ -68,7 +81,18 @@ function apnsHost(environment: ApnsEnvironment): string {
   return environment === 'production' ? 'https://api.push.apple.com' : 'https://api.sandbox.push.apple.com';
 }
 
-async function sendToDevice(token: string, environment: ApnsEnvironment, payload: ApnsPayload, config: ApnsConfig): Promise<void> {
+type SendResult = { ok: boolean; status: number; reason?: string };
+
+function flipEnvironment(env: ApnsEnvironment): ApnsEnvironment {
+  return env === 'sandbox' ? 'production' : 'sandbox';
+}
+
+async function sendToDeviceOnce(
+  token: string,
+  environment: ApnsEnvironment,
+  payload: ApnsPayload,
+  config: ApnsConfig,
+): Promise<SendResult> {
   const body = JSON.stringify({
     aps: {
       alert: { title: payload.title, body: payload.body },
@@ -78,7 +102,7 @@ async function sendToDevice(token: string, environment: ApnsEnvironment, payload
     ...(payload.data ?? {}),
   });
 
-  await new Promise<void>((resolve) => {
+  return new Promise<SendResult>((resolve) => {
     const client = http2.connect(apnsHost(environment));
     const req = client.request({
       ':method': 'POST',
@@ -102,7 +126,7 @@ async function sendToDevice(token: string, environment: ApnsEnvironment, payload
     req.on('end', () => {
       client.close();
       if (status >= 200 && status < 300) {
-        resolve();
+        resolve({ ok: true, status });
         return;
       }
       const reason = (() => {
@@ -115,16 +139,37 @@ async function sendToDevice(token: string, environment: ApnsEnvironment, payload
       if (reason === 'BadDeviceToken' || reason === 'Unregistered' || reason === 'DeviceTokenNotForTopic') {
         void deleteApnsToken(token);
       }
-      console.warn('[apns] send failed', { status, reason, tokenPrefix: token.slice(0, 8) });
-      resolve();
+      console.warn('[apns] send failed', { status, reason, tokenPrefix: token.slice(0, 8), environment });
+      resolve({ ok: false, status, reason });
     });
     req.on('error', (err) => {
       client.close();
       console.warn('[apns] request error', err);
-      resolve();
+      resolve({ ok: false, status: 0, reason: 'network_error' });
     });
     req.end(body);
   });
+}
+
+async function sendToDevice(token: string, environment: ApnsEnvironment, payload: ApnsPayload, config: ApnsConfig): Promise<void> {
+  let result = await sendToDeviceOnce(token, environment, payload, config);
+  if (
+    !result.ok &&
+    result.status === 403 &&
+    result.reason === 'BadEnvironmentKeyInToken'
+  ) {
+    const alt = flipEnvironment(environment);
+    console.warn('[apns] BadEnvironmentKeyInToken — retrying opposite APNs host', {
+      tokenPrefix: token.slice(0, 8),
+      tried: environment,
+      retry: alt,
+    });
+    result = await sendToDeviceOnce(token, alt, payload, config);
+    if (result.ok) {
+      await updateApnsTokenEnvironment(token, alt);
+      console.info('[apns] corrected stored environment for token', { tokenPrefix: token.slice(0, 8), environment: alt });
+    }
+  }
 }
 
 export async function sendPushToUser(userId: string, payload: ApnsPayload): Promise<void> {

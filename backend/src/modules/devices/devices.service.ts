@@ -65,3 +65,13 @@ export async function deleteApnsToken(token: string): Promise<void> {
   await ensureApnsDeviceTokensTable(pool);
   await pool.query('delete from apns_device_tokens where device_token = $1', [token]);
 }
+
+/** Fix stored environment when Apple reports BadEnvironmentKeyInToken (wrong APNs host for this token). */
+export async function updateApnsTokenEnvironment(token: string, environment: ApnsEnvironment): Promise<void> {
+  const pool = getPool();
+  await ensureApnsDeviceTokensTable(pool);
+  await pool.query(
+    `update apns_device_tokens set environment = $2, updated_at = now() where device_token = $1`,
+    [token, environment],
+  );
+}
