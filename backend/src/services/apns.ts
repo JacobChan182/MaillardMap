@@ -129,17 +129,24 @@ async function sendToDeviceOnce(
         resolve({ ok: true, status });
         return;
       }
-      const reason = (() => {
-        try {
-          return JSON.parse(response).reason as string | undefined;
-        } catch {
-          return undefined;
-        }
-      })();
+      let reason: string | undefined;
+      try {
+        reason = (JSON.parse(response) as { reason?: string }).reason;
+      } catch {
+        reason = undefined;
+      }
       if (reason === 'BadDeviceToken' || reason === 'Unregistered' || reason === 'DeviceTokenNotForTopic') {
         void deleteApnsToken(token);
       }
-      console.warn('[apns] send failed', { status, reason, tokenPrefix: token.slice(0, 8), environment });
+      console.warn('[apns] send failed', {
+        status,
+        reason,
+        responseBody: response.length > 0 ? response : undefined,
+        apnsTopic: config.bundleId,
+        tokenLen: token.length,
+        tokenPrefix: token.slice(0, 8),
+        environment,
+      });
       resolve({ ok: false, status, reason });
     });
     req.on('error', (err) => {
@@ -152,6 +159,16 @@ async function sendToDeviceOnce(
 }
 
 async function sendToDevice(token: string, environment: ApnsEnvironment, payload: ApnsPayload, config: ApnsConfig): Promise<void> {
+  const hexLenOk = /^[0-9a-f]{64}$/i.test(token);
+  if (!hexLenOk) {
+    console.warn('[apns] invalid device token shape (expected 64 hex chars for 32-byte token)', {
+      tokenLen: token.length,
+      tokenPrefix: token.slice(0, 8),
+    });
+    void deleteApnsToken(token);
+    return;
+  }
+
   let result = await sendToDeviceOnce(token, environment, payload, config);
   if (
     !result.ok &&

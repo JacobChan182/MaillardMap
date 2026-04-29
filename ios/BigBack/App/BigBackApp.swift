@@ -25,7 +25,8 @@ final class BigBackPushAppDelegate: NSObject, UIApplicationDelegate, UNUserNotif
     }
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+        // Must be two hex digits per byte (64 chars for a 32-byte APNs token). Do not use "%02.2hhx" — it can produce invalid tokens.
+        let token = deviceToken.map { String(format: "%02hhx", $0) }.joined()
         #if DEBUG
         let environment = "sandbox"
         #else
