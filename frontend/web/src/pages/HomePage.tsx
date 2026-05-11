@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 
+const IOS_BETA_TESTFLIGHT_URL = 'https://testflight.apple.com/join/acu9qcwU';
+
 export function HomePage() {
   return (
     <main className="page">
@@ -11,7 +13,15 @@ export function HomePage() {
           been, and tools to plan the next table without the noise of endless anonymous reviews.
         </p>
         <div className="hero-actions">
-          <Link to="/support" className="btn">
+          <a
+            href={IOS_BETA_TESTFLIGHT_URL}
+            className="btn"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Join iOS beta (TestFlight)
+          </a>
+          <Link to="/support" className="btn btn-ghost">
             Get in touch
           </Link>
           <Link to="/privacy" className="btn btn-ghost">
@@ -45,10 +55,24 @@ export function HomePage() {
       </section>
 
       <div className="page-cta">
-        <p>Download the iOS app from the App Store when it&apos;s live — this page is for policy, help, and email verification.</p>
-        <Link to="/support" className="btn">
-          Contact support
-        </Link>
+        <div className="page-cta__platforms">
+          <div className="page-cta__ios">
+            <h2 className="page-cta__platform-head">iOS</h2>
+            <p>Join the beta on TestFlight.</p>
+            <a
+              href={IOS_BETA_TESTFLIGHT_URL}
+              className="btn"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Join iOS beta (TestFlight)
+            </a>
+          </div>
+          <div className="page-cta__android">
+            <h2 className="page-cta__platform-head">Android</h2>
+            <p>Still in development — check back later.</p>
+          </div>
+        </div>
       </div>
     </main>
   );
