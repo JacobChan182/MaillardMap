@@ -25,8 +25,8 @@ export async function searchNearby(lat: number, lng: number, radius = 5000, quer
     return [];
   }
 
-  // Category "13065" = Restaurants (Foursquare Places API)
-  const url = `https://places-api.foursquare.com/places/search?ll=${lat},${lng}&radius=${radius}&categories=13065&limit=30&sort=DISTANCE${query ? `&query=${encodeURIComponent(query)}` : ''}`;
+  // Text search near coordinates; post-filter to dining venues only (see isRestaurantVenue).
+  const url = `https://places-api.foursquare.com/places/search?ll=${lat},${lng}&radius=${radius}&limit=30&sort=DISTANCE${query ? `&query=${encodeURIComponent(query)}` : ''}`;
   let res;
   try {
     res = await fetch(url, { headers: fsqHeaders(key) });
@@ -34,7 +34,10 @@ export async function searchNearby(lat: number, lng: number, radius = 5000, quer
     console.error('[FOURSQUARE] fetch error:', e.message);
     return [];
   }
-  if (!res.ok) return [];
+  if (!res.ok) {
+    console.error('[FOURSQUARE] search failed:', res.status, await res.text().catch(() => ''));
+    return [];
+  }
 
   const data = await res.json();
   return (data.results || [])

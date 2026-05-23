@@ -21,74 +21,124 @@ function displayName(row: { username: string; display_name: string | null }): st
   return row.display_name?.trim() || `@${row.username}`;
 }
 
+/** ~10 miles — used for nearby Foursquare search and local cache radius. */
+const SEARCH_RADIUS_M = 16093;
+
+function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+const HAVERSINE_SQL = `(6371000 * acos(
+  least(1.0, greatest(-1.0,
+    cos(radians($2)) * cos(radians(lat)) * cos(radians(lng) - radians($3)) +
+    sin(radians($2)) * sin(radians(lat))
+  ))
+))`;
+
+async function searchCachedByName(
+  q: string,
+  lat?: number,
+  lng?: number,
+  radiusM?: number,
+): Promise<RestaurantRow[]> {
+  const pool = getPool();
+  let sql: string;
+  let args: (string | number)[];
+
+  if (lat != null && lng != null && radiusM != null) {
+    sql = `select id, foursquare_id, name, lat, lng, cuisine, address
+       from restaurants
+       where name ilike $1
+         and ${HAVERSINE_SQL} <= $4
+       order by ${HAVERSINE_SQL}
+       limit 30`;
+    args = [`%${q}%`, lat, lng, radiusM];
+  } else {
+    sql = `select id, foursquare_id, name, lat, lng, cuisine, address
+       from restaurants
+       where name ilike $1`;
+    args = [`%${q}%`];
+    if (lat != null && lng != null) {
+      args.push(lat, lng);
+      sql += ` order by ${HAVERSINE_SQL}`;
+    }
+    sql += ` limit 30`;
+  }
+
+  const cached = await pool.query<RestaurantRow>(sql, args);
+  return cached.rows.filter((row) => isRestaurantCuisineLabel(row.cuisine));
+}
+
+async function upsertFoursquareVenues(venues: Awaited<ReturnType<typeof searchNearby>>): Promise<RestaurantRow[]> {
+  if (venues.length === 0) return [];
+  const pool = getPool();
+  const ids: string[] = [];
+  for (const v of venues) {
+    const res = await pool.query(
+      `insert into restaurants (foursquare_id, name, lat, lng, cuisine, address)
+       values ($1, $2, $3, $4, $5, $6)
+       on conflict (foursquare_id) do update set
+         name = excluded.name,
+         lat = excluded.lat,
+         lng = excluded.lng,
+         cuisine = coalesce(excluded.cuisine, restaurants.cuisine),
+         address = coalesce(nullif(trim(excluded.address), ''), restaurants.address),
+         updated_at = now()
+       returning id`,
+      [
+        v.foursquare_id,
+        v.name,
+        v.lat,
+        v.lng,
+        v.categories || null,
+        v.address?.trim() ? v.address.trim() : null,
+      ],
+    );
+    ids.push(res.rows[0].id);
+  }
+  const fresh = await pool.query<RestaurantRow>(
+    'select id, foursquare_id, name, lat, lng, cuisine, address from restaurants where id = any($1)',
+    [ids],
+  );
+  return fresh.rows;
+}
+
 /**
  * Search restaurants from Foursquare, caching results locally.
  */
 export async function searchRestaurants(q: string, lat?: number, lng?: number) {
-  const pool = getPool();
-
-  // First check local DB for cached results
-  let sql = `select id, foursquare_id, name, lat, lng, cuisine, address
-     from restaurants
-     where name ilike $1`;
-  const args: (string | number)[] = [`%${q}%`];
-
   if (lat != null && lng != null) {
-    args.push(lat, lng);
-    sql += ` order by sqrt((lat - $2) * (lat - $2) + (lng - $3) * (lng - $3))`;
-  }
-  sql += ` limit 30`;
+    const [fsqVenues, cachedNearby] = await Promise.all([
+      searchNearby(lat, lng, SEARCH_RADIUS_M, q),
+      searchCachedByName(q, lat, lng, SEARCH_RADIUS_M),
+    ]);
 
-  const cached = await pool.query<RestaurantRow>(sql, args);
-  const cachedRestaurants = cached.rows.filter((row) => isRestaurantCuisineLabel(row.cuisine));
+    const upserted = await upsertFoursquareVenues(fsqVenues);
 
-  if (cachedRestaurants.length > 0) {
-    return cachedRestaurants.map(rowToRestaurant);
-  }
-
-  // Not found locally - fetch from Foursquare
-  let results;
-  if (lat != null && lng != null) {
-    results = await searchNearby(lat, lng, 50000, q);
-  } else {
-    // Fallback center (NYC) when no coordinates provided
-    results = await searchNearby(40.7128, -74.006, 50000, q);
-  }
-  if (results.length > 0) {
-    const ids: string[] = [];
-    for (const v of results) {
-      const res = await pool.query(
-        `insert into restaurants (foursquare_id, name, lat, lng, cuisine, address)
-         values ($1, $2, $3, $4, $5, $6)
-         on conflict (foursquare_id) do update set
-           name = excluded.name,
-           lat = excluded.lat,
-           lng = excluded.lng,
-           cuisine = coalesce(excluded.cuisine, restaurants.cuisine),
-           address = coalesce(nullif(trim(excluded.address), ''), restaurants.address),
-           updated_at = now()
-         returning id`,
-        [
-          v.foursquare_id,
-          v.name,
-          v.lat,
-          v.lng,
-          v.categories || null,
-          v.address?.trim() ? v.address.trim() : null,
-        ],
-      );
-      ids.push(res.rows[0].id);
+    const merged = new Map<string, RestaurantRow>();
+    for (const row of [...cachedNearby, ...upserted]) {
+      merged.set(row.foursquare_id, row);
     }
-    if (ids.length > 0) {
-      const fresh = await pool.query<RestaurantRow>(
-        'select id, foursquare_id, name, lat, lng, cuisine, address from restaurants where id = any($1)',
-        [ids],
-      );
-      return fresh.rows.map(rowToRestaurant);
-    }
+
+    return Array.from(merged.values())
+      .map((row) => ({
+        row,
+        distance: distanceMeters(lat, lng, row.lat, row.lng),
+      }))
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 30)
+      .map(({ row }) => rowToRestaurant(row));
   }
 
-  return [];
+  const cached = await searchCachedByName(q);
+  return cached.map(rowToRestaurant);
 }
 
 /**
