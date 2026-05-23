@@ -362,6 +362,10 @@ final class APIClient {
         return try decode(Resp.self, from: data).liked
     }
 
+    func deletePost(id: String) async throws {
+        _ = try await request("posts/\(id)", method: "DELETE")
+    }
+
     func getComments(postId: String) async throws -> [Comment] {
         struct Resp: Decodable { let comments: [Comment] }
         let data = try await request("posts/\(postId)/comments")

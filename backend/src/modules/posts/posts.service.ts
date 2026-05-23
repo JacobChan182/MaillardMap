@@ -328,6 +328,14 @@ export async function getPostsByUserForProfile(
   return { posts, postsHidden: false };
 }
 
+/** Delete a post. Only the author can delete. Returns false if not found or not owned. */
+export async function deletePost(userId: string, postId: string): Promise<boolean> {
+  if (!isUuid(postId)) return false;
+  const pool = getPool();
+  const res = await pool.query(`delete from posts where id = $1 and user_id = $2`, [postId, userId]);
+  return (res.rowCount ?? 0) > 0;
+}
+
 /**
  * Like or unlike a post. Returns true if liked (just added), false if unliked (just removed).
  */

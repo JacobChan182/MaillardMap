@@ -27,11 +27,8 @@ final class BigBackPushAppDelegate: NSObject, UIApplicationDelegate, UNUserNotif
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         // Must be two hex digits per byte (64 chars for a 32-byte APNs token). Do not use "%02.2hhx" — it can produce invalid tokens.
         let token = deviceToken.map { String(format: "%02hhx", $0) }.joined()
-        #if DEBUG
-        let environment = "sandbox"
-        #else
-        let environment = "production"
-        #endif
+        /// Must match embedded `aps-environment` (see `MAILLARD_APS_ENTITLEMENT` / `APS_ENVIRONMENT` in Xcode). TestFlight is always production; `#if DEBUG` alone can mismatch custom schemes.
+        let environment = Self.apnsRegistrationEnvironmentString()
 
         Task {
             do {
@@ -40,6 +37,22 @@ final class BigBackPushAppDelegate: NSObject, UIApplicationDelegate, UNUserNotif
                 print("APNs token registration failed: \(error.localizedDescription)")
             }
         }
+    }
+
+    /// Maps entitlements to API: `development` → sandbox, `production` → production.
+    private static func apnsRegistrationEnvironmentString() -> String {
+        if let raw = Bundle.main.object(forInfoDictionaryKey: "MAILLARD_APS_ENTITLEMENT") as? String {
+            switch raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+            case "development": return "sandbox"
+            case "production": return "production"
+            default: break
+            }
+        }
+        #if DEBUG
+        return "sandbox"
+        #else
+        return "production"
+        #endif
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {

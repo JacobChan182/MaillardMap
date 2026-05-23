@@ -96,4 +96,8 @@ final class RestaurantPostsViewModel: ObservableObject {
         }
         return nil
     }
+
+    func removePost(id: String) {
+        posts.removeAll { $0.id == id }
+    }
 }

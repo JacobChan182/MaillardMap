@@ -5,6 +5,7 @@ import { createPostSchema } from './posts.schemas.js';
 import {
   addComment,
   createPost,
+  deletePost,
   getCommentsByPost,
   getFeed,
   getFeedPostsByRestaurant,
@@ -86,6 +87,18 @@ postsRouter.get('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Post not found' } });
     }
     return res.json({ post });
+  } catch {
+    return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
+  }
+});
+
+postsRouter.delete('/:id', requireAuth, async (req, res) => {
+  try {
+    const deleted = await deletePost((req as any).userId, req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Post not found' } });
+    }
+    return res.json({ ok: true });
   } catch {
     return res.status(500).json({ error: { code: 'INTERNAL', message: 'Internal error' } });
   }

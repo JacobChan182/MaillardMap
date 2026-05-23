@@ -8,6 +8,9 @@
 	<string>$(BACKEND_MAC_BASE)</string>
 	<key>BACKEND_TEST</key>
 	<string>$(BACKEND_TEST)</string>
+	<!-- Mirrors Signing entitlements `aps-environment` (development = sandbox APNs, production = production APNs). -->
+	<key>MAILLARD_APS_ENTITLEMENT</key>
+	<string>$(APS_ENVIRONMENT)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

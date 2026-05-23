@@ -3,6 +3,8 @@ import SwiftUI
 extension Notification.Name {
     /// Posted after a new visit post is created successfully so tabs can reload server-backed lists.
     static let bigBackDidCreatePost = Notification.Name("bigBackDidCreatePost")
+    /// Posted after the current user deletes a post. `userInfo["postId"]` is the deleted post id.
+    static let bigBackDidDeletePost = Notification.Name("bigBackDidDeletePost")
 }
 
 struct MainTabView: View {
@@ -114,6 +116,10 @@ struct FeedTab: View {
                     onRestaurantTap: {
                         mapVM.focusRestaurantFromPost(p)
                         tabRouter.openMap()
+                    },
+                    onDeleted: {
+                        feedVM.removePost(id: p.id)
+                        selectedPost = nil
                     }
                 )
             }
@@ -184,6 +190,9 @@ struct MapTabView: View {
         }
         .task { await mapVM.loadPosts() }
         .onReceive(NotificationCenter.default.publisher(for: .bigBackDidCreatePost)) { _ in
+            Task { await mapVM.loadPosts() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .bigBackDidDeletePost)) { _ in
             Task { await mapVM.loadPosts() }
         }
     }

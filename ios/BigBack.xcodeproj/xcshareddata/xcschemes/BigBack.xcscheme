@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "E17E571470CF10729FCD32FA"
-               BuildableName = "BigBack.app"
+               BuildableName = "MaillardMap.app"
                BlueprintName = "BigBack"
                ReferencedContainer = "container:BigBack.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E17E571470CF10729FCD32FA"
-            BuildableName = "BigBack.app"
+            BuildableName = "MaillardMap.app"
             BlueprintName = "BigBack"
             ReferencedContainer = "container:BigBack.xcodeproj">
          </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E17E571470CF10729FCD32FA"
-            BuildableName = "BigBack.app"
+            BuildableName = "MaillardMap.app"
             BlueprintName = "BigBack"
             ReferencedContainer = "container:BigBack.xcodeproj">
          </BuildableReference>

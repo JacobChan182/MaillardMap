@@ -97,6 +97,10 @@ struct UserPostsView: View {
                 onRestaurantTap: {
                     mapVM.focusRestaurantFromPost(p)
                     tabRouter.openMap()
+                },
+                onDeleted: {
+                    vm.removePost(id: p.id)
+                    selectedPost = nil
                 }
             )
         }
