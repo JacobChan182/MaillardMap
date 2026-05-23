@@ -2,6 +2,7 @@ import { getPool } from '../../db/pool.js';
 import { areMutualFriends } from '../friends/friends.service.js';
 import { searchNearby } from '../../external/foursquare.js';
 import { sendPushToUser } from '../../services/apns.js';
+import { isRestaurantCuisineLabel } from './restaurant-venue-filter.js';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -39,15 +40,16 @@ export async function searchRestaurants(q: string, lat?: number, lng?: number) {
   sql += ` limit 30`;
 
   const cached = await pool.query<RestaurantRow>(sql, args);
+  const cachedRestaurants = cached.rows.filter((row) => isRestaurantCuisineLabel(row.cuisine));
 
-  if (cached.rows.length > 0) {
-    return cached.rows.map(rowToRestaurant);
+  if (cachedRestaurants.length > 0) {
+    return cachedRestaurants.map(rowToRestaurant);
   }
 
   // Not found locally - fetch from Foursquare
   let results;
   if (lat != null && lng != null) {
-    results = await searchNearby(lat, lng, 5000, q);
+    results = await searchNearby(lat, lng, 50000, q);
   } else {
     // Fallback center (NYC) when no coordinates provided
     results = await searchNearby(40.7128, -74.006, 50000, q);
