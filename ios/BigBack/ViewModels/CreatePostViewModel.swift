@@ -8,7 +8,14 @@ final class CreatePostViewModel: ObservableObject {
     @Published var selectedRestaurant: Restaurant?
     @Published var comment = ""
     @Published var selectedPhotos: [UIImage] = []
+    /// Bound to the full multi-select PhotosPicker (initial / replace-all flow).
     @Published var selectedPhotoItems: [PhotosPickerItem] = []
+    /// Bound to the single-slot PhotosPicker (add-one flow).
+    @Published var addPhotoItems: [PhotosPickerItem] = []
+    /// Raw images waiting to be cropped one by one before being added to `selectedPhotos`.
+    @Published var cropQueue: [UIImage] = []
+    /// Total photos in the original crop batch (used to show "Photo X of Y").
+    private(set) var cropQueueTotal: Int = 0
     @Published var errorMessage: String?
     @Published var isPosting = false
     @Published var didPost = false
@@ -40,7 +47,9 @@ final class CreatePostViewModel: ObservableObject {
         "\(comment.count)/\(maxCommentLength)"
     }
 
+    /// Replace-all flow: clears existing photos and queues all picked items for crop.
     func loadPhotos(from items: [PhotosPickerItem]) async {
+        guard !items.isEmpty else { return }
         var images: [UIImage] = []
         for item in items {
             if let data = try? await item.loadTransferable(type: Data.self),
@@ -48,8 +57,39 @@ final class CreatePostViewModel: ObservableObject {
                 images.append(img)
             }
         }
-        selectedPhotos = Array(images.prefix(maxPhotos))
+        selectedPhotos = []
+        cropQueue = Array(images.prefix(maxPhotos))
+        cropQueueTotal = cropQueue.count
     }
+
+    /// Add-one flow: queues a single new photo for crop without touching existing photos.
+    func addSinglePhoto(from item: PhotosPickerItem) async {
+        guard selectedPhotos.count < maxPhotos else { return }
+        guard let data = try? await item.loadTransferable(type: Data.self),
+              let img = UIImage(data: data) else { return }
+        addPhotoItems = []
+        cropQueue = [img]
+        cropQueueTotal = 1
+    }
+
+    func removePhoto(at index: Int) {
+        guard index < selectedPhotos.count else { return }
+        selectedPhotos.remove(at: index)
+    }
+
+    /// Called by the crop sheet when the user confirms a crop for the current photo.
+    func confirmCrop(_ image: UIImage) {
+        selectedPhotos.append(image)
+        if !cropQueue.isEmpty { cropQueue.removeFirst() }
+    }
+
+    /// Cancels any pending crop batch; already-cropped photos in `selectedPhotos` are kept.
+    func cancelCrops() {
+        cropQueue = []
+        cropQueueTotal = 0
+    }
+
+    var cropPhotoNumber: Int { max(1, cropQueueTotal - cropQueue.count + 1) }
 
     func post() async {
         guard let restaurant = selectedRestaurant else {
@@ -128,6 +168,9 @@ final class CreatePostViewModel: ObservableObject {
         comment = ""
         selectedPhotos = []
         selectedPhotoItems = []
+        addPhotoItems = []
+        cropQueue = []
+        cropQueueTotal = 0
         visitRating = nil
         errorMessage = nil
         didPost = false

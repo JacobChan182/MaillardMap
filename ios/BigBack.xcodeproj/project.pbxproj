@@ -28,6 +28,7 @@
 		72FD20D5F76CE7DCA0131A7C /* CommentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35BBB766CE28FC141E56DC09 /* CommentsViewModel.swift */; };
 		830064E83ACE691D2DA1A85E /* RestaurantPostsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD9AD79C1836FD7008FD268C /* RestaurantPostsViewModel.swift */; };
 		8D91D94E89D16EAD687BFA36 /* CreatePostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB35BFE6B4063F0029E007D3 /* CreatePostView.swift */; };
+		DD7A920E4F1C6B38A2953E07 /* PhotoCropView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC3F481B9E2D5A74F8160B93 /* PhotoCropView.swift */; };
 		8E18A4730E0BD2A4F2F21753 /* CreatePostViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41310478D1B7C47522772A89 /* CreatePostViewModel.swift */; };
 		91FEFE987E93FD8E43B765E2 /* BigBackApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E4129F9014643606F249F8 /* BigBackApp.swift */; };
 		958E0630F88B223A39F01399 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F5B7334131D69AD9018D536 /* APIClient.swift */; };
@@ -95,6 +96,7 @@
 		A60F2374FC7DBD30CF7C0966 /* PostDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostDetailView.swift; sourceTree = "<group>"; };
 		A8422E1D1ED8313359A00CED /* SavedPlacesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedPlacesViewModel.swift; sourceTree = "<group>"; };
 		AB35BFE6B4063F0029E007D3 /* CreatePostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreatePostView.swift; sourceTree = "<group>"; };
+		CC3F481B9E2D5A74F8160B93 /* PhotoCropView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoCropView.swift; sourceTree = "<group>"; };
 		ADFB2B999924C69213674FA9 /* User.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = User.swift; sourceTree = "<group>"; };
 		CD9AD79C1836FD7008FD268C /* RestaurantPostsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestaurantPostsViewModel.swift; sourceTree = "<group>"; };
 		CF66CA7185DD9E38E99410C4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -259,7 +261,8 @@
 			isa = PBXGroup;
 			children = (
 				0B24927B8FCEAAA8EE8F9985 /* CommentsView.swift */,
-				AB35BFE6B4063F0029E007D3 /* CreatePostView.swift */,
+			AB35BFE6B4063F0029E007D3 /* CreatePostView.swift */,
+				CC3F481B9E2D5A74F8160B93 /* PhotoCropView.swift */,
 				5AE5455B22B5810BE63A2EA3 /* PostCardView.swift */,
 				A60F2374FC7DBD30CF7C0966 /* PostDetailView.swift */,
 				4A7A677FC0F94DA00838BC90 /* RestaurantPicker.swift */,
@@ -383,7 +386,8 @@
 				3477C61B5E24372233439515 /* BlendViewModel.swift in Sources */,
 				42EE1426A8BD0C36F39A8F1E /* CommentsView.swift in Sources */,
 				72FD20D5F76CE7DCA0131A7C /* CommentsViewModel.swift in Sources */,
-				8D91D94E89D16EAD687BFA36 /* CreatePostView.swift in Sources */,
+			8D91D94E89D16EAD687BFA36 /* CreatePostView.swift in Sources */,
+				DD7A920E4F1C6B38A2953E07 /* PhotoCropView.swift in Sources */,
 				8E18A4730E0BD2A4F2F21753 /* CreatePostViewModel.swift in Sources */,
 				C0F1ABF58228FA45E84B7C4C /* EditProfileView.swift in Sources */,
 				1759D4B330CEF8B7CEB54CCE /* FeedViewModel.swift in Sources */,
