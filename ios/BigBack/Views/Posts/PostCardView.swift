@@ -160,7 +160,7 @@ private func relativePostAge(from postDate: Date, now: Date = Date()) -> String 
     return "\(years) \(years == 1 ? "year" : "years") ago"
 }
 
-/// Feed: stacked peek cards with cropped thumbnails. Detail: full-width aspect-fit images with pinch zoom.
+/// Feed: first photo with +N badge when more exist. Detail: full-width aspect-fit or horizontal carousel.
 private struct PostCardStackedPhotos: View {
     let photos: [PostPhoto]
     var variant: PostCardVariant = .feed
@@ -182,20 +182,21 @@ private struct PostCardStackedPhotos: View {
         GeometryReader { geo in
             let width = min(geo.size.width * 0.82, 330)
             let height: CGFloat = 190
-            let peek: CGFloat = 22
-            ZStack {
-                if sorted.count > 1 {
-                    feedPhotoView(urlString: sorted[1].url, width: width, height: height)
-                        .scaleEffect(0.93)
-                        .rotationEffect(.degrees(3))
-                        .offset(x: peek + 6)
-                        .zIndex(0)
+            let extraCount = sorted.count - 1
+            feedPhotoView(urlString: sorted[0].url, width: width, height: height)
+                .shadow(color: .black.opacity(0.14), radius: 4, x: 0, y: 2)
+                .overlay(alignment: .trailing) {
+                    if extraCount > 0 {
+                        Text("+\(extraCount)")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(.black.opacity(0.55), in: Capsule())
+                            .padding(.trailing, 10)
+                    }
                 }
-                feedPhotoView(urlString: sorted[0].url, width: width, height: height)
-                    .shadow(color: .black.opacity(0.14), radius: 4, x: 3, y: 0)
-                    .zIndex(1)
-            }
-            .frame(width: geo.size.width, height: height, alignment: .center)
+                .frame(width: geo.size.width, height: height, alignment: .center)
         }
         .frame(height: 190)
         .frame(maxWidth: .infinity)
