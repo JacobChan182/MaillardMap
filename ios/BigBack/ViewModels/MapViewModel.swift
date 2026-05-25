@@ -34,11 +34,16 @@ final class MapViewModel: NSObject, ObservableObject, CLLocationManagerDelegate 
     // Threshold for zoom level: span < 0.01 = zoomed in = show pins
     let zoomThreshold: Double = 0.01
 
-    /// For restaurant search: always the map’s visible center so results match the area you’re browsing.
-    /// (Using live GPS here caused repeated re-queries on every location fix and ignored map pans.)
-    var searchAnchor: CLLocationCoordinate2D {
-        region.center
-    }
+  /// For restaurant search: always the map’s visible center so results match the area you’re browsing.
+  /// (Using live GPS here caused repeated re-queries on every location fix and ignored map pans.)
+  var searchAnchor: CLLocationCoordinate2D {
+    region.center
+  }
+
+  /// Prefer device location for “near me” restaurant search; fall back to map center before GPS is ready.
+  var restaurantSearchCoordinate: CLLocationCoordinate2D {
+    userLocation ?? region.center
+  }
 
     init(api: APIClient = .live()) {
         self.api = api

@@ -13,7 +13,7 @@ struct RestaurantSearchView: View {
                 .textFieldStyle(.roundedBorder)
                 .padding()
                 .onChange(of: vm.query) { _, _ in
-                    vm.scheduleDebouncedSearch(near: mapVM.searchAnchor)
+                    vm.scheduleDebouncedSearch(near: mapVM.restaurantSearchCoordinate)
                 }
 
             ScrollView {
@@ -52,7 +52,7 @@ struct RestaurantSearchView: View {
         .onAppear {
             Task {
                 if !vm.query.isEmpty {
-                    await vm.search(near: mapVM.searchAnchor)
+                    await vm.search(near: mapVM.restaurantSearchCoordinate)
                 }
             }
         }
