@@ -76,6 +76,12 @@ private final class AspectFitZoomScrollView: UIScrollView, UIScrollViewDelegate 
         recenterImage()
     }
 
+    /// After pinch ends, snap back to the original aspect-fit size.
+    func scrollViewDidEndZooming(_ scrollView: UIScrollView, with view: UIView?, atScale scale: CGFloat) {
+        guard abs(scale - minimumZoomScale) > 0.01 else { return }
+        setZoomScale(minimumZoomScale, animated: true)
+    }
+
     /// Keeps the image centered when smaller than the viewport; 1× height matches aspect-fit image height.
     private func recenterImage() {
         let iv = imageView
@@ -195,14 +201,15 @@ private struct PostCardStackedPhotos: View {
         .frame(maxWidth: .infinity)
     }
 
+    @ViewBuilder
     private var detailList: some View {
-        VStack(spacing: 16) {
-            ForEach(sorted) { photo in
-                PostDetailZoomablePhoto(urlString: photo.url)
-                    .frame(maxWidth: .infinity)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
+        if sorted.count <= 1, let photo = sorted.first {
+            PostDetailZoomablePhoto(urlString: photo.url)
+                .frame(maxWidth: .infinity)
+                .fixedSize(horizontal: false, vertical: true)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+        } else {
+            PostDetailPhotoCarousel(photos: sorted)
         }
     }
 
@@ -224,6 +231,55 @@ private struct PostCardStackedPhotos: View {
         }
         .frame(width: width, height: height)
         .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+/// Horizontal swipe carousel for post detail when there are multiple photos.
+private struct PostDetailPhotoCarousel: View {
+    let photos: [PostPhoto]
+
+    @State private var visiblePhotoID: String?
+
+    var body: some View {
+        VStack(spacing: 10) {
+            GeometryReader { geo in
+                ScrollView(.horizontal) {
+                    LazyHStack(spacing: 0) {
+                        ForEach(photos) { photo in
+                            PostDetailZoomablePhoto(urlString: photo.url)
+                                .frame(width: geo.size.width, height: geo.size.height)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                .id(photo.id)
+                        }
+                    }
+                    .scrollTargetLayout()
+                }
+                .scrollTargetBehavior(.paging)
+                .scrollPosition(id: $visiblePhotoID)
+                .scrollIndicators(.hidden)
+            }
+            .aspectRatio(9 / 16, contentMode: .fit)
+            .frame(maxWidth: .infinity)
+
+            HStack(spacing: 6) {
+                ForEach(photos) { photo in
+                    Circle()
+                        .fill(visiblePhotoID == photo.id ? Color.orange : Color.secondary.opacity(0.35))
+                        .frame(width: 7, height: 7)
+                }
+            }
+            .frame(maxWidth: .infinity)
+
+            if let visiblePhotoID,
+               let idx = photos.firstIndex(where: { $0.id == visiblePhotoID }) {
+                Text("\(idx + 1) of \(photos.count)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .onAppear {
+            visiblePhotoID = photos.first?.id
+        }
     }
 }
 
