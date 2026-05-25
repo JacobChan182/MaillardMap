@@ -160,10 +160,17 @@ private func relativePostAge(from postDate: Date, now: Date = Date()) -> String 
     return "\(years) \(years == 1 ? "year" : "years") ago"
 }
 
+/// Uniform feed photo width (~82% of card, max 330pt). Height follows aspect ratio up to 9:16.
+private let feedPhotoWidthFraction: CGFloat = 0.82
+private let feedPhotoMaxWidth: CGFloat = 330
+private let feedPhotoMaxHeightToWidth: CGFloat = 16 / 9
+
 /// Feed: first photo with +N badge when more exist. Detail: full-width aspect-fit or horizontal carousel.
 private struct PostCardStackedPhotos: View {
     let photos: [PostPhoto]
     var variant: PostCardVariant = .feed
+
+    @State private var feedPhotoHeight: CGFloat = 160
 
     private var sorted: [PostPhoto] {
         photos.sorted { $0.orderIndex < $1.orderIndex }
@@ -180,25 +187,18 @@ private struct PostCardStackedPhotos: View {
 
     private var feedStack: some View {
         GeometryReader { geo in
-            let width = min(geo.size.width * 0.82, 330)
-            let height: CGFloat = 190
+            let width = min(geo.size.width * feedPhotoWidthFraction, feedPhotoMaxWidth)
             let extraCount = sorted.count - 1
-            feedPhotoView(urlString: sorted[0].url, width: width, height: height)
-                .shadow(color: .black.opacity(0.14), radius: 4, x: 0, y: 2)
-                .overlay(alignment: .trailing) {
-                    if extraCount > 0 {
-                        Text("+\(extraCount)")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(.black.opacity(0.55), in: Capsule())
-                            .padding(.trailing, 10)
-                    }
-                }
-                .frame(width: geo.size.width, height: height, alignment: .center)
+            FeedPostPhoto(
+                urlString: sorted[0].url,
+                width: width,
+                extraPhotoCount: extraCount,
+                onHeightResolved: { feedPhotoHeight = $0 }
+            )
+            .shadow(color: .black.opacity(0.14), radius: 4, x: 0, y: 2)
+            .frame(width: geo.size.width, alignment: .center)
         }
-        .frame(height: 190)
+        .frame(height: feedPhotoHeight)
         .frame(maxWidth: .infinity)
     }
 
@@ -213,25 +213,72 @@ private struct PostCardStackedPhotos: View {
             PostDetailPhotoCarousel(photos: sorted)
         }
     }
+}
 
-    @ViewBuilder
-    private func feedPhotoView(urlString: String, width: CGFloat, height: CGFloat) -> some View {
-        AsyncImage(url: URL(string: urlString)) { phase in
-            switch phase {
-            case .success(let image):
-                image
+/// Feed image: fixed width, natural height (capped at 9:16), optional +N badge.
+private struct FeedPostPhoto: View {
+    let urlString: String
+    let width: CGFloat
+    var extraPhotoCount: Int = 0
+    var onHeightResolved: (CGFloat) -> Void = { _ in }
+
+    @State private var uiImage: UIImage?
+    @State private var loadFailed = false
+
+    private var displayHeight: CGFloat {
+        guard let img = uiImage, img.size.width > 0 else { return 160 }
+        let natural = width * img.size.height / img.size.width
+        return min(natural, width * feedPhotoMaxHeightToWidth)
+    }
+
+    var body: some View {
+        Group {
+            if let img = uiImage {
+                Image(uiImage: img)
                     .resizable()
-                    .scaledToFill()
-            case .failure:
+                    .scaledToFit()
+            } else if loadFailed {
                 Color.gray.opacity(0.3)
-            case .empty:
+            } else {
                 Color.gray.opacity(0.2)
-            @unknown default:
-                Color.gray.opacity(0.3)
             }
         }
-        .frame(width: width, height: height)
+        .frame(width: width, height: displayHeight)
         .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(alignment: .trailing) {
+            if extraPhotoCount > 0 {
+                Text("+\(extraPhotoCount)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(.black.opacity(0.55), in: Capsule())
+                    .padding(.trailing, 10)
+            }
+        }
+        .task(id: urlString) { await loadImage() }
+        .onChange(of: displayHeight) { _, h in onHeightResolved(h) }
+        .onAppear { onHeightResolved(displayHeight) }
+    }
+
+    private func loadImage() async {
+        uiImage = nil
+        loadFailed = false
+        guard let url = URL(string: urlString) else {
+            loadFailed = true
+            return
+        }
+        do {
+            let (data, _) = try await URLSession.shared.data(from: url)
+            guard !Task.isCancelled else { return }
+            if let img = UIImage(data: data) {
+                uiImage = img
+            } else {
+                loadFailed = true
+            }
+        } catch {
+            if !Task.isCancelled { loadFailed = true }
+        }
     }
 }
 
